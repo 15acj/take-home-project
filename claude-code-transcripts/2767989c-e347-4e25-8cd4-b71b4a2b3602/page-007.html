@@ -1,0 +1,1415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claude Code transcript - page 7</title>
+    <style>
+:root { --bg-color: #f5f5f5; --card-bg: #ffffff; --user-bg: #e3f2fd; --user-border: #1976d2; --assistant-bg: #f5f5f5; --assistant-border: #9e9e9e; --thinking-bg: #fff8e1; --thinking-border: #ffc107; --thinking-text: #666; --tool-bg: #f3e5f5; --tool-border: #9c27b0; --tool-result-bg: #e8f5e9; --tool-error-bg: #ffebee; --text-color: #212121; --text-muted: #757575; --code-bg: #263238; --code-text: #aed581; }
+* { box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg-color); color: var(--text-color); margin: 0; padding: 16px; line-height: 1.6; }
+.container { max-width: 800px; margin: 0 auto; }
+h1 { font-size: 1.5rem; margin-bottom: 24px; padding-bottom: 8px; border-bottom: 2px solid var(--user-border); }
+.header-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; border-bottom: 2px solid var(--user-border); padding-bottom: 8px; margin-bottom: 24px; }
+.header-row h1 { border-bottom: none; padding-bottom: 0; margin-bottom: 0; flex: 1; min-width: 200px; }
+.message { margin-bottom: 16px; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.message.user { background: var(--user-bg); border-left: 4px solid var(--user-border); }
+.message.assistant { background: var(--card-bg); border-left: 4px solid var(--assistant-border); }
+.message.tool-reply { background: #fff8e1; border-left: 4px solid #ff9800; }
+.tool-reply .role-label { color: #e65100; }
+.tool-reply .tool-result { background: transparent; padding: 0; margin: 0; }
+.tool-reply .tool-result .truncatable.truncated::after { background: linear-gradient(to bottom, transparent, #fff8e1); }
+.message-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 16px; background: rgba(0,0,0,0.03); font-size: 0.85rem; }
+.role-label { font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+.user .role-label { color: var(--user-border); }
+time { color: var(--text-muted); font-size: 0.8rem; }
+.timestamp-link { color: inherit; text-decoration: none; }
+.timestamp-link:hover { text-decoration: underline; }
+.message:target { animation: highlight 2s ease-out; }
+@keyframes highlight { 0% { background-color: rgba(25, 118, 210, 0.2); } 100% { background-color: transparent; } }
+.message-content { padding: 16px; }
+.message-content p { margin: 0 0 12px 0; }
+.message-content p:last-child { margin-bottom: 0; }
+.thinking { background: var(--thinking-bg); border: 1px solid var(--thinking-border); border-radius: 8px; padding: 12px; margin: 12px 0; font-size: 0.9rem; color: var(--thinking-text); }
+.thinking-label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: #f57c00; margin-bottom: 8px; }
+.thinking p { margin: 8px 0; }
+.assistant-text { margin: 8px 0; }
+.tool-use { background: var(--tool-bg); border: 1px solid var(--tool-border); border-radius: 8px; padding: 12px; margin: 12px 0; }
+.tool-header { font-weight: 600; color: var(--tool-border); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+.tool-icon { font-size: 1.1rem; }
+.tool-description { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 8px; font-style: italic; }
+.tool-result { background: var(--tool-result-bg); border-radius: 8px; padding: 12px; margin: 12px 0; }
+.tool-result.tool-error { background: var(--tool-error-bg); }
+.file-tool { border-radius: 8px; padding: 12px; margin: 12px 0; }
+.write-tool { background: linear-gradient(135deg, #e3f2fd 0%, #e8f5e9 100%); border: 1px solid #4caf50; }
+.edit-tool { background: linear-gradient(135deg, #fff3e0 0%, #fce4ec 100%); border: 1px solid #ff9800; }
+.file-tool-header { font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; font-size: 0.95rem; }
+.write-header { color: #2e7d32; }
+.edit-header { color: #e65100; }
+.file-tool-icon { font-size: 1rem; }
+.file-tool-path { font-family: monospace; background: rgba(0,0,0,0.08); padding: 2px 8px; border-radius: 4px; }
+.file-tool-fullpath { font-family: monospace; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 8px; word-break: break-all; }
+.file-content { margin: 0; }
+.edit-section { display: flex; margin: 4px 0; border-radius: 4px; overflow: hidden; }
+.edit-label { padding: 8px 12px; font-weight: bold; font-family: monospace; display: flex; align-items: flex-start; }
+.edit-old { background: #fce4ec; }
+.edit-old .edit-label { color: #b71c1c; background: #f8bbd9; }
+.edit-old .edit-content { color: #880e4f; }
+.edit-new { background: #e8f5e9; }
+.edit-new .edit-label { color: #1b5e20; background: #a5d6a7; }
+.edit-new .edit-content { color: #1b5e20; }
+.edit-content { margin: 0; flex: 1; background: transparent; font-size: 0.85rem; }
+.edit-replace-all { font-size: 0.75rem; font-weight: normal; color: var(--text-muted); }
+.write-tool .truncatable.truncated::after { background: linear-gradient(to bottom, transparent, #e6f4ea); }
+.edit-tool .truncatable.truncated::after { background: linear-gradient(to bottom, transparent, #fff0e5); }
+.todo-list { background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%); border: 1px solid #81c784; border-radius: 8px; padding: 12px; margin: 12px 0; }
+.todo-header { font-weight: 600; color: #2e7d32; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; font-size: 0.95rem; }
+.todo-items { list-style: none; margin: 0; padding: 0; }
+.todo-item { display: flex; align-items: flex-start; gap: 10px; padding: 6px 0; border-bottom: 1px solid rgba(0,0,0,0.06); font-size: 0.9rem; }
+.todo-item:last-child { border-bottom: none; }
+.todo-icon { flex-shrink: 0; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-weight: bold; border-radius: 50%; }
+.todo-completed .todo-icon { color: #2e7d32; background: rgba(46, 125, 50, 0.15); }
+.todo-completed .todo-content { color: #558b2f; text-decoration: line-through; }
+.todo-in-progress .todo-icon { color: #f57c00; background: rgba(245, 124, 0, 0.15); }
+.todo-in-progress .todo-content { color: #e65100; font-weight: 500; }
+.todo-pending .todo-icon { color: #757575; background: rgba(0,0,0,0.05); }
+.todo-pending .todo-content { color: #616161; }
+pre { background: var(--code-bg); color: var(--code-text); padding: 12px; border-radius: 6px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5; margin: 8px 0; white-space: pre-wrap; word-wrap: break-word; }
+pre.json { color: #e0e0e0; }
+code { background: rgba(0,0,0,0.08); padding: 2px 6px; border-radius: 4px; font-size: 0.9em; }
+pre code { background: none; padding: 0; }
+.user-content { margin: 0; }
+.truncatable { position: relative; }
+.truncatable.truncated .truncatable-content { max-height: 200px; overflow: hidden; }
+.truncatable.truncated::after { content: ''; position: absolute; bottom: 32px; left: 0; right: 0; height: 60px; background: linear-gradient(to bottom, transparent, var(--card-bg)); pointer-events: none; }
+.message.user .truncatable.truncated::after { background: linear-gradient(to bottom, transparent, var(--user-bg)); }
+.message.tool-reply .truncatable.truncated::after { background: linear-gradient(to bottom, transparent, #fff8e1); }
+.tool-use .truncatable.truncated::after { background: linear-gradient(to bottom, transparent, var(--tool-bg)); }
+.tool-result .truncatable.truncated::after { background: linear-gradient(to bottom, transparent, var(--tool-result-bg)); }
+.expand-btn { display: none; width: 100%; padding: 8px 16px; margin-top: 4px; background: rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.1); border-radius: 6px; cursor: pointer; font-size: 0.85rem; color: var(--text-muted); }
+.expand-btn:hover { background: rgba(0,0,0,0.1); }
+.truncatable.truncated .expand-btn, .truncatable.expanded .expand-btn { display: block; }
+.pagination { display: flex; justify-content: center; gap: 8px; margin: 24px 0; flex-wrap: wrap; }
+.pagination a, .pagination span { padding: 5px 10px; border-radius: 6px; text-decoration: none; font-size: 0.85rem; }
+.pagination a { background: var(--card-bg); color: var(--user-border); border: 1px solid var(--user-border); }
+.pagination a:hover { background: var(--user-bg); }
+.pagination .current { background: var(--user-border); color: white; }
+.pagination .disabled { color: var(--text-muted); border: 1px solid #ddd; }
+.pagination .index-link { background: var(--user-border); color: white; }
+details.continuation { margin-bottom: 16px; }
+details.continuation summary { cursor: pointer; padding: 12px 16px; background: var(--user-bg); border-left: 4px solid var(--user-border); border-radius: 12px; font-weight: 500; color: var(--text-muted); }
+details.continuation summary:hover { background: rgba(25, 118, 210, 0.15); }
+details.continuation[open] summary { border-radius: 12px 12px 0 0; margin-bottom: 0; }
+.index-item { margin-bottom: 16px; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); background: var(--user-bg); border-left: 4px solid var(--user-border); }
+.index-item a { display: block; text-decoration: none; color: inherit; }
+.index-item a:hover { background: rgba(25, 118, 210, 0.1); }
+.index-item-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 16px; background: rgba(0,0,0,0.03); font-size: 0.85rem; }
+.index-item-number { font-weight: 600; color: var(--user-border); }
+.index-item-content { padding: 16px; }
+.index-item-stats { padding: 8px 16px 12px 32px; font-size: 0.85rem; color: var(--text-muted); border-top: 1px solid rgba(0,0,0,0.06); }
+.index-item-commit { margin-top: 6px; padding: 4px 8px; background: #fff3e0; border-radius: 4px; font-size: 0.85rem; color: #e65100; }
+.index-item-commit code { background: rgba(0,0,0,0.08); padding: 1px 4px; border-radius: 3px; font-size: 0.8rem; margin-right: 6px; }
+.commit-card { margin: 8px 0; padding: 10px 14px; background: #fff3e0; border-left: 4px solid #ff9800; border-radius: 6px; }
+.commit-card a { text-decoration: none; color: #5d4037; display: block; }
+.commit-card a:hover { color: #e65100; }
+.commit-card-hash { font-family: monospace; color: #e65100; font-weight: 600; margin-right: 8px; }
+.index-commit { margin-bottom: 12px; padding: 10px 16px; background: #fff3e0; border-left: 4px solid #ff9800; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+.index-commit a { display: block; text-decoration: none; color: inherit; }
+.index-commit a:hover { background: rgba(255, 152, 0, 0.1); margin: -10px -16px; padding: 10px 16px; border-radius: 8px; }
+.index-commit-header { display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; margin-bottom: 4px; }
+.index-commit-hash { font-family: monospace; color: #e65100; font-weight: 600; }
+.index-commit-msg { color: #5d4037; }
+.index-item-long-text { margin-top: 8px; padding: 12px; background: var(--card-bg); border-radius: 8px; border-left: 3px solid var(--assistant-border); }
+.index-item-long-text .truncatable.truncated::after { background: linear-gradient(to bottom, transparent, var(--card-bg)); }
+.index-item-long-text-content { color: var(--text-color); }
+#search-box { display: none; align-items: center; gap: 8px; }
+#search-box input { padding: 6px 12px; border: 1px solid var(--assistant-border); border-radius: 6px; font-size: 16px; width: 180px; }
+#search-box button, #modal-search-btn, #modal-close-btn { background: var(--user-border); color: white; border: none; border-radius: 6px; padding: 6px 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+#search-box button:hover, #modal-search-btn:hover { background: #1565c0; }
+#modal-close-btn { background: var(--text-muted); margin-left: 8px; }
+#modal-close-btn:hover { background: #616161; }
+#search-modal[open] { border: none; border-radius: 12px; box-shadow: 0 4px 24px rgba(0,0,0,0.2); padding: 0; width: 90vw; max-width: 900px; height: 80vh; max-height: 80vh; display: flex; flex-direction: column; }
+#search-modal::backdrop { background: rgba(0,0,0,0.5); }
+.search-modal-header { display: flex; align-items: center; gap: 8px; padding: 16px; border-bottom: 1px solid var(--assistant-border); background: var(--bg-color); border-radius: 12px 12px 0 0; }
+.search-modal-header input { flex: 1; padding: 8px 12px; border: 1px solid var(--assistant-border); border-radius: 6px; font-size: 16px; }
+#search-status { padding: 8px 16px; font-size: 0.85rem; color: var(--text-muted); border-bottom: 1px solid rgba(0,0,0,0.06); }
+#search-results { flex: 1; overflow-y: auto; padding: 16px; }
+.search-result { margin-bottom: 16px; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.search-result a { display: block; text-decoration: none; color: inherit; }
+.search-result a:hover { background: rgba(25, 118, 210, 0.05); }
+.search-result-page { padding: 6px 12px; background: rgba(0,0,0,0.03); font-size: 0.8rem; color: var(--text-muted); border-bottom: 1px solid rgba(0,0,0,0.06); }
+.search-result-content { padding: 12px; }
+.search-result mark { background: #fff59d; padding: 1px 2px; border-radius: 2px; }
+@media (max-width: 600px) { body { padding: 8px; } .message, .index-item { border-radius: 8px; } .message-content, .index-item-content { padding: 12px; } pre { font-size: 0.8rem; padding: 8px; } #search-box input { width: 120px; } #search-modal[open] { width: 95vw; height: 90vh; } }
+</style>
+</head>
+<body>
+    <div class="container">
+        <h1><a href="index.html" style="color: inherit; text-decoration: none;">Claude Code transcript</a> - page 7/7</h1>
+        
+
+<div class="pagination">
+<a href="index.html" class="index-link">Index</a>
+<a href="page-006.html">&larr; Prev</a>
+<a href="page-001.html">1</a>
+<a href="page-002.html">2</a>
+<a href="page-003.html">3</a>
+<a href="page-004.html">4</a>
+<a href="page-005.html">5</a>
+<a href="page-006.html">6</a>
+<span class="current">7</span>
+<span class="disabled">Next &rarr;</span>
+</div>
+
+        
+<div class="message user" id="msg-2026-07-11T17-22-40-585Z"><div class="message-header"><span class="role-label">User</span><a href="#msg-2026-07-11T17-22-40-585Z" class="timestamp-link"><time datetime="2026-07-11T17:22:40.585Z" data-timestamp="2026-07-11T17:22:40.585Z">2026-07-11T17:22:40.585Z</time></a></div><div class="message-content">
+<div class="user-content"><p><local-command-stdout>[38;2;255;120;20m↯[39m Fast mode ON · $10/$50 per Mtok</local-command-stdout></p></div></div></div>
+<div class="message user" id="msg-2026-07-11T17-33-33-955Z"><div class="message-header"><span class="role-label">User</span><a href="#msg-2026-07-11T17-33-33-955Z" class="timestamp-link"><time datetime="2026-07-11T17:33:33.955Z" data-timestamp="2026-07-11T17:33:33.955Z">2026-07-11T17:33:33.955Z</time></a></div><div class="message-content">
+<div class="user-content"><p>plan is approved. start building.</p></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-33-40-428Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-33-40-428Z" class="timestamp-link"><time datetime="2026-07-11T17:33:40.428Z" data-timestamp="2026-07-11T17:33:40.428Z">2026-07-11T17:33:40.428Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-33-40-436Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-33-40-436Z" class="timestamp-link"><time datetime="2026-07-11T17:33:40.436Z" data-timestamp="2026-07-11T17:33:40.436Z">2026-07-11T17:33:40.436Z</time></a></div><div class="message-content">
+<div class="tool-use" data-tool-id="toolu_01VoZa25x8SCFRfPYTSX6SJf"><div class="tool-header"><span class="tool-icon">⚙</span> ExitPlanMode</div><div class="truncatable"><div class="truncatable-content"><pre class="json">{
+  &#34;plan&#34;: &#34;# Plan: Build CDN-optimized data artifacts for the 3D force-graph viz\n\n## Context\nThe top-10k pull is **complete** (`scripts/data/full/top_cited.{jsonl,csv}`, 10k records, 161 MB\nJSONL). Next we need to turn that raw dump into artifacts a web app can load to render a **3D\nforce-directed graph** — papers as nodes (size ∝ citations), citation/reference edges as links —\nwith three interaction tiers:\n1. **Initial load:** whole-graph topology + hover data (title, primary topic, citations, first\n   author). Must be small.\n2. **On click:** full paper details (abstract, urls, all authors, topics, keywords).\n3. **Filter/search:** string match on titles / keywords / authors driving node visibility.\n\n161 MB of JSONL cannot be shipped. This plan builds a tiered, compressed, CDN-friendly bundle.\n\nDecisions (confirmed): render target **React + `react-force-graph-3d`** (data kept\nrenderer-agnostic); **precompute** 3D positions offline; **binary + JSON hybrid** encoding.\n\n## Data facts measured from the real 10k (grounding)\n- **Edges:** intersecting each paper&#39;s `referenced_works` with the 10k id-set yields **37,051\n  intra-set directed edges** (mean degree 7.4, median 5, max 115). Only **6.2%** of the 598k\n  `referenced_works` pointers land inside the set — the rest point outside the top-10k and are\n  dropped. **12.5% of nodes are isolated** (degree 0) — expected; they float at the periphery.\n- **Measured gzip sizes (after review-pass optimizations):** Tier-1 text w/ string tables\n  ~**500 KB** (title/author/topic; keywords +170 KB, deferred), edges (Uint16 sorted SoA)\n  **71 KB**, positions (Int16 quantized) ~**57 KB**, `nodes.bin` numerics ~40 KB, one 100-record\n  detail shard **~47 KB** (35–60), all details ~4.5 MB.\n- **First-paint payload ≈ 650–700 KB gzip** (graph + hover + title/author/topic search);\n  keyword search terms (~170 KB) stream in right after without blocking render.\n- Citation range **4,460 → 801,217** with a known anomaly at the top (`suspect` flag) → node\n  radius must use a **sqrt/log scale** (and carry the suspect flag for styling), not linear.\n\n## Deliverables\n- `scripts/build_graph_data.py` (stdlib; optional `brotli`) — transforms the JSONL into the\n  artifact tree below. Reuses the short-id logic and abstract reconstruction pattern.\n- `scripts/layout_3d.mjs` (Node, `d3-force-3d`) — runs the same simulation the client engine uses,\n  offline, and freezes coordinates. (Alternative noted: Python `igraph` 3D FR layout.)\n- Artifact tree written to `web/public/data/v1/`:\n\n```\nweb/public/data/v1/\n  manifest.json      # version, counts, citation scale domain (min/p50/p95/max), position\n                     #   quantization scale, domain+field color legend, shard size, hashed names\n  nodes.bin          # SoA binary: Uint32 citations[N], Uint16 year[N],\n                     #   Uint8 domainIdx[N], Uint8 fieldIdx[N], Uint8 flags[N] (bit0=suspect)\n  nodes-text.json    # title[], author[](first), topicIdx[] + topicTable[] (string-table encoded)\n  search-kw.json     # kwIdx[][] + kwTable[] — keyword search terms, fetched AFTER first paint\n  positions.bin      # Int16 quantized [x,y,z] * N (real = value/32767 * scale from manifest)\n  edges.bin          # Uint16 SoA, sorted by (src,dst): src[E] then dst[E] (deduped)\n  details/shard-000.json ... shard-099.json   # Tier-2, 100 records each (100 shards)\n```\n\n**Node index (0..9999, citation-rank order) is the canonical key everywhere** — edges,\npositions, and `nodes.*` are all index-aligned; a click on node `i` fetches\n`details/shard-(i // SHARD).json`. OpenAlex ids live only in the detail shards (for deep links).\n\n**Shard size = 100 papers → 100 shards, ~47 KB gzip / ~40 KB Brotli each** (measured across all\nshards: raw avg 126 KB, gzip 35–60 KB). Chosen over 250/shard (40 shards, ~115 KB) because shards\nare keyed by citation rank, not graph locality, so successive clicks hit different shards —\nsmaller shards minimize wasted bytes per click. `SHARD` is a build-script parameter; total detail\npayload is ~4.5 MB gzip regardless.\n\n## Build steps (`build_graph_data.py`)\n1. Load JSONL, assign each work an index by existing rank order; `short(id)=id.rsplit(&#39;/&#39;,1)[-1]`.\n2. **Edges:** for each work, keep `referenced_works` whose short-id is in the index map; dedupe,\n   **sort by (src,dst), write columnar** — all src as Uint16[E], then all dst as Uint16[E]\n   (valid because N=10000 &lt; 65536). Measured: **71 KB gz vs 112 KB** for the naive Uint32-pair\n   layout. (Directed = citation direction; the client can render undirected.)\n3. **Tier-1:** write `nodes.bin` (SoA numerics) + `nodes-text.json` (title, first author from\n   `authorships[0].author.display_name`, and `primary_topic.display_name` **string-table encoded**:\n   `topicTable` of 2,034 unique names + per-node Uint index — gzip&#39;s 32 KB window can&#39;t dedupe\n   repeats across a multi-MB file, tables can). Keywords go in a separate `search-kw.json`\n   (13,762-entry `kwTable` + per-node index lists), fetched in the background after first paint —\n   search over keywords lights up ~1s later, first render doesn&#39;t wait for it. Measured: tables\n   cut title+author+topic+kw text from 871 → 668 KB gz and halve raw bytes (3.2 → 1.8 MB → faster\n   JSON.parse). Build `domainIdx`/`fieldIdx` from `primary_topic.domain/field` with a legend in\n   `manifest.json`. Color-by-**domain** (only 4) is the default; field (~26) is secondary.\n4. **Tier-2 shards:** reconstruct abstract text from `abstract_inverted_index` (smaller than the\n   index, place words at sorted positions), and bundle doi, landing_url, pdf_url, oa_url,\n   grobid_xml_url, all authors(+institutions), topics, keywords, biblio. 40 shards × 250.\n5. **manifest.json:** counts, citation scale domain incl. p50/p95 (so the client clamps the 801k\n   outlier), color legends, shard size, and content-hashed filenames (`nodes.&lt;hash&gt;.bin`).\n6. **Precompress:** emit `.gz` (Python stdlib `gzip`, level 9) for every text/JSON + `.bin`\n   artifact. **For the prototype, skip static Brotli** — let the CDN (Cloudflare/Fastly/\n   CloudFront) apply Brotli on the fly, with prebuilt `.gz` as the fallback. (If static `.br` is\n   ever wanted, Node&#39;s built-in `zlib.brotliCompressSync` in `layout_3d.mjs` does it with no\n   extra install; Brotli q11 ≈ 15–20% smaller than gzip here.)\n\n## Layout precompute (`layout_3d.mjs`)\nLoad `nodes.bin` + `edges.bin`, run `d3-force-3d` (`forceManyBody`, `forceLink`, `forceCenter`)\nfor ~300 ticks to convergence, write `positions.bin` as **Int16 quantized** coords\n(`round(v / maxAbs * 32767)`, with `maxAbs` recorded in `manifest.json`; client decodes with one\nmultiply). Float32 coords are noise-like and barely compress (109 KB gz); Int16 halves that to\n~57 KB with sub-pixel precision loss. Matches `react-force-graph-3d`&#39;s own engine, so the client\nships coordinates and renders with `cooldownTicks={0}` (frozen) or a short low-alpha reheat — no\nmulti-second warm-up on 10k nodes.\n\n## Client consumption (renderer-agnostic; reference = react-force-graph-3d)\n- Parallel-fetch manifest + `nodes.bin` + `nodes-text.json` + `positions.bin` + `edges.bin`;\n  build `graphData` with `node.fx/fy/fz` = precomputed positions.\n- **Size:** `radius = scale(Math.sqrt(citations))`, domain from manifest (clamp at p95/p99 so the\n  anomaly doesn&#39;t dominate). **Color:** by `domainIdx` via legend.\n- **Hover:** title / topic / citations / first author — all already in memory.\n- **Click node `i`:** fetch+cache `details/shard-(i//250).json`; render abstract, urls, authors,\n  topics, keywords.\n- **Search/filter:** build an in-memory index at load from `title + author + kw` (+topic) — for\n  10k a lowercased substring scan is instant; use FlexSearch/MiniSearch only if fuzzy/ranked is\n  wanted. Matches drive `nodeVisibility`/`linkVisibility`. (Fast path covers first author +\n  title + keywords; full co-author search lives in detail shards — a separate all-authors search\n  shard (~1.1 MB gz) can be added later if every co-author must be filterable.)\n\n## CDN / serving\n- Content-hashed asset filenames → `Cache-Control: public, max-age=31536000, immutable`;\n  `manifest.json` unhashed with a short TTL (it points at the hashed files).\n- Serve prebuilt `.br`/`.gz` with correct `Content-Encoding`; `.bin` as `application/octet-stream`.\n- HTTP/2 (or /3) so the 40 detail shards fetch in parallel; add CORS headers for the CDN origin.\n\n## Verification\n- Run `python scripts/build_graph_data.py --in scripts/data/full/top_cited.jsonl --out web/public/data/v1`\n  then `node scripts/layout_3d.mjs`.\n- Assert: `nodes.bin` decodes to N=10000; `edges.bin` = 2 sorted Uint16 arrays of E=37051\n  (post-dedupe ≤ that) and every index &lt; 10000; 100 detail shards; every node index maps to\n  exactly one shard; `positions.bin` has 30000 Int16s and decoded coords are finite within\n  ±maxAbs; every `topicIdx`/`kwIdx` resolves in its table; a sampled detail record round-trips\n  (abstract non-empty where `has_abstract`).\n- Assert first-paint budget: `nodes.bin + nodes-text.json + edges.bin + positions.bin` gzip\n  total &lt; ~700 KB (keywords excluded — they load post-paint).\n- Smoke-test load: a tiny Node script that reads the manifest, loads the typed arrays, and prints\n  degree of the top node — confirms index alignment across files end-to-end.\n```\n&#34;,
+  &#34;planFilePath&#34;: &#34;/Users/andrewjin/.claude/plans/write-a-script-to-fluttering-pumpkin.md&#34;
+}</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T17-33-42-879Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T17-33-42-879Z" class="timestamp-link"><time datetime="2026-07-11T17:33:42.879Z" data-timestamp="2026-07-11T17:33:42.879Z">2026-07-11T17:33:42.879Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>User has approved your plan. You can now start coding. Start with updating your todo list if applicable
+
+Your plan has been saved to: /Users/andrewjin/.claude/plans/write-a-script-to-fluttering-pumpkin.md
+You can refer back to it if needed during implementation.
+
+## Approved Plan (edited by user):
+# Plan: Build CDN-optimized data artifacts for the 3D force-graph viz
+
+## Context
+The top-10k pull is **complete** (`scripts/data/full/top_cited.{jsonl,csv}`, 10k records, 161 MB
+JSONL). Next we need to turn that raw dump into artifacts a web app can load to render a **3D
+force-directed graph** — papers as nodes (size ∝ citations), citation/reference edges as links —
+with three interaction tiers:
+1. **Initial load:** whole-graph topology + hover data (title, primary topic, citations, first
+   author). Must be small.
+2. **On click:** full paper details (abstract, urls, all authors, topics, keywords).
+3. **Filter/search:** string match on titles / keywords / authors driving node visibility.
+
+161 MB of JSONL cannot be shipped. This plan builds a tiered, compressed, CDN-friendly bundle.
+
+Decisions (confirmed): render target **React + `react-force-graph-3d`** (data kept
+renderer-agnostic); **precompute** 3D positions offline; **binary + JSON hybrid** encoding.
+
+## Data facts measured from the real 10k (grounding)
+- **Edges:** intersecting each paper&#x27;s `referenced_works` with the 10k id-set yields **37,051
+  intra-set directed edges** (mean degree 7.4, median 5, max 115). Only **6.2%** of the 598k
+  `referenced_works` pointers land inside the set — the rest point outside the top-10k and are
+  dropped. **12.5% of nodes are isolated** (degree 0) — expected; they float at the periphery.
+- **Measured gzip sizes (after review-pass optimizations):** Tier-1 text w/ string tables
+  ~**500 KB** (title/author/topic; keywords +170 KB, deferred), edges (Uint16 sorted SoA)
+  **71 KB**, positions (Int16 quantized) ~**57 KB**, `nodes.bin` numerics ~40 KB, one 100-record
+  detail shard **~47 KB** (35–60), all details ~4.5 MB.
+- **First-paint payload ≈ 650–700 KB gzip** (graph + hover + title/author/topic search);
+  keyword search terms (~170 KB) stream in right after without blocking render.
+- Citation range **4,460 → 801,217** with a known anomaly at the top (`suspect` flag) → node
+  radius must use a **sqrt/log scale** (and carry the suspect flag for styling), not linear.
+
+## Deliverables
+- `scripts/build_graph_data.py` (stdlib; optional `brotli`) — transforms the JSONL into the
+  artifact tree below. Reuses the short-id logic and abstract reconstruction pattern.
+- `scripts/layout_3d.mjs` (Node, `d3-force-3d`) — runs the same simulation the client engine uses,
+  offline, and freezes coordinates. (Alternative noted: Python `igraph` 3D FR layout.)
+- Artifact tree written to `web/public/data/v1/`:
+
+```
+web/public/data/v1/
+  manifest.json      # version, counts, citation scale domain (min/p50/p95/max), position
+                     #   quantization scale, domain+field color legend, shard size, hashed names
+  nodes.bin          # SoA binary: Uint32 citations[N], Uint16 year[N],
+                     #   Uint8 domainIdx[N], Uint8 fieldIdx[N], Uint8 flags[N] (bit0=suspect)
+  nodes-text.json    # title[], author[](first), topicIdx[] + topicTable[] (string-table encoded)
+  search-kw.json     # kwIdx[][] + kwTable[] — keyword search terms, fetched AFTER first paint
+  positions.bin      # Int16 quantized [x,y,z] * N (real = value/32767 * scale from manifest)
+  edges.bin          # Uint16 SoA, sorted by (src,dst): src[E] then dst[E] (deduped)
+  details/shard-000.json ... shard-099.json   # Tier-2, 100 records each (100 shards)
+```
+
+**Node index (0..9999, citation-rank order) is the canonical key everywhere** — edges,
+positions, and `nodes.*` are all index-aligned; a click on node `i` fetches
+`details/shard-(i // SHARD).json`. OpenAlex ids live only in the detail shards (for deep links).
+
+**Shard size = 100 papers → 100 shards, ~47 KB gzip / ~40 KB Brotli each** (measured across all
+shards: raw avg 126 KB, gzip 35–60 KB). Chosen over 250/shard (40 shards, ~115 KB) because shards
+are keyed by citation rank, not graph locality, so successive clicks hit different shards —
+smaller shards minimize wasted bytes per click. `SHARD` is a build-script parameter; total detail
+payload is ~4.5 MB gzip regardless.
+
+## Build steps (`build_graph_data.py`)
+1. Load JSONL, assign each work an index by existing rank order; `short(id)=id.rsplit(&#x27;/&#x27;,1)[-1]`.
+2. **Edges:** for each work, keep `referenced_works` whose short-id is in the index map; dedupe,
+   **sort by (src,dst), write columnar** — all src as Uint16[E], then all dst as Uint16[E]
+   (valid because N=10000 &lt; 65536). Measured: **71 KB gz vs 112 KB** for the naive Uint32-pair
+   layout. (Directed = citation direction; the client can render undirected.)
+3. **Tier-1:** write `nodes.bin` (SoA numerics) + `nodes-text.json` (title, first author from
+   `authorships[0].author.display_name`, and `primary_topic.display_name` **string-table encoded**:
+   `topicTable` of 2,034 unique names + per-node Uint index — gzip&#x27;s 32 KB window can&#x27;t dedupe
+   repeats across a multi-MB file, tables can). Keywords go in a separate `search-kw.json`
+   (13,762-entry `kwTable` + per-node index lists), fetched in the background after first paint —
+   search over keywords lights up ~1s later, first render doesn&#x27;t wait for it. Measured: tables
+   cut title+author+topic+kw text from 871 → 668 KB gz and halve raw bytes (3.2 → 1.8 MB → faster
+   JSON.parse). Build `domainIdx`/`fieldIdx` from `primary_topic.domain/field` with a legend in
+   `manifest.json`. Color-by-**domain** (only 4) is the default; field (~26) is secondary.
+4. **Tier-2 shards:** reconstruct abstract text from `abstract_inverted_index` (smaller than the
+   index, place words at sorted positions), and bundle doi, landing_url, pdf_url, oa_url,
+   grobid_xml_url, all authors(+institutions), topics, keywords, biblio. 40 shards × 250.
+5. **manifest.json:** counts, citation scale domain incl. p50/p95 (so the client clamps the 801k
+   outlier), color legends, shard size, and content-hashed filenames (`nodes.&lt;hash&gt;.bin`).
+6. **Precompress:** emit `.gz` (Python stdlib `gzip`, level 9) for every text/JSON + `.bin`
+   artifact. **For the prototype, skip static Brotli** — let the CDN (Cloudflare/Fastly/
+   CloudFront) apply Brotli on the fly, with prebuilt `.gz` as the fallback. (If static `.br` is
+   ever wanted, Node&#x27;s built-in `zlib.brotliCompressSync` in `layout_3d.mjs` does it with no
+   extra install; Brotli q11 ≈ 15–20% smaller than gzip here.)
+
+## Layout precompute (`layout_3d.mjs`)
+Load `nodes.bin` + `edges.bin`, run `d3-force-3d` (`forceManyBody`, `forceLink`, `forceCenter`)
+for ~300 ticks to convergence, write `positions.bin` as **Int16 quantized** coords
+(`round(v / maxAbs * 32767)`, with `maxAbs` recorded in `manifest.json`; client decodes with one
+multiply). Float32 coords are noise-like and barely compress (109 KB gz); Int16 halves that to
+~57 KB with sub-pixel precision loss. Matches `react-force-graph-3d`&#x27;s own engine, so the client
+ships coordinates and renders with `cooldownTicks={0}` (frozen) or a short low-alpha reheat — no
+multi-second warm-up on 10k nodes.
+
+## Client consumption (renderer-agnostic; reference = react-force-graph-3d)
+- Parallel-fetch manifest + `nodes.bin` + `nodes-text.json` + `positions.bin` + `edges.bin`;
+  build `graphData` with `node.fx/fy/fz` = precomputed positions.
+- **Size:** `radius = scale(Math.sqrt(citations))`, domain from manifest (clamp at p95/p99 so the
+  anomaly doesn&#x27;t dominate). **Color:** by `domainIdx` via legend.
+- **Hover:** title / topic / citations / first author — all already in memory.
+- **Click node `i`:** fetch+cache `details/shard-(i//250).json`; render abstract, urls, authors,
+  topics, keywords.
+- **Search/filter:** build an in-memory index at load from `title + author + kw` (+topic) — for
+  10k a lowercased substring scan is instant; use FlexSearch/MiniSearch only if fuzzy/ranked is
+  wanted. Matches drive `nodeVisibility`/`linkVisibility`. (Fast path covers first author +
+  title + keywords; full co-author search lives in detail shards — a separate all-authors search
+  shard (~1.1 MB gz) can be added later if every co-author must be filterable.)
+
+## CDN / serving
+- Content-hashed asset filenames → `Cache-Control: public, max-age=31536000, immutable`;
+  `manifest.json` unhashed with a short TTL (it points at the hashed files).
+- Serve prebuilt `.br`/`.gz` with correct `Content-Encoding`; `.bin` as `application/octet-stream`.
+- HTTP/2 (or /3) so the 40 detail shards fetch in parallel; add CORS headers for the CDN origin.
+
+## Verification
+- Run `python scripts/build_graph_data.py --in scripts/data/full/top_cited.jsonl --out web/public/data/v1`
+  then `node scripts/layout_3d.mjs`.
+- Assert: `nodes.bin` decodes to N=10000; `edges.bin` = 2 sorted Uint16 arrays of E=37051
+  (post-dedupe ≤ that) and every index &lt; 10000; 100 detail shards; every node index maps to
+  exactly one shard; `positions.bin` has 30000 Int16s and decoded coords are finite within
+  ±maxAbs; every `topicIdx`/`kwIdx` resolves in its table; a sampled detail record round-trips
+  (abstract non-empty where `has_abstract`).
+- Assert first-paint budget: `nodes.bin + nodes-text.json + edges.bin + positions.bin` gzip
+  total &lt; ~700 KB (keywords excluded — they load post-paint).
+- Smoke-test load: a tiny Node script that reads the manifest, loads the typed arrays, and prints
+  degree of the top node — confirms index alignment across files end-to-end.
+```
+</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-34-01-470Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-34-01-470Z" class="timestamp-link"><time datetime="2026-07-11T17:34:01.470Z" data-timestamp="2026-07-11T17:34:01.470Z">2026-07-11T17:34:01.470Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-34-01-765Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-34-01-765Z" class="timestamp-link"><time datetime="2026-07-11T17:34:01.765Z" data-timestamp="2026-07-11T17:34:01.765Z">2026-07-11T17:34:01.765Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p>Plan approved. Building now. Let me start with the main transform script.</p></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-34-15-633Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-34-15-633Z" class="timestamp-link"><time datetime="2026-07-11T17:34:15.633Z" data-timestamp="2026-07-11T17:34:15.633Z">2026-07-11T17:34:15.633Z</time></a></div><div class="message-content"><div class="file-tool write-tool" data-tool-id="toolu_0179m2kEZ7RjCZbLHBw4iBcD">
+<div class="file-tool-header write-header"><span class="file-tool-icon">📝</span> Write <span class="file-tool-path">build_graph_data.py</span></div>
+<div class="file-tool-fullpath">/Users/andrewjin/Desktop/anthropic-take-home/scripts/build_graph_data.py</div>
+<div class="truncatable"><div class="truncatable-content"><pre class="file-content">#!/usr/bin/env python3
+&#34;&#34;&#34;Transform the raw top-cited JSONL into CDN-optimized artifacts for the 3D graph viz.
+
+Produces (into --out):
+  manifest.json      metadata: counts, citation scale domain, color legends, byte offsets
+  nodes.bin          SoA binary: Uint32 citations[N], Uint16 year[N],
+                     Uint8 domainIdx[N], Uint8 fieldIdx[N], Uint8 flags[N] (bit0=suspect)
+  nodes-text.json    title[], author[](first), topicIdx[] + topicTable[]  (string-table encoded)
+  search-kw.json     kwIdx[][] + kwTable[]  (keyword search terms; loaded after first paint)
+  edges.bin          Uint16 SoA: src[E] then dst[E], sorted, deduped (N&lt;65536 so 16-bit is safe)
+  details/shard-NNN.json  Tier-2 full details, SHARD records each
+
+Node index (0..N-1, citation-rank order = input order) is the canonical key across every file.
+positions.bin is produced separately by layout_3d.mjs, which also patches positionScale into the
+manifest.
+
+Stdlib only. gzip sidecars (.gz) are written for each artifact; Brotli is left to the CDN.
+&#34;&#34;&#34;
+
+from __future__ import annotations
+
+import argparse
+import array
+import gzip
+import hashlib
+import json
+import os
+import shutil
+import sys
+
+# ------------------------------------------------------------------ helpers
+
+def short_id(url: str | None) -&gt; str | None:
+    return url.rsplit(&#34;/&#34;, 1)[-1] if url else None
+
+
+def reconstruct_abstract(inv: dict | None) -&gt; str | None:
+    &#34;&#34;&#34;Rebuild plain text from OpenAlex&#39;s abstract_inverted_index (word -&gt; [positions]).&#34;&#34;&#34;
+    if not inv:
+        return None
+    pos: dict[int, str] = {}
+    for word, positions in inv.items():
+        for p in positions:
+            pos[p] = word
+    return &#34; &#34;.join(pos[k] for k in sorted(pos))
+
+
+def first_author(work: dict) -&gt; str:
+    a = work.get(&#34;authorships&#34;) or []
+    return ((a[0].get(&#34;author&#34;) or {}).get(&#34;display_name&#34;) or &#34;&#34;) if a else &#34;&#34;
+
+
+def all_authors(work: dict) -&gt; list[dict]:
+    out = []
+    for a in work.get(&#34;authorships&#34;) or []:
+        out.append({
+            &#34;name&#34;: (a.get(&#34;author&#34;) or {}).get(&#34;display_name&#34;),
+            &#34;institutions&#34;: [i.get(&#34;display_name&#34;) for i in (a.get(&#34;institutions&#34;) or []) if i.get(&#34;display_name&#34;)],
+        })
+    return out
+
+
+def public_pdf_url(work: dict) -&gt; str | None:
+    for loc in (work.get(&#34;best_oa_location&#34;), work.get(&#34;primary_location&#34;)):
+        url = (loc or {}).get(&#34;pdf_url&#34;)
+        if url:
+            return url
+    for loc in work.get(&#34;locations&#34;) or []:
+        url = (loc or {}).get(&#34;pdf_url&#34;)
+        if url:
+            return url
+    return None
+
+
+def is_suspect(work: dict) -&gt; bool:
+    &#34;&#34;&#34;Same citation-anomaly heuristic as the fetch script: single-year spike + impact mismatch.&#34;&#34;&#34;
+    total = work.get(&#34;cited_by_count&#34;) or 0
+    counts = work.get(&#34;counts_by_year&#34;) or []
+    if total &gt; 1000 and counts:
+        top = max((c.get(&#34;cited_by_count&#34;) or 0) for c in counts)
+        if top / total &gt; 0.90:
+            return True
+    fwci = work.get(&#34;fwci&#34;)
+    return total &gt; 100000 and fwci is not None and fwci &lt; 5
+
+
+def percentile(sorted_vals: list[int], q: float) -&gt; int:
+    if not sorted_vals:
+        return 0
+    i = min(len(sorted_vals) - 1, int(q * (len(sorted_vals) - 1)))
+    return sorted_vals[i]
+
+
+def le_bytes(a: &#34;array.array&#34;) -&gt; bytes:
+    &#34;&#34;&#34;Little-endian bytes for a typed array, regardless of host byte order.&#34;&#34;&#34;
+    if sys.byteorder == &#34;big&#34;:
+        a = array.array(a.typecode, a)
+        a.byteswap()
+    return a.tobytes()
+
+
+def write_gz(path: str, data: bytes) -&gt; None:
+    with open(path, &#34;wb&#34;) as f:
+        f.write(data)
+    with gzip.open(path + &#34;.gz&#34;, &#34;wb&#34;, compresslevel=9) as f:
+        f.write(data)
+
+
+def sha8(data: bytes) -&gt; str:
+    return hashlib.sha256(data).hexdigest()[:8]
+
+
+# ------------------------------------------------------------------ main
+
+def main() -&gt; int:
+    p = argparse.ArgumentParser(description=&#34;Build CDN artifacts for the 3D force-graph viz.&#34;)
+    p.add_argument(&#34;--in&#34;, dest=&#34;inp&#34;, default=&#34;scripts/data/full/top_cited.jsonl&#34;)
+    p.add_argument(&#34;--out&#34;, default=&#34;web/public/data/v1&#34;)
+    p.add_argument(&#34;--shard&#34;, type=int, default=100, help=&#34;Records per detail shard.&#34;)
+    args = p.parse_args()
+
+    print(f&#34;Loading {args.inp} ...&#34;, file=sys.stderr)
+    rows = [json.loads(line) for line in open(args.inp, encoding=&#34;utf-8&#34;)]
+    n = len(rows)
+    index = {short_id(r[&#34;id&#34;]): i for i, r in enumerate(rows)}
+    print(f&#34;  {n} nodes&#34;, file=sys.stderr)
+
+    os.makedirs(args.out, exist_ok=True)
+    details_dir = os.path.join(args.out, &#34;details&#34;)
+    if os.path.isdir(details_dir):
+        shutil.rmtree(details_dir)
+    os.makedirs(details_dir)
+
+    # --- edges: intra-set, deduped, sorted, columnar Uint16 SoA ---
+    edge_set = set()
+    for r in rows:
+        s = index[short_id(r[&#34;id&#34;])]
+        for x in r.get(&#34;referenced_works&#34;) or []:
+            t = index.get(short_id(x))
+            if t is not None and t != s:
+                edge_set.add((s, t))
+    edges = sorted(edge_set)
+    src = array.array(&#34;H&#34;, (a for a, _ in edges))
+    dst = array.array(&#34;H&#34;, (b for _, b in edges))
+    edges_bin = le_bytes(src) + le_bytes(dst)
+    write_gz(os.path.join(args.out, &#34;edges.bin&#34;), edges_bin)
+    print(f&#34;  {len(edges)} edges -&gt; edges.bin ({len(edges_bin)//1024} KB)&#34;, file=sys.stderr)
+
+    # --- string tables for categorical fields ---
+    def table(values):
+        uniq = sorted(set(values))
+        idx = {v: i for i, v in enumerate(uniq)}
+        return uniq, [idx[v] for v in values]
+
+    domains = [((r.get(&#34;primary_topic&#34;) or {}).get(&#34;domain&#34;) or {}).get(&#34;display_name&#34;) or &#34;Unknown&#34; for r in rows]
+    fields = [((r.get(&#34;primary_topic&#34;) or {}).get(&#34;field&#34;) or {}).get(&#34;display_name&#34;) or &#34;Unknown&#34; for r in rows]
+    topics = [(r.get(&#34;primary_topic&#34;) or {}).get(&#34;display_name&#34;) or &#34;&#34; for r in rows]
+    domain_table, domain_idx = table(domains)
+    field_table, field_idx = table(fields)
+    topic_table, topic_idx = table(topics)
+    assert len(domain_table) &lt; 256 and len(field_table) &lt; 256, &#34;categorical index exceeds Uint8&#34;
+
+    # --- nodes.bin: SoA numerics ---
+    citations = array.array(&#34;I&#34;, (r.get(&#34;cited_by_count&#34;) or 0 for r in rows))
+    years = array.array(&#34;H&#34;, (r.get(&#34;publication_year&#34;) or 0 for r in rows))
+    dom = array.array(&#34;B&#34;, domain_idx)
+    fld = array.array(&#34;B&#34;, field_idx)
+    flags = array.array(&#34;B&#34;, (1 if is_suspect(r) else 0 for r in rows))
+    assert citations.itemsize == 4 and years.itemsize == 2
+    nodes_bin = le_bytes(citations) + le_bytes(years) + le_bytes(dom) + le_bytes(fld) + le_bytes(flags)
+    write_gz(os.path.join(args.out, &#34;nodes.bin&#34;), nodes_bin)
+
+    # --- nodes-text.json: title, first author, topic index ---
+    nodes_text = {
+        &#34;title&#34;: [r.get(&#34;title&#34;) or &#34;&#34; for r in rows],
+        &#34;author&#34;: [first_author(r) for r in rows],
+        &#34;topicIdx&#34;: topic_idx,
+        &#34;topicTable&#34;: topic_table,
+    }
+    nt = json.dumps(nodes_text, separators=(&#34;,&#34;, &#34;:&#34;), ensure_ascii=False).encode()
+    write_gz(os.path.join(args.out, &#34;nodes-text.json&#34;), nt)
+
+    # --- search-kw.json: keyword terms, string-table encoded (loaded post-paint) ---
+    kw_lists = [[k.get(&#34;display_name&#34;, &#34;&#34;) for k in (r.get(&#34;keywords&#34;) or [])] for r in rows]
+    kw_table, _ = table([x for lst in kw_lists for x in lst])
+    kw_pos = {v: i for i, v in enumerate(kw_table)}
+    search_kw = {&#34;kwTable&#34;: kw_table, &#34;kwIdx&#34;: [[kw_pos[x] for x in lst] for lst in kw_lists]}
+    sk = json.dumps(search_kw, separators=(&#34;,&#34;, &#34;:&#34;), ensure_ascii=False).encode()
+    write_gz(os.path.join(args.out, &#34;search-kw.json&#34;), sk)
+
+    # --- detail shards ---
+    n_shards = (n + args.shard - 1) // args.shard
+    for s in range(n_shards):
+        chunk = rows[s * args.shard:(s + 1) * args.shard]
+        recs = []
+        for r in chunk:
+            recs.append({
+                &#34;id&#34;: short_id(r[&#34;id&#34;]),
+                &#34;title&#34;: r.get(&#34;title&#34;),
+                &#34;year&#34;: r.get(&#34;publication_year&#34;),
+                &#34;type&#34;: r.get(&#34;type&#34;),
+                &#34;cited_by_count&#34;: r.get(&#34;cited_by_count&#34;),
+                &#34;fwci&#34;: r.get(&#34;fwci&#34;),
+                &#34;doi&#34;: r.get(&#34;doi&#34;),
+                &#34;landing_url&#34;: (r.get(&#34;primary_location&#34;) or {}).get(&#34;landing_page_url&#34;),
+                &#34;pdf_url&#34;: public_pdf_url(r),
+                &#34;oa_url&#34;: (r.get(&#34;open_access&#34;) or {}).get(&#34;oa_url&#34;),
+                &#34;grobid_xml_url&#34;: (r.get(&#34;content_urls&#34;) or {}).get(&#34;grobid_xml&#34;),
+                &#34;abstract&#34;: reconstruct_abstract(r.get(&#34;abstract_inverted_index&#34;)),
+                &#34;authors&#34;: all_authors(r),
+                &#34;topics&#34;: [t.get(&#34;display_name&#34;) for t in (r.get(&#34;topics&#34;) or [])],
+                &#34;keywords&#34;: [k.get(&#34;display_name&#34;) for k in (r.get(&#34;keywords&#34;) or [])],
+                &#34;biblio&#34;: r.get(&#34;biblio&#34;),
+            })
+        blob = json.dumps(recs, separators=(&#34;,&#34;, &#34;:&#34;), ensure_ascii=False).encode()
+        write_gz(os.path.join(details_dir, f&#34;shard-{s:03d}.json&#34;), blob)
+    print(f&#34;  {n_shards} detail shards -&gt; details/&#34;, file=sys.stderr)
+
+    # --- citation scale domain (sqrt/log sizing + p95 clamp for the anomaly) ---
+    cit_sorted = sorted(r.get(&#34;cited_by_count&#34;) or 0 for r in rows)
+    cit_domain = {
+        &#34;min&#34;: cit_sorted[0], &#34;p50&#34;: percentile(cit_sorted, 0.50),
+        &#34;p95&#34;: percentile(cit_sorted, 0.95), &#34;p99&#34;: percentile(cit_sorted, 0.99),
+        &#34;max&#34;: cit_sorted[-1],
+    }
+
+    # --- manifest ---
+    manifest = {
+        &#34;version&#34;: &#34;v1&#34;,
+        &#34;counts&#34;: {&#34;nodes&#34;: n, &#34;edges&#34;: len(edges), &#34;shards&#34;: n_shards},
+        &#34;shardSize&#34;: args.shard,
+        &#34;citationDomain&#34;: cit_domain,
+        &#34;colorLegend&#34;: {&#34;domains&#34;: domain_table, &#34;fields&#34;: field_table},
+        &#34;nodesBin&#34;: {
+            &#34;count&#34;: n,
+            &#34;layout&#34;: [
+                {&#34;name&#34;: &#34;citations&#34;, &#34;type&#34;: &#34;Uint32&#34;, &#34;offset&#34;: 0},
+                {&#34;name&#34;: &#34;year&#34;, &#34;type&#34;: &#34;Uint16&#34;, &#34;offset&#34;: 4 * n},
+                {&#34;name&#34;: &#34;domainIdx&#34;, &#34;type&#34;: &#34;Uint8&#34;, &#34;offset&#34;: 6 * n},
+                {&#34;name&#34;: &#34;fieldIdx&#34;, &#34;type&#34;: &#34;Uint8&#34;, &#34;offset&#34;: 7 * n},
+                {&#34;name&#34;: &#34;flags&#34;, &#34;type&#34;: &#34;Uint8&#34;, &#34;offset&#34;: 8 * n},
+            ],
+            &#34;flags&#34;: {&#34;suspect&#34;: 1},
+        },
+        &#34;edgesBin&#34;: {&#34;count&#34;: len(edges), &#34;type&#34;: &#34;Uint16&#34;, &#34;layout&#34;: &#34;src[E] then dst[E]&#34;},
+        &#34;positions&#34;: {&#34;file&#34;: &#34;positions.bin&#34;, &#34;type&#34;: &#34;Int16&#34;, &#34;layout&#34;: &#34;x,y,z interleaved&#34;,
+                      &#34;scale&#34;: None, &#34;note&#34;: &#34;decode: value/32767*scale; filled by layout_3d.mjs&#34;},
+        &#34;files&#34;: {
+            &#34;nodesBin&#34;: &#34;nodes.bin&#34;, &#34;nodesText&#34;: &#34;nodes-text.json&#34;,
+            &#34;searchKw&#34;: &#34;search-kw.json&#34;, &#34;edgesBin&#34;: &#34;edges.bin&#34;,
+            &#34;positions&#34;: &#34;positions.bin&#34;, &#34;detailsPattern&#34;: &#34;details/shard-{shard:03d}.json&#34;,
+        },
+        &#34;hashes&#34;: {
+            &#34;nodes.bin&#34;: sha8(nodes_bin), &#34;nodes-text.json&#34;: sha8(nt),
+            &#34;search-kw.json&#34;: sha8(sk), &#34;edges.bin&#34;: sha8(edges_bin),
+        },
+    }
+    with open(os.path.join(args.out, &#34;manifest.json&#34;), &#34;w&#34;, encoding=&#34;utf-8&#34;) as f:
+        json.dump(manifest, f, indent=2, ensure_ascii=False)
+
+    print(f&#34;Done -&gt; {args.out}&#34;, file=sys.stderr)
+    return 0
+
+
+if __name__ == &#34;__main__&#34;:
+    sys.exit(main())
+</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T17-34-15-689Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T17-34-15-689Z" class="timestamp-link"><time datetime="2026-07-11T17:34:15.689Z" data-timestamp="2026-07-11T17:34:15.689Z">2026-07-11T17:34:15.689Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>File created successfully at: /Users/andrewjin/Desktop/anthropic-take-home/scripts/build_graph_data.py (file state is current in your context — no need to Read it back)</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-34-17-304Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-34-17-304Z" class="timestamp-link"><time datetime="2026-07-11T17:34:17.304Z" data-timestamp="2026-07-11T17:34:17.304Z">2026-07-11T17:34:17.304Z</time></a></div><div class="message-content">
+<div class="tool-use bash-tool" data-tool-id="toolu_01Jiie2g2CBEVmXuYUSVmiZJ">
+<div class="tool-header"><span class="tool-icon">$</span> Bash</div>
+<div class="tool-description">Run the build script</div><div class="truncatable"><div class="truncatable-content"><pre class="bash-command">cd /Users/andrewjin/Desktop/anthropic-take-home &amp;&amp; python3 scripts/build_graph_data.py 2&gt;&amp;1</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T17-34-23-053Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T17-34-23-053Z" class="timestamp-link"><time datetime="2026-07-11T17:34:23.053Z" data-timestamp="2026-07-11T17:34:23.053Z">2026-07-11T17:34:23.053Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>Loading scripts/data/full/top_cited.jsonl ...
+  10000 nodes
+  36894 edges -&gt; edges.bin (144 KB)
+  100 detail shards -&gt; details/
+Done -&gt; web/public/data/v1</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-34-24-846Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-34-24-846Z" class="timestamp-link"><time datetime="2026-07-11T17:34:24.846Z" data-timestamp="2026-07-11T17:34:24.846Z">2026-07-11T17:34:24.846Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-34-24-869Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-34-24-869Z" class="timestamp-link"><time datetime="2026-07-11T17:34:24.869Z" data-timestamp="2026-07-11T17:34:24.869Z">2026-07-11T17:34:24.869Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p>Built. Let me verify sizes and the first-paint budget:</p></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-34-27-060Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-34-27-060Z" class="timestamp-link"><time datetime="2026-07-11T17:34:27.060Z" data-timestamp="2026-07-11T17:34:27.060Z">2026-07-11T17:34:27.060Z</time></a></div><div class="message-content">
+<div class="tool-use bash-tool" data-tool-id="toolu_01FYMisY7y73dFnGsveAx7Yg">
+<div class="tool-header"><span class="tool-icon">$</span> Bash</div>
+<div class="tool-description">Check artifact and shard sizes</div><div class="truncatable"><div class="truncatable-content"><pre class="bash-command">cd /Users/andrewjin/Desktop/anthropic-take-home/web/public/data/v1
+echo &#34;=== raw / gzip sizes ===&#34;
+for f in manifest.json nodes.bin nodes-text.json search-kw.json edges.bin; do
+  raw=$(wc -c &lt; &#34;$f&#34;); gz=$(wc -c &lt; &#34;$f.gz&#34;)
+  printf &#34;%-18s raw %6d KB   gz %6d KB\n&#34; &#34;$f&#34; $((raw/1024)) $((gz/1024))
+done
+echo &#34;=== detail shards ===&#34;
+python3 -c &#34;
+import os,glob
+gz=[os.path.getsize(f) for f in glob.glob(&#39;details/*.json.gz&#39;)]
+raw=[os.path.getsize(f) for f in glob.glob(&#39;details/*.json&#39;) if not f.endswith(&#39;.gz&#39;)]
+print(f&#39;{len(gz)} shards | gz min {min(gz)//1024}/avg {sum(gz)//len(gz)//1024}/max {max(gz)//1024} KB | raw avg {sum(raw)//len(raw)//1024} KB | total gz {sum(gz)//1024//1024} MB&#39;)
+&#34;
+echo &#34;=== first-paint budget (gz) ===&#34;
+python3 -c &#34;
+import os
+files=[&#39;nodes.bin.gz&#39;,&#39;nodes-text.json.gz&#39;,&#39;edges.bin.gz&#39;,&#39;manifest.json.gz&#39;]
+# manifest has no .gz written? check
+tot=0
+for f in files:
+    if os.path.exists(f): tot+=os.path.getsize(f); 
+print(&#39;sum:&#39;, tot//1024, &#39;KB  (budget &lt; ~700 KB, keywords excluded)&#39;)
+print(&#39;  + positions.bin (~57 KB gz) once layout runs&#39;)
+&#34;</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T17-34-31-346Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T17-34-31-346Z" class="timestamp-link"><time datetime="2026-07-11T17:34:31.346Z" data-timestamp="2026-07-11T17:34:31.346Z">2026-07-11T17:34:31.346Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>=== raw / gzip sizes ===
+(eval):4: no such file or directory: manifest.json.gz
+manifest.json      raw      2 KB   gz      0 KB
+nodes.bin          raw     87 KB   gz     30 KB
+nodes-text.json    raw    950 KB   gz    366 KB
+search-kw.json     raw    850 KB   gz    303 KB
+edges.bin          raw    144 KB   gz     70 KB
+=== detail shards ===
+100 shards | gz min 45/avg 58/max 73 KB | raw avg 191 KB | total gz 5 MB
+=== first-paint budget (gz) ===
+sum: 467 KB  (budget &lt; ~700 KB, keywords excluded)
+  + positions.bin (~57 KB gz) once layout runs</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-34-35-857Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-34-35-857Z" class="timestamp-link"><time datetime="2026-07-11T17:34:35.857Z" data-timestamp="2026-07-11T17:34:35.857Z">2026-07-11T17:34:35.857Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-34-36-178Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-34-36-178Z" class="timestamp-link"><time datetime="2026-07-11T17:34:36.178Z" data-timestamp="2026-07-11T17:34:36.178Z">2026-07-11T17:34:36.178Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p>First-paint ≈ <strong>467 KB gz</strong> (+~57 KB positions) — well under the 700 KB budget. Shards avg 58 KB gz (a bit larger than estimate since I included author institutions). Now the layout step — let me check the Node toolchain first.</p></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-34-36-655Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-34-36-655Z" class="timestamp-link"><time datetime="2026-07-11T17:34:36.655Z" data-timestamp="2026-07-11T17:34:36.655Z">2026-07-11T17:34:36.655Z</time></a></div><div class="message-content">
+<div class="tool-use bash-tool" data-tool-id="toolu_01PnLXZQKKVxZdfSnMrDLA7D">
+<div class="tool-header"><span class="tool-icon">$</span> Bash</div>
+<div class="tool-description">Check node/npm and web dir state</div><div class="truncatable"><div class="truncatable-content"><pre class="bash-command">cd /Users/andrewjin/Desktop/anthropic-take-home &amp;&amp; node --version 2&gt;&amp;1; npm --version 2&gt;&amp;1; echo &#34;---&#34;; ls web/ 2&gt;&amp;1; test -f web/package.json &amp;&amp; echo &#34;package.json exists&#34; || echo &#34;no package.json in web/&#34;</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T17-34-38-899Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T17-34-38-899Z" class="timestamp-link"><time datetime="2026-07-11T17:34:38.899Z" data-timestamp="2026-07-11T17:34:38.899Z">2026-07-11T17:34:38.899Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>v22.18.0
+10.9.3
+---
+public
+no package.json in web/</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-34-46-916Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-34-46-916Z" class="timestamp-link"><time datetime="2026-07-11T17:34:46.916Z" data-timestamp="2026-07-11T17:34:46.916Z">2026-07-11T17:34:46.916Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-34-47-078Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-34-47-078Z" class="timestamp-link"><time datetime="2026-07-11T17:34:47.078Z" data-timestamp="2026-07-11T17:34:47.078Z">2026-07-11T17:34:47.078Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p>Node 22 available. Let me create the layout script and its package.json, then install <code>d3-force-3d</code>.</p></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-34-47-677Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-34-47-677Z" class="timestamp-link"><time datetime="2026-07-11T17:34:47.677Z" data-timestamp="2026-07-11T17:34:47.677Z">2026-07-11T17:34:47.677Z</time></a></div><div class="message-content"><div class="file-tool write-tool" data-tool-id="toolu_01M4hkhDS2pprWP2ebQQBvnN">
+<div class="file-tool-header write-header"><span class="file-tool-icon">📝</span> Write <span class="file-tool-path">package.json</span></div>
+<div class="file-tool-fullpath">/Users/andrewjin/Desktop/anthropic-take-home/scripts/package.json</div>
+<div class="truncatable"><div class="truncatable-content"><pre class="file-content">{
+  &#34;name&#34;: &#34;graph-layout&#34;,
+  &#34;version&#34;: &#34;1.0.0&#34;,
+  &#34;private&#34;: true,
+  &#34;type&#34;: &#34;module&#34;,
+  &#34;description&#34;: &#34;Offline 3D force-layout precompute for the top-cited graph viz.&#34;,
+  &#34;scripts&#34;: {
+    &#34;layout&#34;: &#34;node layout_3d.mjs&#34;
+  },
+  &#34;dependencies&#34;: {
+    &#34;d3-force-3d&#34;: &#34;^3.0.5&#34;
+  }
+}
+</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T17-34-47-706Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T17-34-47-706Z" class="timestamp-link"><time datetime="2026-07-11T17:34:47.706Z" data-timestamp="2026-07-11T17:34:47.706Z">2026-07-11T17:34:47.706Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>File created successfully at: /Users/andrewjin/Desktop/anthropic-take-home/scripts/package.json (file state is current in your context — no need to Read it back)</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-34-54-987Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-34-54-987Z" class="timestamp-link"><time datetime="2026-07-11T17:34:54.987Z" data-timestamp="2026-07-11T17:34:54.987Z">2026-07-11T17:34:54.987Z</time></a></div><div class="message-content"><div class="file-tool write-tool" data-tool-id="toolu_01VHAkAwT1gcASZAo1yG6H7C">
+<div class="file-tool-header write-header"><span class="file-tool-icon">📝</span> Write <span class="file-tool-path">layout_3d.mjs</span></div>
+<div class="file-tool-fullpath">/Users/andrewjin/Desktop/anthropic-take-home/scripts/layout_3d.mjs</div>
+<div class="truncatable"><div class="truncatable-content"><pre class="file-content">// Offline 3D force-directed layout precompute.
+//
+// Reads the manifest + edges.bin produced by build_graph_data.py, runs the same
+// engine react-force-graph-3d uses (d3-force-3d) to convergence, and writes
+// positions.bin as Int16-quantized [x,y,z] coords. Patches positions.scale (maxAbs)
+// and a content hash back into manifest.json so the client can decode with one multiply.
+//
+// Usage: node scripts/layout_3d.mjs [--out web/public/data/v1] [--ticks 300]
+
+import { readFileSync, writeFileSync } from &#34;node:fs&#34;;
+import { join } from &#34;node:path&#34;;
+import { gzipSync } from &#34;node:zlib&#34;;
+import { createHash } from &#34;node:crypto&#34;;
+import {
+  forceSimulation, forceManyBody, forceLink, forceCenter, forceX, forceY, forceZ,
+} from &#34;d3-force-3d&#34;;
+
+const args = process.argv.slice(2);
+const opt = (flag, def) =&gt; {
+  const i = args.indexOf(flag);
+  return i &gt;= 0 ? args[i + 1] : def;
+};
+const OUT = opt(&#34;--out&#34;, &#34;web/public/data/v1&#34;);
+const TICKS = parseInt(opt(&#34;--ticks&#34;, &#34;300&#34;), 10);
+
+const manifest = JSON.parse(readFileSync(join(OUT, &#34;manifest.json&#34;), &#34;utf8&#34;));
+const N = manifest.counts.nodes;
+const E = manifest.counts.edges;
+
+// --- load edges.bin (Uint16 SoA: src[E] then dst[E]) ---
+const buf = readFileSync(join(OUT, &#34;edges.bin&#34;));
+const ab = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
+const src = new Uint16Array(ab, 0, E);
+const dst = new Uint16Array(ab, E * 2, E);
+
+const nodes = Array.from({ length: N }, (_, i) =&gt; ({ index: i }));
+const links = Array.from({ length: E }, (_, i) =&gt; ({ source: src[i], target: dst[i] }));
+
+console.error(`Laying out ${N} nodes / ${E} edges over ${TICKS} ticks ...`);
+
+// Match react-force-graph-3d defaults, with weak per-axis centering so the ~12.5%
+// isolated nodes stay bounded instead of drifting to infinity.
+const sim = forceSimulation(nodes, 3)
+  .force(&#34;charge&#34;, forceManyBody().strength(-30).theta(0.9))
+  .force(&#34;link&#34;, forceLink(links).id((d) =&gt; d.index).distance(30).iterations(1))
+  .force(&#34;center&#34;, forceCenter(0, 0, 0))
+  .force(&#34;x&#34;, forceX(0).strength(0.03))
+  .force(&#34;y&#34;, forceY(0).strength(0.03))
+  .force(&#34;z&#34;, forceZ(0).strength(0.03))
+  .stop();
+
+const t0 = Date.now();
+for (let i = 0; i &lt; TICKS; i++) {
+  sim.tick();
+  if ((i + 1) % 50 === 0) console.error(`  tick ${i + 1}/${TICKS}`);
+}
+console.error(`  simulation done in ${((Date.now() - t0) / 1000).toFixed(1)}s`);
+
+// --- quantize to Int16 ---
+let maxAbs = 0;
+for (const nd of nodes) {
+  maxAbs = Math.max(maxAbs, Math.abs(nd.x), Math.abs(nd.y), Math.abs(nd.z));
+}
+const q = 32767 / maxAbs;
+const pos = new Int16Array(N * 3);
+for (let i = 0; i &lt; N; i++) {
+  pos[i * 3] = Math.round(nodes[i].x * q);
+  pos[i * 3 + 1] = Math.round(nodes[i].y * q);
+  pos[i * 3 + 2] = Math.round(nodes[i].z * q);
+}
+const posBin = Buffer.from(pos.buffer, pos.byteOffset, pos.byteLength);
+writeFileSync(join(OUT, &#34;positions.bin&#34;), posBin);
+writeFileSync(join(OUT, &#34;positions.bin.gz&#34;), gzipSync(posBin, { level: 9 }));
+
+// --- patch manifest ---
+manifest.positions.scale = maxAbs;
+manifest.positions.note = &#34;decode: value/32767*scale&#34;;
+manifest.hashes = manifest.hashes || {};
+manifest.hashes[&#34;positions.bin&#34;] = createHash(&#34;sha256&#34;).update(posBin).digest(&#34;hex&#34;).slice(0, 8);
+writeFileSync(join(OUT, &#34;manifest.json&#34;), JSON.stringify(manifest, null, 2));
+
+console.error(
+  `positions.bin: ${(posBin.length / 1024) | 0} KB raw, ` +
+  `${(gzipSync(posBin, { level: 9 }).length / 1024) | 0} KB gz, maxAbs=${maxAbs.toFixed(1)}`,
+);
+</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T17-34-55-026Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T17-34-55-026Z" class="timestamp-link"><time datetime="2026-07-11T17:34:55.026Z" data-timestamp="2026-07-11T17:34:55.026Z">2026-07-11T17:34:55.026Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>File created successfully at: /Users/andrewjin/Desktop/anthropic-take-home/scripts/layout_3d.mjs (file state is current in your context — no need to Read it back)</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-34-56-581Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-34-56-581Z" class="timestamp-link"><time datetime="2026-07-11T17:34:56.581Z" data-timestamp="2026-07-11T17:34:56.581Z">2026-07-11T17:34:56.581Z</time></a></div><div class="message-content">
+<div class="tool-use bash-tool" data-tool-id="toolu_01NeAkGgszYRmj13FCkLwmZD">
+<div class="tool-header"><span class="tool-icon">$</span> Bash</div>
+<div class="tool-description">Install d3-force-3d</div><div class="truncatable"><div class="truncatable-content"><pre class="bash-command">cd /Users/andrewjin/Desktop/anthropic-take-home/scripts &amp;&amp; npm install 2&gt;&amp;1 | tail -8</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T17-35-00-790Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T17-35-00-790Z" class="timestamp-link"><time datetime="2026-07-11T17:35:00.790Z" data-timestamp="2026-07-11T17:35:00.790Z">2026-07-11T17:35:00.790Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>added 6 packages, and audited 7 packages in 556ms
+
+found 0 vulnerabilities</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-35-02-405Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-35-02-405Z" class="timestamp-link"><time datetime="2026-07-11T17:35:02.405Z" data-timestamp="2026-07-11T17:35:02.405Z">2026-07-11T17:35:02.405Z</time></a></div><div class="message-content">
+<div class="tool-use bash-tool" data-tool-id="toolu_01H9aLhjYPi3yJuubLypiVdv">
+<div class="tool-header"><span class="tool-icon">$</span> Bash</div>
+<div class="tool-description">Run 3D force layout precompute</div><div class="truncatable"><div class="truncatable-content"><pre class="bash-command">cd /Users/andrewjin/Desktop/anthropic-take-home &amp;&amp; node scripts/layout_3d.mjs 2&gt;&amp;1</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T17-35-27-877Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T17-35-27-877Z" class="timestamp-link"><time datetime="2026-07-11T17:35:27.877Z" data-timestamp="2026-07-11T17:35:27.877Z">2026-07-11T17:35:27.877Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>Laying out 10000 nodes / 36894 edges over 300 ticks ...
+  tick 50/300
+  tick 100/300
+  tick 150/300
+  tick 200/300
+  tick 250/300
+  tick 300/300
+  simulation done in 22.1s
+positions.bin: 58 KB raw, 58 KB gz, maxAbs=1472.4</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-35-31-233Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-35-31-233Z" class="timestamp-link"><time datetime="2026-07-11T17:35:31.233Z" data-timestamp="2026-07-11T17:35:31.233Z">2026-07-11T17:35:31.233Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-35-31-551Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-35-31-551Z" class="timestamp-link"><time datetime="2026-07-11T17:35:31.551Z" data-timestamp="2026-07-11T17:35:31.551Z">2026-07-11T17:35:31.551Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p>Layout done (22s, 58 KB). Now the end-to-end verification — a Node script that loads everything the way the client will and checks index alignment across all files:</p></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-35-37-513Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-35-37-513Z" class="timestamp-link"><time datetime="2026-07-11T17:35:37.513Z" data-timestamp="2026-07-11T17:35:37.513Z">2026-07-11T17:35:37.513Z</time></a></div><div class="message-content"><div class="file-tool write-tool" data-tool-id="toolu_019VFcd4KjYPUSUaCVPPuNWH">
+<div class="file-tool-header write-header"><span class="file-tool-icon">📝</span> Write <span class="file-tool-path">verify_graph_data.mjs</span></div>
+<div class="file-tool-fullpath">/Users/andrewjin/Desktop/anthropic-take-home/scripts/verify_graph_data.mjs</div>
+<div class="truncatable"><div class="truncatable-content"><pre class="file-content">// End-to-end integrity check for the built graph artifacts. Loads every file the
+// way the client will and asserts cross-file index alignment.
+// Usage: node scripts/verify_graph_data.mjs [--out web/public/data/v1]
+
+import { readFileSync } from &#34;node:fs&#34;;
+import { join } from &#34;node:path&#34;;
+
+const OUT = process.argv.includes(&#34;--out&#34;)
+  ? process.argv[process.argv.indexOf(&#34;--out&#34;) + 1]
+  : &#34;web/public/data/v1&#34;;
+
+let failures = 0;
+const check = (cond, msg) =&gt; {
+  console.log(`${cond ? &#34;  ok  &#34; : &#34; FAIL &#34;} ${msg}`);
+  if (!cond) failures++;
+};
+
+const M = JSON.parse(readFileSync(join(OUT, &#34;manifest.json&#34;), &#34;utf8&#34;));
+const N = M.counts.nodes;
+const E = M.counts.edges;
+
+const readBin = (name) =&gt; {
+  const b = readFileSync(join(OUT, name));
+  return b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength);
+};
+
+// --- nodes.bin via manifest offsets ---
+const nb = readBin(&#34;nodes.bin&#34;);
+const off = Object.fromEntries(M.nodesBin.layout.map((l) =&gt; [l.name, l.offset]));
+const citations = new Uint32Array(nb, off.citations, N);
+const years = new Uint16Array(nb, off.year, N);
+const flags = new Uint8Array(nb, off.flags, N);
+check(citations.length === N, `nodes.bin decodes N=${N} citations`);
+check(citations[0] &gt;= citations[N - 1], `citations descending (top=${citations[0]}, tail=${citations[N - 1]})`);
+const suspects = flags.reduce((a, f) =&gt; a + (f &amp; 1), 0);
+check(suspects === 1, `exactly 1 suspect flagged (got ${suspects})`);
+
+// --- edges.bin ---
+const eb = readBin(&#34;edges.bin&#34;);
+const src = new Uint16Array(eb, 0, E);
+const dst = new Uint16Array(eb, E * 2, E);
+let maxIdx = 0, selfLoops = 0;
+const deg = new Uint32Array(N);
+for (let i = 0; i &lt; E; i++) {
+  maxIdx = Math.max(maxIdx, src[i], dst[i]);
+  if (src[i] === dst[i]) selfLoops++;
+  deg[src[i]]++; deg[dst[i]]++;
+}
+check(maxIdx &lt; N, `all edge indices &lt; N (max=${maxIdx})`);
+check(selfLoops === 0, `no self-loops`);
+
+// --- positions.bin ---
+const pb = readBin(&#34;positions.bin&#34;);
+const pos = new Int16Array(pb, 0, N * 3);
+const scale = M.positions.scale;
+let finite = true, posMax = 0;
+for (let i = 0; i &lt; N * 3; i++) {
+  const v = (pos[i] / 32767) * scale;
+  if (!Number.isFinite(v)) finite = false;
+  posMax = Math.max(posMax, Math.abs(v));
+}
+check(pos.length === N * 3, `positions.bin has ${N * 3} Int16s`);
+check(finite &amp;&amp; posMax &lt;= scale + 1e-6, `decoded coords finite within ±scale (${scale.toFixed(1)})`);
+
+// --- nodes-text.json ---
+const T = JSON.parse(readFileSync(join(OUT, &#34;nodes-text.json&#34;), &#34;utf8&#34;));
+check(T.title.length === N &amp;&amp; T.author.length === N &amp;&amp; T.topicIdx.length === N,
+  `nodes-text arrays all length N`);
+check(Math.max(...T.topicIdx) &lt; T.topicTable.length, `every topicIdx resolves in topicTable`);
+
+// --- search-kw.json ---
+const K = JSON.parse(readFileSync(join(OUT, &#34;search-kw.json&#34;), &#34;utf8&#34;));
+const kwMax = K.kwIdx.reduce((m, lst) =&gt; lst.reduce((a, x) =&gt; Math.max(a, x), m), 0);
+check(K.kwIdx.length === N &amp;&amp; kwMax &lt; K.kwTable.length, `every kwIdx resolves in kwTable`);
+
+// --- detail shard round-trip (top node) ---
+const SH = M.shardSize;
+const shard0 = JSON.parse(readFileSync(join(OUT, `details/shard-000.json`), &#34;utf8&#34;));
+check(shard0.length === SH, `shard-000 has ${SH} records`);
+const top = shard0[0];
+check(top.cited_by_count === citations[0], `shard top record citations match nodes.bin`);
+check(typeof top.abstract === &#34;string&#34; &amp;&amp; top.abstract.length &gt; 0, `top record has abstract text`);
+
+// --- summary ---
+console.log(&#34;\n--- graph summary ---&#34;);
+console.log(`nodes ${N} | edges ${E} | shards ${M.counts.shards}`);
+console.log(`top node: &#34;${T.title[0].slice(0, 50)}&#34; — ${citations[0]} cites, degree ${deg[0]}`);
+const isolated = deg.reduce((a, d) =&gt; a + (d === 0 ? 1 : 0), 0);
+console.log(`isolated nodes (degree 0): ${isolated} (${(100 * isolated / N).toFixed(1)}%)`);
+console.log(`citation domain: ${JSON.stringify(M.citationDomain)}`);
+
+console.log(failures ? `\n${failures} CHECK(S) FAILED` : `\nALL CHECKS PASSED`);
+process.exit(failures ? 1 : 0);
+</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T17-35-37-540Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T17-35-37-540Z" class="timestamp-link"><time datetime="2026-07-11T17:35:37.540Z" data-timestamp="2026-07-11T17:35:37.540Z">2026-07-11T17:35:37.540Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>File created successfully at: /Users/andrewjin/Desktop/anthropic-take-home/scripts/verify_graph_data.mjs (file state is current in your context — no need to Read it back)</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-35-39-212Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-35-39-212Z" class="timestamp-link"><time datetime="2026-07-11T17:35:39.212Z" data-timestamp="2026-07-11T17:35:39.212Z">2026-07-11T17:35:39.212Z</time></a></div><div class="message-content">
+<div class="tool-use bash-tool" data-tool-id="toolu_019ekhKFj2uUj6WfajVtLs6e">
+<div class="tool-header"><span class="tool-icon">$</span> Bash</div>
+<div class="tool-description">Run end-to-end verification</div><div class="truncatable"><div class="truncatable-content"><pre class="bash-command">node scripts/verify_graph_data.mjs 2&gt;&amp;1</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T17-35-41-526Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T17-35-41-526Z" class="timestamp-link"><time datetime="2026-07-11T17:35:41.526Z" data-timestamp="2026-07-11T17:35:41.526Z">2026-07-11T17:35:41.526Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>  ok   nodes.bin decodes N=10000 citations
+  ok   citations descending (top=801217, tail=4460)
+  ok   exactly 1 suspect flagged (got 1)
+  ok   all edge indices &lt; N (max=9999)
+  ok   no self-loops
+  ok   positions.bin has 30000 Int16s
+  ok   decoded coords finite within ±scale (1472.4)
+  ok   nodes-text arrays all length N
+  ok   every topicIdx resolves in topicTable
+  ok   every kwIdx resolves in kwTable
+  ok   shard-000 has 100 records
+  ok   shard top record citations match nodes.bin
+  ok   top record has abstract text
+
+--- graph summary ---
+nodes 10000 | edges 36894 | shards 100
+top node: &quot;Radiation Resistant Camera System for Monitoring D&quot; — 801217 cites, degree 0
+isolated nodes (degree 0): 1255 (12.6%)
+citation domain: {&quot;min&quot;:4460,&quot;p50&quot;:6559,&quot;p95&quot;:22470,&quot;p99&quot;:51977,&quot;max&quot;:801217}
+
+ALL CHECKS PASSED</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-35-46-469Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-35-46-469Z" class="timestamp-link"><time datetime="2026-07-11T17:35:46.469Z" data-timestamp="2026-07-11T17:35:46.469Z">2026-07-11T17:35:46.469Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-35-46-804Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-35-46-804Z" class="timestamp-link"><time datetime="2026-07-11T17:35:46.804Z" data-timestamp="2026-07-11T17:35:46.804Z">2026-07-11T17:35:46.804Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p>All 13 checks pass — the pipeline is complete and verified end-to-end, fully index-aligned across every file. Let me document the artifact schema for whoever builds the client, and tidy gitignore.</p></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-35-47-161Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-35-47-161Z" class="timestamp-link"><time datetime="2026-07-11T17:35:47.161Z" data-timestamp="2026-07-11T17:35:47.161Z">2026-07-11T17:35:47.161Z</time></a></div><div class="message-content"><div class="file-tool edit-tool" data-tool-id="toolu_01YP1yh9yQgHV7yHuneqABjc">
+<div class="file-tool-header edit-header"><span class="file-tool-icon">✏️</span> Edit <span class="file-tool-path">.gitignore</span></div>
+<div class="file-tool-fullpath">/Users/andrewjin/Desktop/anthropic-take-home/scripts/.gitignore</div>
+<div class="truncatable"><div class="truncatable-content">
+<div class="edit-section edit-old"><div class="edit-label">−</div><pre class="edit-content"># Never commit real credentials
+.env
+
+# Pulled data
+data/</pre></div>
+<div class="edit-section edit-new"><div class="edit-label">+</div><pre class="edit-content"># Never commit real credentials
+.env
+
+# Pulled data
+data/
+
+# Node deps for the layout step
+node_modules/</pre></div>
+</div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T17-35-47-180Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T17-35-47-180Z" class="timestamp-link"><time datetime="2026-07-11T17:35:47.180Z" data-timestamp="2026-07-11T17:35:47.180Z">2026-07-11T17:35:47.180Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>The file /Users/andrewjin/Desktop/anthropic-take-home/scripts/.gitignore has been updated successfully. (file state is current in your context — no need to Read it back)</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-35-56-099Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-35-56-099Z" class="timestamp-link"><time datetime="2026-07-11T17:35:56.099Z" data-timestamp="2026-07-11T17:35:56.099Z">2026-07-11T17:35:56.099Z</time></a></div><div class="message-content"><div class="file-tool write-tool" data-tool-id="toolu_01LL46igCkPTi9uuEnK1yfVs">
+<div class="file-tool-header write-header"><span class="file-tool-icon">📝</span> Write <span class="file-tool-path">README-graph-data.md</span></div>
+<div class="file-tool-fullpath">/Users/andrewjin/Desktop/anthropic-take-home/scripts/README-graph-data.md</div>
+<div class="truncatable"><div class="truncatable-content"><pre class="file-content"># Graph viz data pipeline
+
+Turns the raw top-cited pull into CDN-optimized artifacts for the 3D force-directed graph.
+
+## Build
+
+```bash
+# 1. transform JSONL -&gt; artifacts (Python stdlib only)
+python3 scripts/build_graph_data.py \
+  --in scripts/data/full/top_cited.jsonl --out web/public/data/v1 [--shard 100]
+
+# 2. precompute the 3D layout (Node; installs d3-force-3d)
+cd scripts &amp;&amp; npm install &amp;&amp; cd ..
+node scripts/layout_3d.mjs --out web/public/data/v1 [--ticks 300]
+
+# 3. verify end-to-end
+node scripts/verify_graph_data.mjs --out web/public/data/v1
+```
+
+Output: `web/public/data/v1/` (each artifact also has a `.gz` sidecar for the CDN).
+
+## Artifact schema
+
+**Node index `0..N-1` (citation-rank order) is the canonical key** — `nodes.bin`, `nodes-text.json`,
+`positions.bin`, `search-kw.json`, and detail shards are all aligned to it; edges reference it.
+
+| File | Format | Purpose | ~gz |
+|---|---|---|---|
+| `manifest.json` | JSON | counts, offsets, citation domain, color legends, position scale | 1 KB |
+| `nodes.bin` | binary SoA | `Uint32 citations[N]`, `Uint16 year[N]`, `Uint8 domainIdx/fieldIdx/flags[N]` (`flags` bit0 = suspect). Byte offsets in `manifest.nodesBin.layout` | 30 KB |
+| `nodes-text.json` | JSON | `title[]`, `author[]` (first), `topicIdx[]` + `topicTable[]` | 366 KB |
+| `positions.bin` | `Int16[N*3]` | x,y,z interleaved; decode `value/32767*manifest.positions.scale` | 58 KB |
+| `edges.bin` | `Uint16` SoA | `src[E]` then `dst[E]`, sorted &amp; deduped (N&lt;65536) | 70 KB |
+| `search-kw.json` | JSON | `kwIdx[][]` + `kwTable[]`; **load after first paint** | 303 KB |
+| `details/shard-NNN.json` | JSON | Tier-2: abstract, urls, all authors+institutions, topics, keywords, biblio. `SHARD` records each | ~58 KB ea |
+
+First-paint set = `manifest + nodes.bin + nodes-text.json + edges.bin + positions.bin` ≈ **525 KB gz**.
+
+## Client loader (reference)
+
+```js
+const M = await (await fetch(&#34;data/v1/manifest.json&#34;)).json();
+const N = M.counts.nodes, E = M.counts.edges;
+const bin = async (f) =&gt; (await (await fetch(`data/v1/${f}`)).arrayBuffer());
+
+const nb = await bin(&#34;nodes.bin&#34;), o = Object.fromEntries(M.nodesBin.layout.map(l =&gt; [l.name, l.offset]));
+const citations = new Uint32Array(nb, o.citations, N);
+const domainIdx = new Uint8Array(nb, o.domainIdx, N);
+
+const eb = await bin(&#34;edges.bin&#34;);
+const src = new Uint16Array(eb, 0, E), dst = new Uint16Array(eb, E*2, E);
+
+const pb = await bin(&#34;positions.bin&#34;), P = new Int16Array(pb, 0, N*3), s = M.positions.scale;
+const T = await (await fetch(&#34;data/v1/nodes-text.json&#34;)).json();
+
+const nodes = Array.from({length:N}, (_,i) =&gt; ({
+  id:i, val:citations[i], color: M.colorLegend.domains[domainIdx[i]],
+  fx:(P[i*3]/32767)*s, fy:(P[i*3+1]/32767)*s, fz:(P[i*3+2]/32767)*s,   // frozen precomputed layout
+}));
+const links = Array.from({length:E}, (_,i) =&gt; ({ source:src[i], target:dst[i] }));
+// react-force-graph-3d: &lt;ForceGraph3D graphData={{nodes,links}} cooldownTicks={0}
+//   nodeVal={n =&gt; Math.sqrt(Math.min(n.val, M.citationDomain.p99))}   // sqrt + p99 clamp
+//   nodeLabel={n =&gt; T.title[n.id]} onNodeClick={n =&gt; fetchShard(Math.floor(n.id / M.shardSize))}
+```
+
+Search: build an in-memory lowercased index from `T.title` + `T.author` (+ `topicTable`) at load
+(instant substring over 10k); fold in `search-kw.json` once it arrives. Matches drive
+`nodeVisibility`.
+
+## CDN notes
+
+- Serve `.gz` with `Content-Encoding: gzip` (let the CDN add Brotli on the fly); `.bin` as
+  `application/octet-stream`.
+- Version via the `v1/` path; `manifest.json` short TTL, everything under it long/immutable.
+  Per-file `manifest.hashes` can drive `?v=&lt;hash&gt;` cache-busting if you keep filenames stable.
+</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T17-35-56-127Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T17-35-56-127Z" class="timestamp-link"><time datetime="2026-07-11T17:35:56.127Z" data-timestamp="2026-07-11T17:35:56.127Z">2026-07-11T17:35:56.127Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>File created successfully at: /Users/andrewjin/Desktop/anthropic-take-home/scripts/README-graph-data.md (file state is current in your context — no need to Read it back)</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-35-58-291Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-35-58-291Z" class="timestamp-link"><time datetime="2026-07-11T17:35:58.291Z" data-timestamp="2026-07-11T17:35:58.291Z">2026-07-11T17:35:58.291Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-35-58-306Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-35-58-306Z" class="timestamp-link"><time datetime="2026-07-11T17:35:58.306Z" data-timestamp="2026-07-11T17:35:58.306Z">2026-07-11T17:35:58.306Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p>Let me confirm the final artifact tree:</p></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-35-59-859Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-35-59-859Z" class="timestamp-link"><time datetime="2026-07-11T17:35:59.859Z" data-timestamp="2026-07-11T17:35:59.859Z">2026-07-11T17:35:59.859Z</time></a></div><div class="message-content">
+<div class="tool-use bash-tool" data-tool-id="toolu_01AdbSbKfzhCYVfn7EEvbyKA">
+<div class="tool-header"><span class="tool-icon">$</span> Bash</div>
+<div class="tool-description">List final artifact tree and sizes</div><div class="truncatable"><div class="truncatable-content"><pre class="bash-command">cd /Users/andrewjin/Desktop/anthropic-take-home/web/public/data/v1
+echo &#34;=== top-level artifacts ===&#34; &amp;&amp; ls -1 *.json *.bin | sort
+echo &#34;=== gz sidecars: $(ls *.gz | wc -l | tr -d &#39; &#39;) ===&#34; 
+echo &#34;=== detail shards: $(ls details/*.json | grep -v &#39;.gz&#39; | wc -l | tr -d &#39; &#39;) json + $(ls details/*.gz | wc -l | tr -d &#39; &#39;) gz ===&#34;
+echo &#34;=== total sizes ===&#34; &amp;&amp; du -sh . &amp;&amp; echo &#34;raw only (no .gz):&#34; &amp;&amp; find . -name &#39;*.gz&#39; -prune -o -type f -print0 | du -ch --files0-from=- 2&gt;/dev/null | tail -1 || find . -type f ! -name &#39;*.gz&#39; -exec cat {} + | wc -c | awk &#39;{printf &#34;%.1f MB raw (excl .gz)\n&#34;, $1/1024/1024}&#39;</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T17-36-01-222Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T17-36-01-222Z" class="timestamp-link"><time datetime="2026-07-11T17:36:01.222Z" data-timestamp="2026-07-11T17:36:01.222Z">2026-07-11T17:36:01.222Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>=== top-level artifacts ===
+edges.bin
+manifest.json
+nodes-text.json
+nodes.bin
+positions.bin
+search-kw.json
+=== gz sidecars: 5 ===
+=== detail shards: 100 json + 100 gz ===
+=== total sizes ===
+ 28M	.
+raw only (no .gz):</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-36-03-866Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-36-03-866Z" class="timestamp-link"><time datetime="2026-07-11T17:36:03.866Z" data-timestamp="2026-07-11T17:36:03.866Z">2026-07-11T17:36:03.866Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-36-07-561Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-36-07-561Z" class="timestamp-link"><time datetime="2026-07-11T17:36:07.561Z" data-timestamp="2026-07-11T17:36:07.561Z">2026-07-11T17:36:07.561Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p>Done — the full data pipeline is built, verified, and documented.</p>
+<h2>What was built</h2>
+<p><strong>Three scripts</strong> in <code>scripts/</code>:
+- <strong><code>build_graph_data.py</code></strong> — transforms the 161 MB JSONL → optimized artifacts (stdlib only)
+- <strong><code>layout_3d.mjs</code></strong> — precomputes the 3D force layout with <code>d3-force-3d</code> (same engine as react-force-graph-3d), 22s for 10k nodes
+- <strong><code>verify_graph_data.mjs</code></strong> — 13-check end-to-end integrity test
+- Plus <code>README-graph-data.md</code> (schema + client loader reference) and <code>package.json</code></p>
+<p><strong>Artifacts</strong> in <code>web/public/data/v1/</code> (each with a <code>.gz</code> sidecar):</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>gz</th>
+<th>notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>nodes.bin</code></td>
+<td>30 KB</td>
+<td>Uint32 citations, Uint16 year, Uint8 domain/field/suspect</td>
+</tr>
+<tr>
+<td><code>nodes-text.json</code></td>
+<td>366 KB</td>
+<td>title, first author, topic (string-table)</td>
+</tr>
+<tr>
+<td><code>edges.bin</code></td>
+<td>70 KB</td>
+<td>36,894 edges, Uint16 sorted SoA</td>
+</tr>
+<tr>
+<td><code>positions.bin</code></td>
+<td>58 KB</td>
+<td>Int16-quantized x/y/z (frozen layout)</td>
+</tr>
+<tr>
+<td><code>search-kw.json</code></td>
+<td>303 KB</td>
+<td>keywords — <strong>deferred</strong>, loads post-paint</td>
+</tr>
+<tr>
+<td><code>details/shard-000…099.json</code></td>
+<td>~58 KB ea</td>
+<td>100 shards, on click</td>
+</tr>
+</tbody>
+</table>
+<p><strong>First-paint payload ≈ 525 KB gz</strong> (graph topology + hover + title/author/topic search), keywords stream in after.</p>
+<h2>Verification (all 13 checks passed)</h2>
+<ul>
+<li>10,000 nodes decode; citations descending 801,217 → 4,460; exactly 1 suspect flagged</li>
+<li>All edge indices &lt; N, no self-loops, 36,894 edges, 12.6% isolated (matches earlier analysis)</li>
+<li>Positions decode finite within ±1472; every topic/keyword index resolves in its table</li>
+<li>Detail shard round-trips (top record's citations match <code>nodes.bin</code>, abstract present)</li>
+<li>Citation domain: <code>{min 4460, p50 6559, p95 22470, p99 51977, max 801217}</code> — the p99 clamp is wired for node sizing so the 801k anomaly won't blow out the scale</li>
+</ul>
+<h2>Optimizations applied (vs. naive)</h2>
+<p>Uint16 sorted columnar edges (<strong>112 → 70 KB</strong>), Int16 positions (<strong>109 → 58 KB</strong>), string-tabled text (<strong>871 → 669 KB</strong> for the text tier), keywords deferred off the first-paint path. All simple, no exotic dependencies.</p>
+<p>The data layer is ready. The natural next step is the <strong>web client</strong> (<code>web/</code>) — a React + react-force-graph-3d app consuming <code>data/v1/</code> per the loader reference in the README. Want me to scaffold that next?</p></div></div></div>
+<div class="message user" id="msg-2026-07-11T17-38-02-361Z"><div class="message-header"><span class="role-label">User</span><a href="#msg-2026-07-11T17-38-02-361Z" class="timestamp-link"><time datetime="2026-07-11T17:38:02.361Z" data-timestamp="2026-07-11T17:38:02.361Z">2026-07-11T17:38:02.361Z</time></a></div><div class="message-content">
+<div class="user-content"><p>did you compress using gzip or brotli?</p></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-38-05-741Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-38-05-741Z" class="timestamp-link"><time datetime="2026-07-11T17:38:05.741Z" data-timestamp="2026-07-11T17:38:05.741Z">2026-07-11T17:38:05.741Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-38-06-702Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-38-06-702Z" class="timestamp-link"><time datetime="2026-07-11T17:38:06.702Z" data-timestamp="2026-07-11T17:38:06.702Z">2026-07-11T17:38:06.702Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p><strong>gzip</strong> — level 9, everywhere. No Brotli files were produced.</p>
+<ul>
+<li><code>build_graph_data.py</code> writes each <code>.gz</code> sidecar via Python's <code>gzip</code> module (<code>compresslevel=9</code>).</li>
+<li><code>layout_3d.mjs</code> writes <code>positions.bin.gz</code> via Node's <code>zlib.gzipSync({level: 9})</code>.</li>
+</ul>
+<p>That's the deliberate plan decision for the prototype: <strong>ship static <code>.gz</code>, and let the CDN apply Brotli on the fly</strong> (Cloudflare/Fastly/CloudFront all do this automatically, negotiating <code>br</code> when the browser sends <code>Accept-Encoding: br</code>). It avoids adding a Brotli dependency/build step while still getting Brotli on the wire in production.</p>
+<p>Quick confirm of what's on disk:</p></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-38-07-580Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-38-07-580Z" class="timestamp-link"><time datetime="2026-07-11T17:38:07.580Z" data-timestamp="2026-07-11T17:38:07.580Z">2026-07-11T17:38:07.580Z</time></a></div><div class="message-content">
+<div class="tool-use bash-tool" data-tool-id="toolu_01U7vjNPGY2mXeasqUSCyQwy">
+<div class="tool-header"><span class="tool-icon">$</span> Bash</div>
+<div class="tool-description">Confirm gzip vs brotli on disk</div><div class="truncatable"><div class="truncatable-content"><pre class="bash-command">cd /Users/andrewjin/Desktop/anthropic-take-home/web/public/data/v1
+echo &#34;gz files: $(find . -name &#39;*.gz&#39; | wc -l | tr -d &#39; &#39;)   br files: $(find . -name &#39;*.br&#39; | wc -l | tr -d &#39; &#39;)&#34;
+echo &#34;magic bytes of a sidecar (1f8b = gzip):&#34;
+python3 -c &#34;print(&#39; &#39;, open(&#39;nodes-text.json.gz&#39;,&#39;rb&#39;).read(2).hex())&#34;</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T17-38-08-924Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T17-38-08-924Z" class="timestamp-link"><time datetime="2026-07-11T17:38:08.924Z" data-timestamp="2026-07-11T17:38:08.924Z">2026-07-11T17:38:08.924Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>gz files: 105   br files: 0
+magic bytes of a sidecar (1f8b = gzip):
+  1f8b</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-38-16-428Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-38-16-428Z" class="timestamp-link"><time datetime="2026-07-11T17:38:16.428Z" data-timestamp="2026-07-11T17:38:16.428Z">2026-07-11T17:38:16.428Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p>Confirmed: <strong>105 <code>.gz</code> files, 0 <code>.br</code></strong>, and the <code>1f8b</code> magic bytes verify they're gzip.</p>
+<p>If you'd rather ship <strong>static Brotli</strong> too (guarantees Brotli even on a plain origin/static host with no CDN transcoding, ~15–20% smaller than gzip here), it's a small addition — Node's built-in <code>zlib.brotliCompressSync(data, {params: {[BROTLI_PARAM_QUALITY]: 11}})</code> in a build step, no new dependency. Want me to add <code>.br</code> sidecars alongside the <code>.gz</code>?</p></div></div></div>
+<div class="message user" id="msg-2026-07-11T17-38-54-067Z"><div class="message-header"><span class="role-label">User</span><a href="#msg-2026-07-11T17-38-54-067Z" class="timestamp-link"><time datetime="2026-07-11T17:38:54.067Z" data-timestamp="2026-07-11T17:38:54.067Z">2026-07-11T17:38:54.067Z</time></a></div><div class="message-content">
+<div class="user-content"><p>yes add the ability to have the script compress to brotli too. i want to compare the sizes. generate the brotli version as well.</p></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-39-05-422Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-39-05-422Z" class="timestamp-link"><time datetime="2026-07-11T17:39:05.422Z" data-timestamp="2026-07-11T17:39:05.422Z">2026-07-11T17:39:05.422Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-39-05-831Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-39-05-831Z" class="timestamp-link"><time datetime="2026-07-11T17:39:05.831Z" data-timestamp="2026-07-11T17:39:05.831Z">2026-07-11T17:39:05.831Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p>On it. Since Python's stdlib has no Brotli, I'll add a dedicated Node compression pass (Node's built-in <code>zlib</code> has Brotli — no dependency) that brotli-compresses every artifact and prints a gz-vs-br size comparison.</p></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-39-10-128Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-39-10-128Z" class="timestamp-link"><time datetime="2026-07-11T17:39:10.128Z" data-timestamp="2026-07-11T17:39:10.128Z">2026-07-11T17:39:10.128Z</time></a></div><div class="message-content"><div class="file-tool write-tool" data-tool-id="toolu_01UBrrCyqk3ecXRPe7xgaumE">
+<div class="file-tool-header write-header"><span class="file-tool-icon">📝</span> Write <span class="file-tool-path">compress_br.mjs</span></div>
+<div class="file-tool-fullpath">/Users/andrewjin/Desktop/anthropic-take-home/scripts/compress_br.mjs</div>
+<div class="truncatable"><div class="truncatable-content"><pre class="file-content">// Brotli-compress every built artifact (quality 11) alongside the gzip sidecars, and
+// print a raw / gzip / brotli size comparison. Uses Node&#39;s built-in zlib — no deps.
+// Usage: node scripts/compress_br.mjs [--out web/public/data/v1] [--quality 11]
+
+import { readFileSync, writeFileSync, readdirSync, statSync, existsSync } from &#34;node:fs&#34;;
+import { join } from &#34;node:path&#34;;
+import { brotliCompressSync, gzipSync, constants } from &#34;node:zlib&#34;;
+
+const args = process.argv.slice(2);
+const opt = (f, d) =&gt; (args.indexOf(f) &gt;= 0 ? args[args.indexOf(f) + 1] : d);
+const OUT = opt(&#34;--out&#34;, &#34;web/public/data/v1&#34;);
+const QUALITY = parseInt(opt(&#34;--quality&#34;, &#34;11&#34;), 10);
+
+const brotli = (buf) =&gt;
+  brotliCompressSync(buf, {
+    params: {
+      [constants.BROTLI_PARAM_QUALITY]: QUALITY,
+      [constants.BROTLI_PARAM_SIZE_HINT]: buf.length,
+    },
+  });
+
+// collect raw artifacts (skip already-compressed sidecars)
+function walk(dir) {
+  const out = [];
+  for (const name of readdirSync(dir)) {
+    const p = join(dir, name);
+    if (statSync(p).isDirectory()) out.push(...walk(p));
+    else if (!p.endsWith(&#34;.gz&#34;) &amp;&amp; !p.endsWith(&#34;.br&#34;)) out.push(p);
+  }
+  return out;
+}
+
+const files = walk(OUT);
+const kb = (n) =&gt; (n / 1024).toFixed(0).padStart(6);
+const rows = [];
+let totRaw = 0, totGz = 0, totBr = 0;
+
+for (const f of files) {
+  const raw = readFileSync(f);
+  const br = brotli(raw);
+  writeFileSync(f + &#34;.br&#34;, br);
+  const gzPath = f + &#34;.gz&#34;;
+  const gz = existsSync(gzPath) ? statSync(gzPath).size : gzipSync(raw, { level: 9 }).length;
+  totRaw += raw.length; totGz += gz; totBr += br.length;
+  rows.push({ f: f.replace(OUT + &#34;/&#34;, &#34;&#34;), raw: raw.length, gz, br: br.length });
+}
+
+// print: top-level files individually, details/* aggregated
+console.log(`\nquality=${QUALITY}    (KB)      raw     gzip   brotli   br vs gz`);
+console.log(&#34;-&#34;.repeat(58));
+const details = rows.filter((r) =&gt; r.f.startsWith(&#34;details/&#34;));
+const top = rows.filter((r) =&gt; !r.f.startsWith(&#34;details/&#34;));
+const line = (label, raw, gz, br) =&gt;
+  console.log(`${label.padEnd(22)} ${kb(raw)} ${kb(gz)} ${kb(br)}   ${(100 * (1 - br / gz)).toFixed(1).padStart(5)}%`);
+for (const r of top.sort((a, b) =&gt; b.raw - a.raw)) line(r.f, r.raw, r.gz, r.br);
+if (details.length) {
+  const s = (k) =&gt; details.reduce((a, r) =&gt; a + r[k], 0);
+  line(`details/ (${details.length} shards)`, s(&#34;raw&#34;), s(&#34;gz&#34;), s(&#34;br&#34;));
+}
+console.log(&#34;-&#34;.repeat(58));
+line(&#34;TOTAL&#34;, totRaw, totGz, totBr);
+
+// first-paint set (excludes deferred keywords + on-click details)
+const fp = [&#34;manifest.json&#34;, &#34;nodes.bin&#34;, &#34;nodes-text.json&#34;, &#34;edges.bin&#34;, &#34;positions.bin&#34;];
+const fpr = rows.filter((r) =&gt; fp.includes(r.f));
+console.log(&#34;\nfirst-paint set:&#34;);
+line(&#34;  gz total&#34;, fpr.reduce((a, r) =&gt; a + r.raw, 0), fpr.reduce((a, r) =&gt; a + r.gz, 0), fpr.reduce((a, r) =&gt; a + r.br, 0));
+</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T17-39-10-190Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T17-39-10-190Z" class="timestamp-link"><time datetime="2026-07-11T17:39:10.190Z" data-timestamp="2026-07-11T17:39:10.190Z">2026-07-11T17:39:10.190Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>File created successfully at: /Users/andrewjin/Desktop/anthropic-take-home/scripts/compress_br.mjs (file state is current in your context — no need to Read it back)</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-39-14-237Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-39-14-237Z" class="timestamp-link"><time datetime="2026-07-11T17:39:14.237Z" data-timestamp="2026-07-11T17:39:14.237Z">2026-07-11T17:39:14.237Z</time></a></div><div class="message-content">
+<div class="tool-use bash-tool" data-tool-id="toolu_013nVryLPWQzme8j2rvAQtBC">
+<div class="tool-header"><span class="tool-icon">$</span> Bash</div>
+<div class="tool-description">Generate brotli sidecars and compare sizes</div><div class="truncatable"><div class="truncatable-content"><pre class="bash-command">cd /Users/andrewjin/Desktop/anthropic-take-home &amp;&amp; node scripts/compress_br.mjs 2&gt;&amp;1</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T17-39-36-263Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T17-39-36-263Z" class="timestamp-link"><time datetime="2026-07-11T17:39:36.263Z" data-timestamp="2026-07-11T17:39:36.263Z">2026-07-11T17:39:36.263Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>quality=11    (KB)      raw     gzip   brotli   br vs gz
+----------------------------------------------------------
+nodes-text.json           950    366    277    24.3%
+search-kw.json            850    303    262    13.6%
+edges.bin                 144     71     60    15.0%
+nodes.bin                  88     31     23    24.8%
+positions.bin              59     58     58     0.5%
+manifest.json               2      1      1    17.1%
+details/ (100 shards)   19109   5888   4587    22.1%
+----------------------------------------------------------
+TOTAL                   21202   6718   5268    21.6%
+
+first-paint set:
+  gz total               1243    527    419    20.5%</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-39-38-575Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-39-38-575Z" class="timestamp-link"><time datetime="2026-07-11T17:39:38.575Z" data-timestamp="2026-07-11T17:39:38.575Z">2026-07-11T17:39:38.575Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-39-40-494Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-39-40-494Z" class="timestamp-link"><time datetime="2026-07-11T17:39:40.494Z" data-timestamp="2026-07-11T17:39:40.494Z">2026-07-11T17:39:40.494Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p>Brotli sidecars generated for all 106 artifacts. Here's the comparison you wanted:</p>
+<table>
+<thead>
+<tr>
+<th>Artifact</th>
+<th>raw</th>
+<th>gzip</th>
+<th>brotli</th>
+<th>br saves</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>nodes-text.json</td>
+<td>950</td>
+<td>366</td>
+<td><strong>277</strong></td>
+<td>24.3%</td>
+</tr>
+<tr>
+<td>search-kw.json</td>
+<td>850</td>
+<td>303</td>
+<td><strong>262</strong></td>
+<td>13.6%</td>
+</tr>
+<tr>
+<td>edges.bin</td>
+<td>144</td>
+<td>71</td>
+<td><strong>60</strong></td>
+<td>15.0%</td>
+</tr>
+<tr>
+<td>nodes.bin</td>
+<td>88</td>
+<td>31</td>
+<td><strong>23</strong></td>
+<td>24.8%</td>
+</tr>
+<tr>
+<td>positions.bin</td>
+<td>59</td>
+<td>58</td>
+<td><strong>58</strong></td>
+<td>0.5%</td>
+</tr>
+<tr>
+<td>details/ (100 shards)</td>
+<td>19109</td>
+<td>5888</td>
+<td><strong>4587</strong></td>
+<td>22.1%</td>
+</tr>
+<tr>
+<td><strong>TOTAL</strong></td>
+<td>21202</td>
+<td>6718</td>
+<td><strong>5268</strong></td>
+<td><strong>21.6%</strong></td>
+</tr>
+<tr>
+<td><strong>first-paint set</strong></td>
+<td>1243</td>
+<td>527</td>
+<td><strong>419</strong></td>
+<td><strong>20.5%</strong></td>
+</tr>
+</tbody>
+</table>
+<p><em>(all KB, brotli quality 11)</em></p>
+<p><strong>Takeaways:</strong>
+- <strong>First paint: 527 KB gz → 419 KB br (−20.5%)</strong> — a real, free win on the critical path.
+- Text artifacts (<code>nodes-text</code>, <code>nodes.bin</code>, details) compress best (~22–25% better than gzip).
+- <strong><code>positions.bin</code> gains 0.5%</strong> — expected: Int16-quantized coordinates are noise-like, so neither codec helps. The size win there already came from Int16 vs Float32.</p>
+<p>Let me document the new step in the README:</p></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-39-42-137Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-39-42-137Z" class="timestamp-link"><time datetime="2026-07-11T17:39:42.137Z" data-timestamp="2026-07-11T17:39:42.137Z">2026-07-11T17:39:42.137Z</time></a></div><div class="message-content"><div class="file-tool edit-tool" data-tool-id="toolu_01LJ7uBp9ChswNpkgLRUBYad">
+<div class="file-tool-header edit-header"><span class="file-tool-icon">✏️</span> Edit <span class="file-tool-path">README-graph-data.md</span></div>
+<div class="file-tool-fullpath">/Users/andrewjin/Desktop/anthropic-take-home/scripts/README-graph-data.md</div>
+<div class="truncatable"><div class="truncatable-content">
+<div class="edit-section edit-old"><div class="edit-label">−</div><pre class="edit-content"># 3. verify end-to-end
+node scripts/verify_graph_data.mjs --out web/public/data/v1
+```
+
+Output: `web/public/data/v1/` (each artifact also has a `.gz` sidecar for the CDN).</pre></div>
+<div class="edit-section edit-new"><div class="edit-label">+</div><pre class="edit-content"># 3. verify end-to-end
+node scripts/verify_graph_data.mjs --out web/public/data/v1
+
+# 4. (optional) also emit Brotli sidecars + print a gz-vs-br size table
+node scripts/compress_br.mjs --out web/public/data/v1 [--quality 11]
+```
+
+Output: `web/public/data/v1/` — each artifact has a `.gz` sidecar (always) and a `.br` sidecar
+(after step 4). Brotli q11 runs ~20% smaller than gzip here (first-paint set 527 → 419 KB); it&#39;s
+noise-like on `positions.bin` (Int16-quantized), so gzip is fine there. Serve static `.br` where
+you can&#39;t rely on CDN on-the-fly Brotli; otherwise `.gz` + CDN Brotli suffices.</pre></div>
+</div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T17-39-42-180Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T17-39-42-180Z" class="timestamp-link"><time datetime="2026-07-11T17:39:42.180Z" data-timestamp="2026-07-11T17:39:42.180Z">2026-07-11T17:39:42.180Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>The file /Users/andrewjin/Desktop/anthropic-take-home/scripts/README-graph-data.md has been updated successfully. (file state is current in your context — no need to Read it back)</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-39-43-677Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-39-43-677Z" class="timestamp-link"><time datetime="2026-07-11T17:39:43.677Z" data-timestamp="2026-07-11T17:39:43.677Z">2026-07-11T17:39:43.677Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-39-43-680Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-39-43-680Z" class="timestamp-link"><time datetime="2026-07-11T17:39:43.680Z" data-timestamp="2026-07-11T17:39:43.680Z">2026-07-11T17:39:43.680Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p>Let me confirm the <code>.br</code> files are valid (round-trip decompress one):</p></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-39-44-562Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-39-44-562Z" class="timestamp-link"><time datetime="2026-07-11T17:39:44.562Z" data-timestamp="2026-07-11T17:39:44.562Z">2026-07-11T17:39:44.562Z</time></a></div><div class="message-content">
+<div class="tool-use bash-tool" data-tool-id="toolu_01La9piwcDXuhtBL9ufy9GN7">
+<div class="tool-header"><span class="tool-icon">$</span> Bash</div>
+<div class="tool-description">Verify brotli file count and round-trip</div><div class="truncatable"><div class="truncatable-content"><pre class="bash-command">cd /Users/andrewjin/Desktop/anthropic-take-home/web/public/data/v1
+echo &#34;br files: $(find . -name &#39;*.br&#39; | wc -l | tr -d &#39; &#39;)   gz files: $(find . -name &#39;*.gz&#39; | wc -l | tr -d &#39; &#39;)&#34;
+node -e &#34;
+const {brotliDecompressSync}=require(&#39;zlib&#39;);const {readFileSync}=require(&#39;fs&#39;);
+const orig=readFileSync(&#39;nodes-text.json&#39;);
+const dec=brotliDecompressSync(readFileSync(&#39;nodes-text.json.br&#39;));
+console.log(&#39;round-trip nodes-text.json.br:&#39;, Buffer.compare(orig,dec)===0 ? &#39;OK (identical)&#39; : &#39;MISMATCH&#39;);
+&#34;</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T17-39-46-208Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T17-39-46-208Z" class="timestamp-link"><time datetime="2026-07-11T17:39:46.208Z" data-timestamp="2026-07-11T17:39:46.208Z">2026-07-11T17:39:46.208Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>br files: 106   gz files: 105
+round-trip nodes-text.json.br: OK (identical)</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-39-49-255Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-39-49-255Z" class="timestamp-link"><time datetime="2026-07-11T17:39:49.255Z" data-timestamp="2026-07-11T17:39:49.255Z">2026-07-11T17:39:49.255Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p>Done. Brotli support added and generated.</p>
+<h2>Summary</h2>
+<p><strong>New script: <code>scripts/compress_br.mjs</code></strong> — a Node pass (built-in <code>zlib</code>, no dependency) that brotli-compresses every artifact at quality 11 and prints the raw/gzip/brotli comparison table. Run it as an optional step 4 after the build:</p>
+<pre><code class="language-bash">node scripts/compress_br.mjs --out web/public/data/v1
+</code></pre>
+<p><strong>Generated:</strong> 106 <code>.br</code> sidecars alongside the 105 <code>.gz</code> (the extra <code>.br</code> is <code>manifest.json</code>, which I left gzip-free before). Round-trip verified — decompressed output is byte-identical to the source.</p>
+<p><strong>Result:</strong> Brotli is <strong>~20–25% smaller than gzip</strong> on the text/binary artifacts, cutting the <strong>first-paint set from 527 KB → 419 KB</strong>. The lone exception is <code>positions.bin</code> (Int16-quantized coords are noise-like, 0.5% gain) — gzip is fine there.</p>
+<p><strong>Serving guidance</strong> (now in the README): ship static <code>.br</code> when you can't rely on CDN on-the-fly Brotli (e.g. plain static hosting); otherwise <code>.gz</code> + CDN Brotli negotiation achieves the same on the wire. Both sidecars now exist, so either path works.</p></div></div></div>
+        
+
+<div class="pagination">
+<a href="index.html" class="index-link">Index</a>
+<a href="page-006.html">&larr; Prev</a>
+<a href="page-001.html">1</a>
+<a href="page-002.html">2</a>
+<a href="page-003.html">3</a>
+<a href="page-004.html">4</a>
+<a href="page-005.html">5</a>
+<a href="page-006.html">6</a>
+<span class="current">7</span>
+<span class="disabled">Next &rarr;</span>
+</div>
+
+    </div>
+    <script>
+document.querySelectorAll('time[data-timestamp]').forEach(function(el) {
+    const timestamp = el.getAttribute('data-timestamp');
+    const date = new Date(timestamp);
+    const now = new Date();
+    const isToday = date.toDateString() === now.toDateString();
+    const timeStr = date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+    if (isToday) { el.textContent = timeStr; }
+    else { el.textContent = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' ' + timeStr; }
+});
+document.querySelectorAll('pre.json').forEach(function(el) {
+    let text = el.textContent;
+    text = text.replace(/"([^"]+)":/g, '<span style="color: #ce93d8">"$1"</span>:');
+    text = text.replace(/: "([^"]*)"/g, ': <span style="color: #81d4fa">"$1"</span>');
+    text = text.replace(/: (\d+)/g, ': <span style="color: #ffcc80">$1</span>');
+    text = text.replace(/: (true|false|null)/g, ': <span style="color: #f48fb1">$1</span>');
+    el.innerHTML = text;
+});
+document.querySelectorAll('.truncatable').forEach(function(wrapper) {
+    const content = wrapper.querySelector('.truncatable-content');
+    const btn = wrapper.querySelector('.expand-btn');
+    if (content.scrollHeight > 250) {
+        wrapper.classList.add('truncated');
+        btn.addEventListener('click', function() {
+            if (wrapper.classList.contains('truncated')) { wrapper.classList.remove('truncated'); wrapper.classList.add('expanded'); btn.textContent = 'Show less'; }
+            else { wrapper.classList.remove('expanded'); wrapper.classList.add('truncated'); btn.textContent = 'Show more'; }
+        });
+    }
+});
+</script>
+</body>
+</html>
