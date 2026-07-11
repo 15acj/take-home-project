@@ -1,0 +1,2886 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claude Code transcript - Index</title>
+    <style>
+:root { --bg-color: #f5f5f5; --card-bg: #ffffff; --user-bg: #e3f2fd; --user-border: #1976d2; --assistant-bg: #f5f5f5; --assistant-border: #9e9e9e; --thinking-bg: #fff8e1; --thinking-border: #ffc107; --thinking-text: #666; --tool-bg: #f3e5f5; --tool-border: #9c27b0; --tool-result-bg: #e8f5e9; --tool-error-bg: #ffebee; --text-color: #212121; --text-muted: #757575; --code-bg: #263238; --code-text: #aed581; }
+* { box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg-color); color: var(--text-color); margin: 0; padding: 16px; line-height: 1.6; }
+.container { max-width: 800px; margin: 0 auto; }
+h1 { font-size: 1.5rem; margin-bottom: 24px; padding-bottom: 8px; border-bottom: 2px solid var(--user-border); }
+.header-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; border-bottom: 2px solid var(--user-border); padding-bottom: 8px; margin-bottom: 24px; }
+.header-row h1 { border-bottom: none; padding-bottom: 0; margin-bottom: 0; flex: 1; min-width: 200px; }
+.message { margin-bottom: 16px; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.message.user { background: var(--user-bg); border-left: 4px solid var(--user-border); }
+.message.assistant { background: var(--card-bg); border-left: 4px solid var(--assistant-border); }
+.message.tool-reply { background: #fff8e1; border-left: 4px solid #ff9800; }
+.tool-reply .role-label { color: #e65100; }
+.tool-reply .tool-result { background: transparent; padding: 0; margin: 0; }
+.tool-reply .tool-result .truncatable.truncated::after { background: linear-gradient(to bottom, transparent, #fff8e1); }
+.message-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 16px; background: rgba(0,0,0,0.03); font-size: 0.85rem; }
+.role-label { font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+.user .role-label { color: var(--user-border); }
+time { color: var(--text-muted); font-size: 0.8rem; }
+.timestamp-link { color: inherit; text-decoration: none; }
+.timestamp-link:hover { text-decoration: underline; }
+.message:target { animation: highlight 2s ease-out; }
+@keyframes highlight { 0% { background-color: rgba(25, 118, 210, 0.2); } 100% { background-color: transparent; } }
+.message-content { padding: 16px; }
+.message-content p { margin: 0 0 12px 0; }
+.message-content p:last-child { margin-bottom: 0; }
+.thinking { background: var(--thinking-bg); border: 1px solid var(--thinking-border); border-radius: 8px; padding: 12px; margin: 12px 0; font-size: 0.9rem; color: var(--thinking-text); }
+.thinking-label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: #f57c00; margin-bottom: 8px; }
+.thinking p { margin: 8px 0; }
+.assistant-text { margin: 8px 0; }
+.tool-use { background: var(--tool-bg); border: 1px solid var(--tool-border); border-radius: 8px; padding: 12px; margin: 12px 0; }
+.tool-header { font-weight: 600; color: var(--tool-border); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+.tool-icon { font-size: 1.1rem; }
+.tool-description { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 8px; font-style: italic; }
+.tool-result { background: var(--tool-result-bg); border-radius: 8px; padding: 12px; margin: 12px 0; }
+.tool-result.tool-error { background: var(--tool-error-bg); }
+.file-tool { border-radius: 8px; padding: 12px; margin: 12px 0; }
+.write-tool { background: linear-gradient(135deg, #e3f2fd 0%, #e8f5e9 100%); border: 1px solid #4caf50; }
+.edit-tool { background: linear-gradient(135deg, #fff3e0 0%, #fce4ec 100%); border: 1px solid #ff9800; }
+.file-tool-header { font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; font-size: 0.95rem; }
+.write-header { color: #2e7d32; }
+.edit-header { color: #e65100; }
+.file-tool-icon { font-size: 1rem; }
+.file-tool-path { font-family: monospace; background: rgba(0,0,0,0.08); padding: 2px 8px; border-radius: 4px; }
+.file-tool-fullpath { font-family: monospace; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 8px; word-break: break-all; }
+.file-content { margin: 0; }
+.edit-section { display: flex; margin: 4px 0; border-radius: 4px; overflow: hidden; }
+.edit-label { padding: 8px 12px; font-weight: bold; font-family: monospace; display: flex; align-items: flex-start; }
+.edit-old { background: #fce4ec; }
+.edit-old .edit-label { color: #b71c1c; background: #f8bbd9; }
+.edit-old .edit-content { color: #880e4f; }
+.edit-new { background: #e8f5e9; }
+.edit-new .edit-label { color: #1b5e20; background: #a5d6a7; }
+.edit-new .edit-content { color: #1b5e20; }
+.edit-content { margin: 0; flex: 1; background: transparent; font-size: 0.85rem; }
+.edit-replace-all { font-size: 0.75rem; font-weight: normal; color: var(--text-muted); }
+.write-tool .truncatable.truncated::after { background: linear-gradient(to bottom, transparent, #e6f4ea); }
+.edit-tool .truncatable.truncated::after { background: linear-gradient(to bottom, transparent, #fff0e5); }
+.todo-list { background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%); border: 1px solid #81c784; border-radius: 8px; padding: 12px; margin: 12px 0; }
+.todo-header { font-weight: 600; color: #2e7d32; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; font-size: 0.95rem; }
+.todo-items { list-style: none; margin: 0; padding: 0; }
+.todo-item { display: flex; align-items: flex-start; gap: 10px; padding: 6px 0; border-bottom: 1px solid rgba(0,0,0,0.06); font-size: 0.9rem; }
+.todo-item:last-child { border-bottom: none; }
+.todo-icon { flex-shrink: 0; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-weight: bold; border-radius: 50%; }
+.todo-completed .todo-icon { color: #2e7d32; background: rgba(46, 125, 50, 0.15); }
+.todo-completed .todo-content { color: #558b2f; text-decoration: line-through; }
+.todo-in-progress .todo-icon { color: #f57c00; background: rgba(245, 124, 0, 0.15); }
+.todo-in-progress .todo-content { color: #e65100; font-weight: 500; }
+.todo-pending .todo-icon { color: #757575; background: rgba(0,0,0,0.05); }
+.todo-pending .todo-content { color: #616161; }
+pre { background: var(--code-bg); color: var(--code-text); padding: 12px; border-radius: 6px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5; margin: 8px 0; white-space: pre-wrap; word-wrap: break-word; }
+pre.json { color: #e0e0e0; }
+code { background: rgba(0,0,0,0.08); padding: 2px 6px; border-radius: 4px; font-size: 0.9em; }
+pre code { background: none; padding: 0; }
+.user-content { margin: 0; }
+.truncatable { position: relative; }
+.truncatable.truncated .truncatable-content { max-height: 200px; overflow: hidden; }
+.truncatable.truncated::after { content: ''; position: absolute; bottom: 32px; left: 0; right: 0; height: 60px; background: linear-gradient(to bottom, transparent, var(--card-bg)); pointer-events: none; }
+.message.user .truncatable.truncated::after { background: linear-gradient(to bottom, transparent, var(--user-bg)); }
+.message.tool-reply .truncatable.truncated::after { background: linear-gradient(to bottom, transparent, #fff8e1); }
+.tool-use .truncatable.truncated::after { background: linear-gradient(to bottom, transparent, var(--tool-bg)); }
+.tool-result .truncatable.truncated::after { background: linear-gradient(to bottom, transparent, var(--tool-result-bg)); }
+.expand-btn { display: none; width: 100%; padding: 8px 16px; margin-top: 4px; background: rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.1); border-radius: 6px; cursor: pointer; font-size: 0.85rem; color: var(--text-muted); }
+.expand-btn:hover { background: rgba(0,0,0,0.1); }
+.truncatable.truncated .expand-btn, .truncatable.expanded .expand-btn { display: block; }
+.pagination { display: flex; justify-content: center; gap: 8px; margin: 24px 0; flex-wrap: wrap; }
+.pagination a, .pagination span { padding: 5px 10px; border-radius: 6px; text-decoration: none; font-size: 0.85rem; }
+.pagination a { background: var(--card-bg); color: var(--user-border); border: 1px solid var(--user-border); }
+.pagination a:hover { background: var(--user-bg); }
+.pagination .current { background: var(--user-border); color: white; }
+.pagination .disabled { color: var(--text-muted); border: 1px solid #ddd; }
+.pagination .index-link { background: var(--user-border); color: white; }
+details.continuation { margin-bottom: 16px; }
+details.continuation summary { cursor: pointer; padding: 12px 16px; background: var(--user-bg); border-left: 4px solid var(--user-border); border-radius: 12px; font-weight: 500; color: var(--text-muted); }
+details.continuation summary:hover { background: rgba(25, 118, 210, 0.15); }
+details.continuation[open] summary { border-radius: 12px 12px 0 0; margin-bottom: 0; }
+.index-item { margin-bottom: 16px; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); background: var(--user-bg); border-left: 4px solid var(--user-border); }
+.index-item a { display: block; text-decoration: none; color: inherit; }
+.index-item a:hover { background: rgba(25, 118, 210, 0.1); }
+.index-item-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 16px; background: rgba(0,0,0,0.03); font-size: 0.85rem; }
+.index-item-number { font-weight: 600; color: var(--user-border); }
+.index-item-content { padding: 16px; }
+.index-item-stats { padding: 8px 16px 12px 32px; font-size: 0.85rem; color: var(--text-muted); border-top: 1px solid rgba(0,0,0,0.06); }
+.index-item-commit { margin-top: 6px; padding: 4px 8px; background: #fff3e0; border-radius: 4px; font-size: 0.85rem; color: #e65100; }
+.index-item-commit code { background: rgba(0,0,0,0.08); padding: 1px 4px; border-radius: 3px; font-size: 0.8rem; margin-right: 6px; }
+.commit-card { margin: 8px 0; padding: 10px 14px; background: #fff3e0; border-left: 4px solid #ff9800; border-radius: 6px; }
+.commit-card a { text-decoration: none; color: #5d4037; display: block; }
+.commit-card a:hover { color: #e65100; }
+.commit-card-hash { font-family: monospace; color: #e65100; font-weight: 600; margin-right: 8px; }
+.index-commit { margin-bottom: 12px; padding: 10px 16px; background: #fff3e0; border-left: 4px solid #ff9800; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+.index-commit a { display: block; text-decoration: none; color: inherit; }
+.index-commit a:hover { background: rgba(255, 152, 0, 0.1); margin: -10px -16px; padding: 10px 16px; border-radius: 8px; }
+.index-commit-header { display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; margin-bottom: 4px; }
+.index-commit-hash { font-family: monospace; color: #e65100; font-weight: 600; }
+.index-commit-msg { color: #5d4037; }
+.index-item-long-text { margin-top: 8px; padding: 12px; background: var(--card-bg); border-radius: 8px; border-left: 3px solid var(--assistant-border); }
+.index-item-long-text .truncatable.truncated::after { background: linear-gradient(to bottom, transparent, var(--card-bg)); }
+.index-item-long-text-content { color: var(--text-color); }
+#search-box { display: none; align-items: center; gap: 8px; }
+#search-box input { padding: 6px 12px; border: 1px solid var(--assistant-border); border-radius: 6px; font-size: 16px; width: 180px; }
+#search-box button, #modal-search-btn, #modal-close-btn { background: var(--user-border); color: white; border: none; border-radius: 6px; padding: 6px 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+#search-box button:hover, #modal-search-btn:hover { background: #1565c0; }
+#modal-close-btn { background: var(--text-muted); margin-left: 8px; }
+#modal-close-btn:hover { background: #616161; }
+#search-modal[open] { border: none; border-radius: 12px; box-shadow: 0 4px 24px rgba(0,0,0,0.2); padding: 0; width: 90vw; max-width: 900px; height: 80vh; max-height: 80vh; display: flex; flex-direction: column; }
+#search-modal::backdrop { background: rgba(0,0,0,0.5); }
+.search-modal-header { display: flex; align-items: center; gap: 8px; padding: 16px; border-bottom: 1px solid var(--assistant-border); background: var(--bg-color); border-radius: 12px 12px 0 0; }
+.search-modal-header input { flex: 1; padding: 8px 12px; border: 1px solid var(--assistant-border); border-radius: 6px; font-size: 16px; }
+#search-status { padding: 8px 16px; font-size: 0.85rem; color: var(--text-muted); border-bottom: 1px solid rgba(0,0,0,0.06); }
+#search-results { flex: 1; overflow-y: auto; padding: 16px; }
+.search-result { margin-bottom: 16px; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.search-result a { display: block; text-decoration: none; color: inherit; }
+.search-result a:hover { background: rgba(25, 118, 210, 0.05); }
+.search-result-page { padding: 6px 12px; background: rgba(0,0,0,0.03); font-size: 0.8rem; color: var(--text-muted); border-bottom: 1px solid rgba(0,0,0,0.06); }
+.search-result-content { padding: 12px; }
+.search-result mark { background: #fff59d; padding: 1px 2px; border-radius: 2px; }
+@media (max-width: 600px) { body { padding: 8px; } .message, .index-item { border-radius: 8px; } .message-content, .index-item-content { padding: 12px; } pre { font-size: 0.8rem; padding: 8px; } #search-box input { width: 120px; } #search-modal[open] { width: 95vw; height: 90vh; } }
+</style>
+</head>
+<body>
+    <div class="container">
+        <div class="header-row">
+            <h1>Claude Code transcript</h1>
+            <div id="search-box">
+                <input type="text" id="search-input" placeholder="Search..." aria-label="Search transcripts">
+                <button id="search-btn" type="button" aria-label="Search">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
+                </button>
+            </div>
+        </div>
+        
+
+<div class="pagination">
+<span class="current">Index</span>
+<span class="disabled">&larr; Prev</span>
+<a href="page-001.html">1</a>
+<a href="page-002.html">2</a>
+<a href="page-003.html">3</a>
+<a href="page-001.html">Next &rarr;</a>
+</div>
+
+        <p style="color: var(--text-muted); margin-bottom: 24px;">15 prompts · 399 messages · 111 tool calls · 0 commits · 3 pages</p>
+        
+<div class="index-item"><a href="page-001.html#msg-2026-07-11T17-36-11-717Z"><div class="index-item-header"><span class="index-item-number">#1</span><time datetime="2026-07-11T17:36:11.717Z" data-timestamp="2026-07-11T17:36:11.717Z">2026-07-11T17:36:11.717Z</time></div><div class="index-item-content"><p>write a script to explore the data you pulled for the top 10k cited papers. i want to know things like:</p>
+<ul>
+<li>distribution across domains</li>
+<li>what portion is open access vs. not</li>
+<li>what portion has pdf urls</li>
+<li>what portion has grobid urls</li>
+</ul></div></a><div class="index-item-stats"><span>5 bash · 1 read · 1 write</span>
+<div class="index-item-long-text"><div class="truncatable"><div class="truncatable-content"><div class="index-item-long-text-content"><p>Done. The script is at <code>scripts/explore_data.py</code> — stdlib-only, reads the raw JSONL, and prints the coverage/distribution report above (add <code>--json</code> for a machine-readable dump).</p>
+<h2>What the 10k top-cited papers look like</h2>
+<p><strong>Domains</strong> — heavily physical-sciences-weighted:
+- Physical Sciences 41.5% · Social Sciences 26.3% · Life Sciences 17.1% · Health Sciences 14.9% (14 works unclassified). Top fields are Medicine, Computer Science, and Biochem/Molecular Bio (~12–13% each).</p>
+<p><strong>Open access</strong> — only <strong>~1/3 is OA</strong> (32.6%); 67.4% closed. Of the OA slice, it's mostly green (self-archived, 12.1%) and bronze (free-to-read but no license, 12.1%), with true gold/hybrid/diamond a small minority (~8% combined).</p>
+<p><strong>PDF urls</strong> — coverage is low:
+- Any public/landing pdf: <strong>23.7%</strong>
+- OpenAlex-hosted content pdf: <strong>18.0%</strong> (a subset of the above)</p>
+<p><strong>GROBID XML</strong> — <strong>14.7%</strong> have a <code>content_urls.grobid_xml</code> url (matches the <code>has_content.grobid_xml</code> flag exactly).</p>
+<p><strong>Notable for the graph viz:</strong> the full-text pipeline (pdf → GROBID) only reaches ~15–24% of these papers, even though 91.7% have DOIs and 72.2% carry <code>referenced_works</code> (which is what your intra-set edges are built from). So citation-graph edges are well-covered, but anything depending on parsed full text will be sparse.</p>
+<p>One thing worth calling out: "pdf url" is ambiguous in this dataset — there's the OpenAlex-hosted content pdf (<code>content_urls.pdf</code>, 18%) and any publisher/repository pdf from the work's <code>locations</code> (23.7%, which is what <code>build_graph_data.py</code> surfaces as <code>pdf_url</code>). I reported both. Want me to break GROBID/pdf coverage down <em>by domain</em> (e.g. is full-text far better covered in CS than Medicine)?</p></div></div><button class="expand-btn">Show more</button></div></div>
+</div></div>
+<div class="index-item"><a href="page-001.html#msg-2026-07-11T17-40-41-806Z"><div class="index-item-header"><span class="index-item-number">#2</span><time datetime="2026-07-11T17:40:41.806Z" data-timestamp="2026-07-11T17:40:41.806Z">2026-07-11T17:40:41.806Z</time></div><div class="index-item-content"><p>show me the top 50 most cited papers in a table (with citations, year of publication, domain)</p></div></a><div class="index-item-stats"><span>1 bash</span>
+<div class="index-item-long-text"><div class="truncatable"><div class="truncatable-content"><div class="index-item-long-text-content"><p>Here are the top 50 by citation count. Titles included for context; <strong>⚠ flags likely citation-count anomalies</strong> (see note below).</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: right;">#</th>
+<th style="text-align: right;">Citations</th>
+<th style="text-align: right;">Year</th>
+<th>Domain</th>
+<th>Title</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">801,217</td>
+<td style="text-align: right;">2020</td>
+<td>Physical Sciences</td>
+<td>⚠ Radiation Resistant Camera System for Monitoring Deuterium Plasma</td>
+</tr>
+<tr>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">353,004</td>
+<td style="text-align: right;">2000</td>
+<td>Physical Sciences</td>
+<td>R: A Language and Environment for Statistical Computing</td>
+</tr>
+<tr>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">318,442</td>
+<td style="text-align: right;">1951</td>
+<td>Life Sciences</td>
+<td>Protein Measurement with the Folin Phenol Reagent</td>
+</tr>
+<tr>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">251,709</td>
+<td style="text-align: right;">1970</td>
+<td>Physical Sciences</td>
+<td>Cleavage of Structural Proteins during Assembly of the Head of Bacteriophage T4</td>
+</tr>
+<tr>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">225,381</td>
+<td style="text-align: right;">1976</td>
+<td>Life Sciences</td>
+<td>A Rapid and Sensitive Method for Quantitation of Microgram Quantities of Protein (Bradford)</td>
+</tr>
+<tr>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">222,656</td>
+<td style="text-align: right;">2016</td>
+<td>Physical Sciences</td>
+<td>Deep Residual Learning for Image Recognition</td>
+</tr>
+<tr>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">212,285</td>
+<td style="text-align: right;">1996</td>
+<td>Physical Sciences</td>
+<td>Generalized Gradient Approximation Made Simple</td>
+</tr>
+<tr>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">211,381</td>
+<td style="text-align: right;">1976</td>
+<td>Life Sciences</td>
+<td>A Rapid and Sensitive Method for Quantitation of Microgram Quantities of Protein</td>
+</tr>
+<tr>
+<td style="text-align: right;">9</td>
+<td style="text-align: right;">185,277</td>
+<td style="text-align: right;">2006</td>
+<td>Health Sciences</td>
+<td>Using thematic analysis in psychology</td>
+</tr>
+<tr>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">182,044</td>
+<td style="text-align: right;">2001</td>
+<td>Life Sciences</td>
+<td>Analysis of Relative Gene Expression Data Using Real-Time qPCR (2^−ΔΔCT)</td>
+</tr>
+<tr>
+<td style="text-align: right;">11</td>
+<td style="text-align: right;">169,601</td>
+<td style="text-align: right;">—</td>
+<td>Physical Sciences</td>
+<td>⚠ Yaşlı Kadınlarda Üreme Sağlığı (no pub year)</td>
+</tr>
+<tr>
+<td style="text-align: right;">12</td>
+<td style="text-align: right;">129,998</td>
+<td style="text-align: right;">1989</td>
+<td>Life Sciences</td>
+<td>Molecular Cloning: A Laboratory Manual</td>
+</tr>
+<tr>
+<td style="text-align: right;">13</td>
+<td style="text-align: right;">127,092</td>
+<td style="text-align: right;">2001</td>
+<td>Physical Sciences</td>
+<td>Random Forests</td>
+</tr>
+<tr>
+<td style="text-align: right;">14</td>
+<td style="text-align: right;">121,001</td>
+<td style="text-align: right;">1996</td>
+<td>Physical Sciences</td>
+<td>Efficient iterative schemes for ab initio total-energy calculations</td>
+</tr>
+<tr>
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">114,440</td>
+<td style="text-align: right;">2013</td>
+<td>Health Sciences</td>
+<td>Diagnostic and Statistical Manual of Mental Disorders (DSM-5)</td>
+</tr>
+<tr>
+<td style="text-align: right;">16</td>
+<td style="text-align: right;">112,837</td>
+<td style="text-align: right;">2021</td>
+<td>Health Sciences</td>
+<td>Global Cancer Statistics 2020: GLOBOCAN</td>
+</tr>
+<tr>
+<td style="text-align: right;">17</td>
+<td style="text-align: right;">109,983</td>
+<td style="text-align: right;">2013</td>
+<td>Social Sciences</td>
+<td>Diagnostic and Statistical Manual of Mental Disorders</td>
+</tr>
+<tr>
+<td style="text-align: right;">18</td>
+<td style="text-align: right;">109,152</td>
+<td style="text-align: right;">1995</td>
+<td>Physical Sciences</td>
+<td>Controlling the False Discovery Rate (Benjamini–Hochberg)</td>
+</tr>
+<tr>
+<td style="text-align: right;">19</td>
+<td style="text-align: right;">105,915</td>
+<td style="text-align: right;">1999</td>
+<td>Social Sciences</td>
+<td>Cutoff criteria for fit indexes in covariance structure analysis</td>
+</tr>
+<tr>
+<td style="text-align: right;">20</td>
+<td style="text-align: right;">102,970</td>
+<td style="text-align: right;">1993</td>
+<td>Physical Sciences</td>
+<td>Density-functional thermochemistry. III (B3LYP)</td>
+</tr>
+<tr>
+<td style="text-align: right;">21</td>
+<td style="text-align: right;">101,074</td>
+<td style="text-align: right;">2014</td>
+<td>Life Sciences</td>
+<td>Moderated estimation of fold change and dispersion for RNA-seq (DESeq2)</td>
+</tr>
+<tr>
+<td style="text-align: right;">22</td>
+<td style="text-align: right;">100,230</td>
+<td style="text-align: right;">1988</td>
+<td>Physical Sciences</td>
+<td>Development of the Colle-Salvetti correlation-energy formula (LYP)</td>
+</tr>
+<tr>
+<td style="text-align: right;">23</td>
+<td style="text-align: right;">98,553</td>
+<td style="text-align: right;">1997</td>
+<td>Physical Sciences</td>
+<td>Long Short-Term Memory</td>
+</tr>
+<tr>
+<td style="text-align: right;">24</td>
+<td style="text-align: right;">96,642</td>
+<td style="text-align: right;">2021</td>
+<td>Social Sciences</td>
+<td>The PRISMA 2020 statement</td>
+</tr>
+<tr>
+<td style="text-align: right;">25</td>
+<td style="text-align: right;">94,691</td>
+<td style="text-align: right;">1990</td>
+<td>Life Sciences</td>
+<td>Basic Local Alignment Search Tool (BLAST)</td>
+</tr>
+<tr>
+<td style="text-align: right;">26</td>
+<td style="text-align: right;">91,158</td>
+<td style="text-align: right;">1994</td>
+<td>Physical Sciences</td>
+<td>Projector augmented-wave method</td>
+</tr>
+<tr>
+<td style="text-align: right;">27</td>
+<td style="text-align: right;">89,228</td>
+<td style="text-align: right;">2015</td>
+<td>Life Sciences</td>
+<td>U-Net: Convolutional Networks for Biomedical Image Segmentation</td>
+</tr>
+<tr>
+<td style="text-align: right;">28</td>
+<td style="text-align: right;">87,807</td>
+<td style="text-align: right;">2018</td>
+<td>Health Sciences</td>
+<td>Global cancer statistics 2018: GLOBOCAN</td>
+</tr>
+<tr>
+<td style="text-align: right;">29</td>
+<td style="text-align: right;">87,500</td>
+<td style="text-align: right;">2007</td>
+<td>Physical Sciences</td>
+<td>A short history of SHELX</td>
+</tr>
+<tr>
+<td style="text-align: right;">30</td>
+<td style="text-align: right;">86,959</td>
+<td style="text-align: right;">1975</td>
+<td>Health Sciences</td>
+<td>"Mini-mental state"</td>
+</tr>
+<tr>
+<td style="text-align: right;">31</td>
+<td style="text-align: right;">86,172</td>
+<td style="text-align: right;">2015</td>
+<td>Physical Sciences</td>
+<td>Fitting Linear Mixed-Effects Models Using lme4</td>
+</tr>
+<tr>
+<td style="text-align: right;">32</td>
+<td style="text-align: right;">86,161</td>
+<td style="text-align: right;">1990</td>
+<td>Life Sciences</td>
+<td>Molecular Cloning: A Laboratory Manual</td>
+</tr>
+<tr>
+<td style="text-align: right;">33</td>
+<td style="text-align: right;">85,217</td>
+<td style="text-align: right;">1991</td>
+<td>Social Sciences</td>
+<td>The theory of planned behavior</td>
+</tr>
+<tr>
+<td style="text-align: right;">34</td>
+<td style="text-align: right;">84,785</td>
+<td style="text-align: right;">2014</td>
+<td>Physical Sciences</td>
+<td>Adam: A Method for Stochastic Optimization</td>
+</tr>
+<tr>
+<td style="text-align: right;">35</td>
+<td style="text-align: right;">83,945</td>
+<td style="text-align: right;">1999</td>
+<td>Physical Sciences</td>
+<td>From ultrasoft pseudopotentials to the projector augmented-wave method</td>
+</tr>
+<tr>
+<td style="text-align: right;">36</td>
+<td style="text-align: right;">83,881</td>
+<td style="text-align: right;">1989</td>
+<td>Social Sciences</td>
+<td>Statistical Power Analysis for the Behavioral Sciences</td>
+</tr>
+<tr>
+<td style="text-align: right;">37</td>
+<td style="text-align: right;">83,369</td>
+<td style="text-align: right;">2009</td>
+<td>Social Sciences</td>
+<td>Preferred reporting items for systematic reviews (PRISMA)</td>
+</tr>
+<tr>
+<td style="text-align: right;">38</td>
+<td style="text-align: right;">82,069</td>
+<td style="text-align: right;">2015</td>
+<td>Physical Sciences</td>
+<td>Deep learning</td>
+</tr>
+<tr>
+<td style="text-align: right;">39</td>
+<td style="text-align: right;">80,921</td>
+<td style="text-align: right;">1948</td>
+<td>Physical Sciences</td>
+<td>A Mathematical Theory of Communication</td>
+</tr>
+<tr>
+<td style="text-align: right;">40</td>
+<td style="text-align: right;">79,357</td>
+<td style="text-align: right;">1977</td>
+<td>Social Sciences</td>
+<td>The Measurement of Observer Agreement for Categorical Data</td>
+</tr>
+<tr>
+<td style="text-align: right;">41</td>
+<td style="text-align: right;">77,497</td>
+<td style="text-align: right;">1983</td>
+<td>Physical Sciences</td>
+<td>Using Multivariate Statistics</td>
+</tr>
+<tr>
+<td style="text-align: right;">42</td>
+<td style="text-align: right;">77,226</td>
+<td style="text-align: right;">2003</td>
+<td>Social Sciences</td>
+<td>Common method biases in behavioral research</td>
+</tr>
+<tr>
+<td style="text-align: right;">43</td>
+<td style="text-align: right;">76,372</td>
+<td style="text-align: right;">2023</td>
+<td>Physical Sciences</td>
+<td>⚠ Inline Hardware KV-Cache Compression for Long-Context Transformer Inference</td>
+</tr>
+<tr>
+<td style="text-align: right;">44</td>
+<td style="text-align: right;">75,710</td>
+<td style="text-align: right;">2017</td>
+<td>Physical Sciences</td>
+<td>ImageNet classification with deep convolutional neural networks (AlexNet)</td>
+</tr>
+<tr>
+<td style="text-align: right;">45</td>
+<td style="text-align: right;">75,541</td>
+<td style="text-align: right;">2014</td>
+<td>Physical Sciences</td>
+<td>Very Deep Convolutional Networks (VGG)</td>
+</tr>
+<tr>
+<td style="text-align: right;">46</td>
+<td style="text-align: right;">74,973</td>
+<td style="text-align: right;">1984</td>
+<td>Physical Sciences</td>
+<td>Case Study Research: Design and Methods</td>
+</tr>
+<tr>
+<td style="text-align: right;">47</td>
+<td style="text-align: right;">74,948</td>
+<td style="text-align: right;">1996</td>
+<td>Physical Sciences</td>
+<td>Efficiency of ab-initio total energy calculations for metals and semiconductors</td>
+</tr>
+<tr>
+<td style="text-align: right;">48</td>
+<td style="text-align: right;">74,574</td>
+<td style="text-align: right;">1997</td>
+<td>Life Sciences</td>
+<td>Gapped BLAST and PSI-BLAST</td>
+</tr>
+<tr>
+<td style="text-align: right;">49</td>
+<td style="text-align: right;">72,472</td>
+<td style="text-align: right;">1990</td>
+<td>Physical Sciences</td>
+<td>Standard Methods for the Examination of Water and Wastewater</td>
+</tr>
+<tr>
+<td style="text-align: right;">50</td>
+<td style="text-align: right;">72,166</td>
+<td style="text-align: right;">1986</td>
+<td>Social Sciences</td>
+<td>The moderator–mediator variable distinction (Baron &amp; Kenny)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Notes:</strong>
+- <strong>Anomalies (⚠):</strong> #1 (801k citations, an obscure 2020 plasma-camera paper), #11 (a Turkish-titled work with no publication year), and #43 (a 2023 hardware paper already at 76k cites) are almost certainly OpenAlex citation-count errors or reference-parsing artifacts — they don't match the profile of genuinely foundational methods papers around them. Your fetch script's <code>is_suspect</code> heuristic only flagged <strong>1</strong> of these, so it's under-catching; #11 and #43 slip through because they don't trip the single-year-spike or high-count-low-FWCI rules.
+- <strong>Domain caveat:</strong> "Physical Sciences" is inflated here because OpenAlex classifies statistics/ML/CS methods papers (R, Random Forests, LSTM, Adam, ResNet, VGG) under it — that's why so many deep-learning and stats works show as Physical Sciences rather than a dedicated CS domain.
+- The list is dominated by <strong>methods/tools papers</strong> (assays, DFT functionals, statistical tests, ML architectures) rather than discoveries — the expected shape for a citation-ranked corpus.</p>
+<p>Want me to save this as a script (e.g. <code>scripts/top_papers.py --n 50</code>), or tighten the anomaly detector to catch #11 and #43?</p></div></div><button class="expand-btn">Show more</button></div></div>
+</div></div>
+<div class="index-item"><a href="page-001.html#msg-2026-07-11T17-41-32-382Z"><div class="index-item-header"><span class="index-item-number">#3</span><time datetime="2026-07-11T17:41:32.382Z" data-timestamp="2026-07-11T17:41:32.382Z">2026-07-11T17:41:32.382Z</time></div><div class="index-item-content"><p>where is the "attention is all you need" paper ranked in this top 10k dataset</p></div></a><div class="index-item-stats"><span>1 bash</span>
+<div class="index-item-long-text"><div class="truncatable"><div class="truncatable-content"><div class="index-item-long-text-content"><p><strong>"Attention Is All You Need" ranks #4,969</strong> in the dataset — 6,583 citations, listed under Physical Sciences.</p>
+<p>But that ranking is <strong>almost certainly wrong / a bad record</strong>. The entry OpenAlex returned is dated <strong>2025</strong> with only 6,583 citations. The actual Vaswani et al. paper is from <strong>2017</strong> and has well over 100,000 citations — which would place it in roughly the <strong>top 20</strong> of this dataset, not near the middle.</p>
+<p>What you're seeing is a known OpenAlex data-quality issue: the seminal 2017 paper often has its citations fragmented across duplicate/variant work records (preprint vs. conference vs. reprints), and the copy that surfaced here is a low-citation 2025 duplicate rather than the canonical one. The real one either got split or didn't make it into the top-10k pull under this deduplicated form.</p>
+<p>Want me to:
+1. Search the raw data for <strong>all</strong> records whose title matches "attention is all you need" (to confirm whether the canonical 2017 record is present at all), or
+2. Query the OpenAlex API directly for the canonical work ID to see its true citation count and where it <em>should</em> rank?</p></div></div><button class="expand-btn">Show more</button></div></div>
+</div></div>
+<div class="index-item"><a href="page-001.html#msg-2026-07-11T18-04-16-690Z"><div class="index-item-header"><span class="index-item-number">#4</span><time datetime="2026-07-11T18:04:16.690Z" data-timestamp="2026-07-11T18:04:16.690Z">2026-07-11T18:04:16.690Z</time></div><div class="index-item-content"><p>do you think it makes more sense to rank papers by fwci instead of pure citation counts (since different fields may dominate depending on their citation profiles)?</p></div></a><div class="index-item-stats"><span>1 bash</span>
+<div class="index-item-long-text"><div class="truncatable"><div class="truncatable-content"><div class="index-item-long-text-content"><p>Short answer: <strong>no — I wouldn't replace citation count with FWCI as the primary rank for this dataset.</strong> They answer different questions, and in <em>this</em> corpus FWCI has some disqualifying problems. But field-normalization is a real concern worth addressing a different way. Here's the reasoning, grounded in what the data actually shows:</p>
+<h2>What the data says</h2>
+<p><strong>1. Your selection is already conditioned on raw citations.</strong> This corpus was pulled <code>sort=cited_by_count:desc</code>. Look at the per-domain medians:</p>
+<table>
+<thead>
+<tr>
+<th>Domain</th>
+<th style="text-align: right;">median FWCI</th>
+<th style="text-align: right;">median citations</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Physical Sciences</td>
+<td style="text-align: right;">64.9</td>
+<td style="text-align: right;">6,680</td>
+</tr>
+<tr>
+<td>Social Sciences</td>
+<td style="text-align: right;">81.8</td>
+<td style="text-align: right;">6,611</td>
+</tr>
+<tr>
+<td>Life Sciences</td>
+<td style="text-align: right;">71.5</td>
+<td style="text-align: right;">6,453</td>
+</tr>
+<tr>
+<td>Health Sciences</td>
+<td style="text-align: right;">137.1</td>
+<td style="text-align: right;">6,216</td>
+</tr>
+</tbody>
+</table>
+<p>The domains are <em>already</em> balanced at the median citation level (~6,200–6,700 across all four) — because you filtered on citations. Re-ranking that same sample by FWCI is a bit incoherent: you'd be conditioning on citations to build the set, then optimizing a different objective inside it. The papers that FWCI is designed to surface — modest raw counts but exceptional for their field — were <strong>never pulled into the top-10k in the first place</strong>. So FWCI-ranking here has built-in survivorship bias.</p>
+<p><strong>2. FWCI amplifies the exact metadata errors that plague the raw-count ranking — it doesn't fix them.</strong> FWCI = actual citations ÷ <em>expected</em> citations for that field+<strong>year</strong>+type. When a paper's year is wrong (which we've now seen repeatedly — "Attention" tagged 2025, GANs, etc.), the denominator collapses and FWCI explodes. The top-by-FWCI list is <em>worse</em> than top-by-citations:</p>
+<ul>
+<li>
+<h1>1 "Generative Adversarial Nets", FWCI <strong>26,990</strong>, dated 2023 (real paper: 2014 — year error inflating it)</h1>
+</li>
+<li>
+<h1>2/#4/#10 three separate <strong>"Harvard business review"</strong> container-junk records with FWCI 7k–24k</h1>
+</li>
+<li>
+<h1>6 title <code>null</code>, #5 a Japanese-titled calibration-curve reprint</h1>
+</li>
+</ul>
+<p>FWCI's dynamic range is enormous (p50≈80, max≈27,000) and it's extremely sensitive to the denominator, so bad metadata gets amplified, not smoothed.</p>
+<p><strong>3. Coverage gap.</strong> 282 papers (2.8%) have no FWCI at all and would silently drop out of a pure-FWCI ranking. Raw <code>cited_by_count</code> is present for everything.</p>
+<h2>What I'd actually recommend</h2>
+<p>Keep <strong>raw citations as the primary rank/size encoding</strong> — for a citation-<em>graph</em> viz it's the honest primitive (the edges <em>are</em> real citations; node size should reflect the actual structure). Then address field bias explicitly, without FWCI's noise:</p>
+<ul>
+<li><strong>Best:</strong> select/rank <em>within domain</em> — e.g. top-N per field, or percentile-within-field-and-decade. Gives explicit, interpretable field balance with none of FWCI's denominator blowups.</li>
+<li><strong>Good:</strong> use FWCI as a <strong>secondary</strong> channel — a color scale or a filter ("show papers that over-performed their field"), not the ranking. That captures the "punched above its weight" story where it's genuinely interesting.</li>
+<li>If you do want a normalized <em>headline</em> metric, a <strong>capped log-FWCI</strong> (clamp at ~p99, drop nulls) is far more robust than raw FWCI.</li>
+</ul>
+<p>So: FWCI is a good <em>lens</em>, a bad <em>primary sort</em> here. Want me to add a <code>--rank {citations,fwci,within-field}</code> mode to the explore script so you can eyeball the three side by side?</p></div></div><button class="expand-btn">Show more</button></div></div>
+</div></div>
+<div class="index-item"><a href="page-001.html#msg-2026-07-11T18-05-54-802Z"><div class="index-item-header"><span class="index-item-number">#5</span><time datetime="2026-07-11T18:05:54.802Z" data-timestamp="2026-07-11T18:05:54.802Z">2026-07-11T18:05:54.802Z</time></div><div class="index-item-content"><p>recent papers (e.g., from 2026 and 2025) won't make it into this dataset because they're too recent to accumulate enough citations. how would you recommend boosting to account for them as well?</p></div></a><div class="index-item-stats"><span>1 bash</span>
+<div class="index-item-long-text"><div class="truncatable"><div class="truncatable-content"><div class="index-item-long-text-content"><p>The data confirms the problem is severe and, importantly, <strong>structural — you can't fix it by reweighting the current file.</strong> Here's the sharp version:</p>
+<ul>
+<li>The floor to enter this pull is <strong>4,460 citations</strong>. The fetch was sorted <code>cited_by_count:desc</code> and truncated at 10k, so <em>every paper below 4,460 citations was never fetched</em> — including virtually the entire recent long tail.</li>
+<li>Recent representation falls off a cliff: 2022 → 33 papers, 2023 → 25, 2024 → 18, <strong>2025 → 6, 2026 → 3</strong>. And the handful that did clear the bar are disproportionately the <em>anomalies</em> we already found (the "801k in 2020", "76k in 2023" bad records).</li>
+</ul>
+<p>So the key realization: <strong>no post-hoc boost on <code>top_cited.jsonl</code> can recover recent papers — the data isn't in the file.</strong> Any real solution has to change the <em>fetch/sampling</em> stage. Raw citation count conflates quality with elapsed time, and recent papers simply haven't had the time; you can't manufacture that signal by reweighting.</p>
+<h2>What I'd recommend</h2>
+<p><strong>Primary fix — cohort-stratified sampling (change the fetch):</strong> Instead of one global <code>cited_by_count:desc</code> truncated at 10k, pull <strong>top-K per publication year</strong> (e.g. top ~300/year × ~35 years ≈ 10k). This <em>guarantees</em> every recent year is represented and turns "the 10k most-cited papers ever" into "the most-cited papers of each era" — which is what you actually want if recent work should appear. Tag each node with its cohort so the viz can color/filter by it.</p>
+<p><strong>For the most-recent cohorts specifically (say 2023–2026), rank by a time-robust metric instead of raw count</strong>, because raw counts are near-meaningless there:
+- <strong>Citation velocity</strong> — recent-year citations from <code>counts_by_year</code> (you already select this field), e.g. citations in the trailing 24 months, or <code>cited_by_count / years_since_pub</code>. This surfaces <em>currently-hot</em> papers regardless of age. This is the most natural "boost."
+- <strong>FWCI</strong> is <em>not</em> a good choice for the recent boost even though it's year-normalized — its denominator (expected citations for a 2025 paper) is tiny and unstable, so it's most volatile exactly in the years you're trying to include. We saw that blow up earlier (GANs at FWCI 27k from a wrong year).</p>
+<p><strong>Practical composition</strong> for the viz: keep the citation-ranked backbone for historical depth, then layer in a stratified recent-cohort set selected by velocity, and encode <code>cohort</code>/<code>is_recent</code> as a node attribute so the two populations are visually distinguishable rather than silently mixed on an unfair axis.</p>
+<p>One caveat to decide up front: stratifying means the corpus is no longer "the most cited papers, period" — you're explicitly trading some raw-impact purity for temporal coverage. That's the right trade <em>if</em> the goal is a representative map of the field over time, the wrong one if the goal is strictly "what the citation graph's biggest nodes are."</p>
+<p>Want me to modify <code>fetch_top_cited.py</code> to support a <code>--strategy {global,per-year}</code> mode (per-year doing top-K-by-citations with a velocity sort for the recent cohorts)? That's the change that actually gets recent papers in.</p></div></div><button class="expand-btn">Show more</button></div></div>
+</div></div>
+<div class="index-item"><a href="page-002.html#msg-2026-07-11T18-10-30-131Z"><div class="index-item-header"><span class="index-item-number">#6</span><time datetime="2026-07-11T18:10:30.131Z" data-timestamp="2026-07-11T18:10:30.131Z">2026-07-11T18:10:30.131Z</time></div><div class="index-item-content"><p>yes modify it and support a flag that lets us choose between the two approaches. what scoring mechanism will you use to appropriately size the node circles of the more recent papers (from 2026, 2025, etc)?</p></div></a><div class="index-item-stats"><span>16 edit · 9 bash · 5 read</span>
+<div class="index-item-long-text"><div class="truncatable"><div class="truncatable-content"><div class="index-item-long-text-content"><p>Both strategies work. Notice what the metrics already expose: the "2026" paper <em>Childhood and Society</em> has 11,316 lifetime citations but <strong>recent_2y = 6</strong> — it's a mis-dated reprint of Erikson's 1950 classic, not a hot new paper. Meanwhile the 2025 <em>Fractional Differential Equations</em> has <strong>recent_2y = 1,437</strong> — genuinely accumulating now. That contrast is exactly what the sizing score needs to exploit.</p>
+<p>Now let me implement the sizing in the build step, where node size is actually decided:</p></div></div><button class="expand-btn">Show more</button></div></div>
+<div class="index-item-long-text"><div class="truncatable"><div class="truncatable-content"><div class="index-item-long-text-content"><p>The test exposes a real flaw in my first formulation. The <code>citations/age</code> <strong>velocity term is corrupted by mis-dating the exact same way FWCI was</strong> — the "2026" reprint of <em>Childhood and Society</em> (11,316 lifetime cites, age=1) gets a fake velocity of 11,316/yr and saturates at size 1.000, right next to genuine giants. Velocity uses <code>total citations</code>, which is the old paper's real count wearing a fake recent date.</p>
+<p>The only field immune to mis-dating is <code>counts_by_year</code> — actual recent citation <em>activity</em>. A truly-2026 paper cannot have 11k citations with 6 of them in the last two years. So the sizing has to be dominated by <strong>recent momentum</strong>, not lifetime velocity. Let me rewrite:</p></div></div><button class="expand-btn">Show more</button></div></div>
+<div class="index-item-long-text"><div class="truncatable"><div class="truncatable-content"><div class="index-item-long-text-content"><p>Momentum sizing now behaves correctly:
+- <strong>Mis-dated 2026 reprint</strong> → size 0.215 (rank 9635) — correctly demoted; it isn't actually being cited now.
+- <strong>Segment Anything (2023)</strong> → size 0.937 (rank 251, up from citation-rank 2716) — correctly boosted.
+- <strong>ResNet / Bradford</strong> (still heavily cited classics) → 1.000 — correctly stay large.
+- 101 papers (top ~1%) saturate at max due to the p99 clamp — acceptable, and tunable.</p>
+<p>I changed the <code>nodes.bin</code> layout, so let me check the verifier and README don't assert the old size:</p></div></div><button class="expand-btn">Show more</button></div></div>
+<div class="index-item-long-text"><div class="truncatable"><div class="truncatable-content"><div class="index-item-long-text-content"><p>Done. Here's what changed and the scoring answer.</p>
+<h2>1. <code>fetch_top_cited.py</code> — <code>--strategy</code> flag</h2>
+<pre><code class="language-bash"># global (default, unchanged behavior): top-N by citations across all years
+python scripts/fetch_top_cited.py --strategy global --limit 10000
+
+# per-year: top-K per publication year, so recent cohorts are guaranteed in
+python scripts/fetch_top_cited.py --strategy per-year --limit 10000 \
+       --year-start 1970 --year-end 2026            # --per-year defaults to limit/#years
+</code></pre>
+<ul>
+<li><strong><code>global</code></strong> paths through the original code unchanged.</li>
+<li><strong><code>per-year</code></strong> queries each year independently (<code>filter=publication_year:Y</code>, sorted by citations), so 2025/2026 papers are selected on their own terms instead of losing a global race. <code>--limit</code> still caps the grand total; <code>--per-year</code> sets the per-cohort quota.</li>
+<li><code>run_meta.json</code> now records <code>strategy</code>, <code>per_year</code>, <code>year_range</code>, and <code>data_year</code>.</li>
+<li>Every record (JSONL untouched — raw OpenAlex; CSV gains columns) now carries <strong><code>age_years</code>, <code>citations_per_year</code>, <code>recent_2y_citations</code></strong> — the raw signals for downstream sizing.</li>
+</ul>
+<p>Both strategies tested live against the API (global limit-3, per-year 2024–2026).</p>
+<h2>2. The node-sizing score</h2>
+<p><strong>I use recent-momentum, not lifetime velocity — and the reason matters.</strong> My first attempt was <code>0.5·(citations/age) + 0.5·momentum</code>, which <em>failed in testing</em>: the <code>citations/age</code> term divides the <strong>lifetime</strong> count by age, so a mis-dated old reprint (Erikson's <em>Childhood and Society</em>, relabeled 2026, age=1, 11k cites) gets a fake 11,316/yr velocity and saturates at max size — the identical failure mode we'd already diagnosed in FWCI.</p>
+<p>The only field immune to a wrong <code>publication_year</code> is <strong><code>counts_by_year</code></strong> (actual recent activity). A genuinely-2026 paper <em>cannot</em> have 11k citations with ~0 in the last two years. So the final model is:</p>
+<pre><code>sizeScore = log1p( mean citations/year over the last 3 years )   # then min..p99 normalized → [0,1]
+</code></pre>
+<p>It's a <strong>rate</strong> (age-fair across eras), it rewards work cited <em>now</em>, and it starves both mis-dated reprints and long-dead classics. Verified on the real 10k:</p>
+<table>
+<thead>
+<tr>
+<th>Paper</th>
+<th style="text-align: right;">citation-rank</th>
+<th style="text-align: right;">size-rank</th>
+<th style="text-align: right;">sizeScore</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Segment Anything (2023, genuinely hot)</td>
+<td style="text-align: right;">2,716</td>
+<td style="text-align: right;"><strong>251</strong></td>
+<td style="text-align: right;">0.94</td>
+</tr>
+<tr>
+<td>ResNet / Bradford (still-cited canon)</td>
+<td style="text-align: right;">6 / 8</td>
+<td style="text-align: right;">3 / 5</td>
+<td style="text-align: right;">1.00</td>
+</tr>
+<tr>
+<td>Mis-dated 2026 reprint (11k cites, dead)</td>
+<td style="text-align: right;">1,895</td>
+<td style="text-align: right;"><strong>9,635</strong></td>
+<td style="text-align: right;">0.21</td>
+</tr>
+</tbody>
+</table>
+<p>Stored as <code>Uint16 sizeScore[N]</code> appended to <code>nodes.bin</code> (offset in <code>manifest.nodesBin.layout</code>, model documented in <code>manifest.sizeModel</code>). Raw <code>citations</code> stays in the file, so the viz can offer an <strong>all-time vs. current-relevance</strong> sizing toggle. The verifier passes (it's layout-driven) and the README is updated.</p>
+<p><strong>Two notes for you:</strong>
+- I built to a scratch dir to verify — I did <strong>not</strong> regenerate <code>web/public/data/v1</code> (it still lacks <code>sizeScore</code>). The meaningful rebuild is <em>after</em> you pick a fetch strategy; say the word and I'll run the per-year fetch + rebuild.
+- The p99 clamp pins the top ~1% (101 papers) at max size — deliberate anti-anomaly robustness, but trivially tunable (window length is <code>SIZE_MOMENTUM_YEARS</code>, clamp is one line) if you want more spread among the giants.</p></div></div><button class="expand-btn">Show more</button></div></div>
+</div></div>
+<div class="index-item"><a href="page-002.html#msg-2026-07-11T18-15-09-689Z"><div class="index-item-header"><span class="index-item-number">#7</span><time datetime="2026-07-11T18:15:09.689Z" data-timestamp="2026-07-11T18:15:09.689Z">2026-07-11T18:15:09.689Z</time></div><div class="index-item-content"><p>what are the top 50 papers using this new fetch strategy?</p></div></a><div class="index-item-stats"><span>3 bash</span>
+<div class="index-item-long-text"><div class="truncatable"><div class="truncatable-content"><div class="index-item-long-text-content"><p>The top-50-by-<code>sizeScore</code> all saturate at 1.000 — that's the p99 clamp doing its job (top ~1% pinned), but it makes it useless as a <em>ranking</em>. Two honest findings worth surfacing:</p>
+<p><strong>Ranking by citations, the per-year strategy gives you the <em>same</em> top 50 as before</strong> — every megahit is also the top of its own publication year, so none of them drop out. The strategy only changes what's included <em>deeper down</em>.</p>
+<p>So the meaningful "top" for this strategy is the underlying <strong>momentum</strong> (avg citations/yr over the last 3y — the unclamped signal behind <code>sizeScore</code>). Let me rank by that so you see real differentiation and where recent papers land:</p></div></div><button class="expand-btn">Show more</button></div></div>
+<div class="index-item-long-text"><div class="truncatable"><div class="truncatable-content"><div class="index-item-long-text-content"><p>This momentum ranking is the meaningful "top 50" for the new strategy — it's what drives node size in the viz, and recent work finally surfaces. <strong>⚠ = likely citation anomaly</strong> (same bad records as before).</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: right;">#</th>
+<th style="text-align: right;">cites/yr (3y)</th>
+<th style="text-align: right;">total</th>
+<th style="text-align: right;">year</th>
+<th>domain</th>
+<th>title</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">267,071</td>
+<td style="text-align: right;">801,217</td>
+<td style="text-align: right;">2020</td>
+<td>Phys</td>
+<td>⚠ Radiation Resistant Camera System…</td>
+</tr>
+<tr>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">34,115</td>
+<td style="text-align: right;">222,656</td>
+<td style="text-align: right;">2016</td>
+<td>Phys</td>
+<td>Deep Residual Learning (ResNet)</td>
+</tr>
+<tr>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">29,522</td>
+<td style="text-align: right;">185,277</td>
+<td style="text-align: right;">2006</td>
+<td>Health</td>
+<td>Using thematic analysis in psychology</td>
+</tr>
+<tr>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">27,616</td>
+<td style="text-align: right;">112,837</td>
+<td style="text-align: right;">2021</td>
+<td>Health</td>
+<td>Global Cancer Statistics 2020 (GLOBOCAN)</td>
+</tr>
+<tr>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">27,615</td>
+<td style="text-align: right;">96,642</td>
+<td style="text-align: right;">2021</td>
+<td>Social</td>
+<td>PRISMA 2020 statement</td>
+</tr>
+<tr>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">25,220</td>
+<td style="text-align: right;">353,004</td>
+<td style="text-align: right;">2000</td>
+<td>Phys</td>
+<td>R: A Language and Environment for Stats</td>
+</tr>
+<tr>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">23,976</td>
+<td style="text-align: right;">212,285</td>
+<td style="text-align: right;">1996</td>
+<td>Phys</td>
+<td>Generalized Gradient Approximation (PBE)</td>
+</tr>
+<tr>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">18,293</td>
+<td style="text-align: right;">101,074</td>
+<td style="text-align: right;">2014</td>
+<td>Life</td>
+<td>DESeq2 (RNA-seq fold change)</td>
+</tr>
+<tr>
+<td style="text-align: right;">9</td>
+<td style="text-align: right;">18,281</td>
+<td style="text-align: right;">76,372</td>
+<td style="text-align: right;">2023</td>
+<td>Phys</td>
+<td>⚠ Inline Hardware KV-Cache Compression…</td>
+</tr>
+<tr>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">18,234</td>
+<td style="text-align: right;">127,092</td>
+<td style="text-align: right;">2001</td>
+<td>Phys</td>
+<td>Random Forests</td>
+</tr>
+<tr>
+<td style="text-align: right;">11</td>
+<td style="text-align: right;">16,304</td>
+<td style="text-align: right;">182,044</td>
+<td style="text-align: right;">2001</td>
+<td>Life</td>
+<td>Real-Time qPCR (2^−ΔΔCT)</td>
+</tr>
+<tr>
+<td style="text-align: right;">12</td>
+<td style="text-align: right;">15,502</td>
+<td style="text-align: right;">89,228</td>
+<td style="text-align: right;">2015</td>
+<td>Life</td>
+<td>U-Net</td>
+</tr>
+<tr>
+<td style="text-align: right;">13</td>
+<td style="text-align: right;">14,351</td>
+<td style="text-align: right;">121,001</td>
+<td style="text-align: right;">1996</td>
+<td>Phys</td>
+<td>VASP ab initio iterative schemes</td>
+</tr>
+<tr>
+<td style="text-align: right;">14</td>
+<td style="text-align: right;">14,105</td>
+<td style="text-align: right;">98,553</td>
+<td style="text-align: right;">1997</td>
+<td>Phys</td>
+<td>Long Short-Term Memory (LSTM)</td>
+</tr>
+<tr>
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">12,922</td>
+<td style="text-align: right;">86,172</td>
+<td style="text-align: right;">2015</td>
+<td>Phys</td>
+<td>lme4 (linear mixed-effects)</td>
+</tr>
+<tr>
+<td style="text-align: right;"><strong>16</strong></td>
+<td style="text-align: right;"><strong>12,623</strong></td>
+<td style="text-align: right;"><strong>45,547</strong></td>
+<td style="text-align: right;"><strong>2021</strong></td>
+<td>Life</td>
+<td><strong>AlphaFold (highly accurate protein structure)</strong></td>
+</tr>
+<tr>
+<td style="text-align: right;">17</td>
+<td style="text-align: right;">11,912</td>
+<td style="text-align: right;">114,440</td>
+<td style="text-align: right;">2013</td>
+<td>Health</td>
+<td>DSM (mental disorders)</td>
+</tr>
+<tr>
+<td style="text-align: right;">18</td>
+<td style="text-align: right;">11,493</td>
+<td style="text-align: right;">82,069</td>
+<td style="text-align: right;">2015</td>
+<td>Phys</td>
+<td>Deep learning (LeCun/Bengio/Hinton)</td>
+</tr>
+<tr>
+<td style="text-align: right;">19</td>
+<td style="text-align: right;">11,382</td>
+<td style="text-align: right;">105,915</td>
+<td style="text-align: right;">1999</td>
+<td>Social</td>
+<td>Cutoff criteria for fit indexes</td>
+</tr>
+<tr>
+<td style="text-align: right;"><strong>20</strong></td>
+<td style="text-align: right;"><strong>11,228</strong></td>
+<td style="text-align: right;"><strong>49,154</strong></td>
+<td style="text-align: right;"><strong>2016</strong></td>
+<td>Phys</td>
+<td><strong>XGBoost</strong></td>
+</tr>
+<tr>
+<td style="text-align: right;">21</td>
+<td style="text-align: right;">10,809</td>
+<td style="text-align: right;">91,158</td>
+<td style="text-align: right;">1994</td>
+<td>Phys</td>
+<td>Projector augmented-wave method</td>
+</tr>
+<tr>
+<td style="text-align: right;">22</td>
+<td style="text-align: right;">10,671</td>
+<td style="text-align: right;">70,067</td>
+<td style="text-align: right;">2014</td>
+<td>Life</td>
+<td>Trimmomatic</td>
+</tr>
+<tr>
+<td style="text-align: right;">23</td>
+<td style="text-align: right;">10,614</td>
+<td style="text-align: right;">71,222</td>
+<td style="text-align: right;">2012</td>
+<td>Life</td>
+<td>Fiji (image analysis)</td>
+</tr>
+<tr>
+<td style="text-align: right;">24</td>
+<td style="text-align: right;">10,267</td>
+<td style="text-align: right;">68,442</td>
+<td style="text-align: right;">1981</td>
+<td>Social</td>
+<td>Evaluating Structural Equation Models</td>
+</tr>
+<tr>
+<td style="text-align: right;">25</td>
+<td style="text-align: right;">10,016</td>
+<td style="text-align: right;">41,013</td>
+<td style="text-align: right;">2018</td>
+<td>Social</td>
+<td>PRISMA-ScR (scoping reviews)</td>
+</tr>
+<tr>
+<td style="text-align: right;">26</td>
+<td style="text-align: right;">9,800</td>
+<td style="text-align: right;">109,152</td>
+<td style="text-align: right;">1995</td>
+<td>Phys</td>
+<td>Controlling the False Discovery Rate</td>
+</tr>
+<tr>
+<td style="text-align: right;">27</td>
+<td style="text-align: right;">9,678</td>
+<td style="text-align: right;">77,226</td>
+<td style="text-align: right;">2003</td>
+<td>Social</td>
+<td>Common method biases</td>
+</tr>
+<tr>
+<td style="text-align: right;">28</td>
+<td style="text-align: right;">9,570</td>
+<td style="text-align: right;">57,264</td>
+<td style="text-align: right;">2010</td>
+<td>Phys</td>
+<td>Grimme D3 dispersion parametrization</td>
+</tr>
+<tr>
+<td style="text-align: right;">29</td>
+<td style="text-align: right;">9,522</td>
+<td style="text-align: right;">83,945</td>
+<td style="text-align: right;">1999</td>
+<td>Phys</td>
+<td>Ultrasoft → PAW (VASP)</td>
+</tr>
+<tr>
+<td style="text-align: right;">30</td>
+<td style="text-align: right;">9,431</td>
+<td style="text-align: right;">43,387</td>
+<td style="text-align: right;">2011</td>
+<td>Phys</td>
+<td>Multiwfn</td>
+</tr>
+<tr>
+<td style="text-align: right;">31</td>
+<td style="text-align: right;">9,345</td>
+<td style="text-align: right;">56,504</td>
+<td style="text-align: right;">2012</td>
+<td>Life</td>
+<td>STAR (RNA-seq aligner)</td>
+</tr>
+<tr>
+<td style="text-align: right;">32</td>
+<td style="text-align: right;">9,193</td>
+<td style="text-align: right;">85,217</td>
+<td style="text-align: right;">1991</td>
+<td>Social</td>
+<td>Theory of planned behavior</td>
+</tr>
+<tr>
+<td style="text-align: right;">33</td>
+<td style="text-align: right;">9,163</td>
+<td style="text-align: right;">64,468</td>
+<td style="text-align: right;">2007</td>
+<td>Social</td>
+<td>G*Power 3</td>
+</tr>
+<tr>
+<td style="text-align: right;"><strong>34</strong></td>
+<td style="text-align: right;"><strong>9,058</strong></td>
+<td style="text-align: right;"><strong>30,313</strong></td>
+<td style="text-align: right;"><strong>2021</strong></td>
+<td>Phys</td>
+<td><strong>Swin Transformer</strong></td>
+</tr>
+<tr>
+<td style="text-align: right;">35</td>
+<td style="text-align: right;">8,942</td>
+<td style="text-align: right;">74,948</td>
+<td style="text-align: right;">1996</td>
+<td>Phys</td>
+<td>VASP metals/semiconductors</td>
+</tr>
+<tr>
+<td style="text-align: right;"><strong>36</strong></td>
+<td style="text-align: right;"><strong>8,861</strong></td>
+<td style="text-align: right;"><strong>38,284</strong></td>
+<td style="text-align: right;"><strong>2020</strong></td>
+<td>Phys</td>
+<td><strong>SciPy 1.0</strong></td>
+</tr>
+<tr>
+<td style="text-align: right;">37</td>
+<td style="text-align: right;">8,590</td>
+<td style="text-align: right;">54,350</td>
+<td style="text-align: right;">2016</td>
+<td>Phys</td>
+<td>Faster R-CNN</td>
+</tr>
+<tr>
+<td style="text-align: right;">38</td>
+<td style="text-align: right;">8,261</td>
+<td style="text-align: right;">66,880</td>
+<td style="text-align: right;">1996</td>
+<td>Life</td>
+<td>VMD (molecular dynamics)</td>
+</tr>
+<tr>
+<td style="text-align: right;">39</td>
+<td style="text-align: right;">8,194</td>
+<td style="text-align: right;">61,940</td>
+<td style="text-align: right;">2009</td>
+<td>Phys</td>
+<td>ImageNet database</td>
+</tr>
+<tr>
+<td style="text-align: right;">40</td>
+<td style="text-align: right;">8,184</td>
+<td style="text-align: right;">65,447</td>
+<td style="text-align: right;">2012</td>
+<td>Life</td>
+<td>NIH Image → ImageJ</td>
+</tr>
+<tr>
+<td style="text-align: right;">41</td>
+<td style="text-align: right;">8,169</td>
+<td style="text-align: right;">61,352</td>
+<td style="text-align: right;">2012</td>
+<td>Life</td>
+<td>Bowtie 2</td>
+</tr>
+<tr>
+<td style="text-align: right;">42</td>
+<td style="text-align: right;">8,072</td>
+<td style="text-align: right;">45,719</td>
+<td style="text-align: right;">2018</td>
+<td>Phys</td>
+<td>⚠ AI-Assisted Pipeline for Dynamic Generation…</td>
+</tr>
+<tr>
+<td style="text-align: right;">43</td>
+<td style="text-align: right;">8,042</td>
+<td style="text-align: right;">42,012</td>
+<td style="text-align: right;">2007</td>
+<td>Social</td>
+<td>COREQ (qualitative research reporting)</td>
+</tr>
+<tr>
+<td style="text-align: right;">44</td>
+<td style="text-align: right;">8,017</td>
+<td style="text-align: right;">84,785</td>
+<td style="text-align: right;">2014</td>
+<td>Phys</td>
+<td>Adam optimizer</td>
+</tr>
+<tr>
+<td style="text-align: right;">45</td>
+<td style="text-align: right;">7,986</td>
+<td style="text-align: right;">87,807</td>
+<td style="text-align: right;">2018</td>
+<td>Health</td>
+<td>Global cancer statistics 2018</td>
+</tr>
+<tr>
+<td style="text-align: right;">46</td>
+<td style="text-align: right;">7,968</td>
+<td style="text-align: right;">51,985</td>
+<td style="text-align: right;">2008</td>
+<td>Life</td>
+<td>REDCap</td>
+</tr>
+<tr>
+<td style="text-align: right;"><strong>47</strong></td>
+<td style="text-align: right;"><strong>7,770</strong></td>
+<td style="text-align: right;"><strong>23,494</strong></td>
+<td style="text-align: right;"><strong>2024</strong></td>
+<td>Health</td>
+<td><strong>Global cancer statistics 2022</strong></td>
+</tr>
+<tr>
+<td style="text-align: right;">48</td>
+<td style="text-align: right;">7,765</td>
+<td style="text-align: right;">67,750</td>
+<td style="text-align: right;">2009</td>
+<td>Life</td>
+<td>SAMtools</td>
+</tr>
+<tr>
+<td style="text-align: right;">49</td>
+<td style="text-align: right;">7,747</td>
+<td style="text-align: right;">31,151</td>
+<td style="text-align: right;">2019</td>
+<td>Social</td>
+<td>RoB 2 (risk of bias)</td>
+</tr>
+<tr>
+<td style="text-align: right;">50</td>
+<td style="text-align: right;">7,717</td>
+<td style="text-align: right;">30,004</td>
+<td style="text-align: right;">2018</td>
+<td>Phys</td>
+<td>fastp</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Takeaways:</strong></p>
+<ul>
+<li><strong>Per-year sampling doesn't change the very top by citations</strong> — every giant is also the top of its own year, so a citation-ranked top-50 is byte-identical to the global one. The strategy's payoff is entirely in the mid/tail: recent cohorts that the global pull dropped are now present (2022–2026 went from ~60 papers to a full ~175/year each).</li>
+<li><strong>Momentum ranking is where recency shows up:</strong> 8 of the top 50 are 2020+ — <strong>AlphaFold (#16), XGBoost (#20), Swin Transformer (#34), SciPy 1.0 (#36), Global cancer stats 2022 (#47)</strong> — none of which a raw-citation top-50 surfaces this high. That's the whole point: these render as large nodes now.</li>
+<li><strong>Anomalies still lead</strong>, because momentum is <code>counts_by_year</code>-based and the #1 record genuinely has 267k citations/yr logged. Those are <code>suspect</code>-flagged (this run flagged 16 vs. the global run's 1 — per-year sampling drags more recent-year anomalies into view), so the viz can dim/clamp them separately.</li>
+<li>Reminder: this ran to a <strong>scratch dir</strong> — <code>web/public/data/v1</code> is untouched. Say the word and I'll promote this per-year build (or a different year range) to the real output.</li>
+</ul>
+<p>Want me to exclude <code>suspect</code>-flagged records from the ranking, or widen/narrow the momentum window (currently 3y)?</p></div></div><button class="expand-btn">Show more</button></div></div>
+</div></div>
+<div class="index-item"><a href="page-002.html#msg-2026-07-11T18-18-51-244Z"><div class="index-item-header"><span class="index-item-number">#8</span><time datetime="2026-07-11T18:18:51.244Z" data-timestamp="2026-07-11T18:18:51.244Z">2026-07-11T18:18:51.244Z</time></div><div class="index-item-content"><p>are there papers from 2025 / 2026 about glp-1s that show up in the dataset?</p></div></a><div class="index-item-stats"><span>1 bash</span>
+<div class="index-item-long-text"><div class="truncatable"><div class="truncatable-content"><div class="index-item-long-text-content"><p>Yes — the per-year strategy pulls them in. <strong>Three 2025 GLP-1 papers, zero from 2026:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Year</th>
+<th style="text-align: right;">Citations</th>
+<th>Title</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2025</td>
+<td style="text-align: right;">723</td>
+<td>Phase 3 Trial of <strong>Semaglutide</strong> in Metabolic Dysfunction–Associated Steatohepatitis (MASH)</td>
+</tr>
+<tr>
+<td>2025</td>
+<td style="text-align: right;">433</td>
+<td><strong>Tirzepatide</strong> as Compared with <strong>Semaglutide</strong> for the Treatment of Obesity</td>
+</tr>
+<tr>
+<td>2025</td>
+<td style="text-align: right;">452</td>
+<td><em>Burden of 375 diseases and injuries…</em> (Global Burden of Disease study)</td>
+</tr>
+</tbody>
+</table>
+<p>Two caveats:</p>
+<ul>
+<li><strong>The GBD study (452) is a false positive</strong> — my search lexicon is broad (it caught "incretin"/"GIP" in the abstract), but it's an epidemiology mega-study, not a GLP-1 paper. So really <strong>2 genuine 2025 GLP-1 papers</strong>: the semaglutide MASH trial and the tirzepatide-vs-semaglutide obesity trial.</li>
+<li><strong>No 2026 GLP-1 papers</strong> cleared the top-175-of-year bar (2026 is only half-elapsed and thinly cited so far).</li>
+</ul>
+<p>The key point for your question: <strong>these would be completely absent from the global top-10k.</strong> At 723 and 433 citations they're ~6× below the global cutoff of 4,460 — the per-year strategy is exactly what surfaces them. Across all years, the corpus holds <strong>12</strong> GLP-1 papers (2016→2025), so there's a small but real semaglutide/tirzepatide cluster forming in the recent cohorts.</p>
+<p>One thing worth flagging: I searched titles + keywords + topics + abstract text. If you want higher recall on the recent clinical literature specifically, I could also match on OpenAlex <code>concepts</code>/MeSH-style topic IDs rather than string patterns — want me to, or widen the drug lexicon (e.g. add cagrilintide, retatrutide, orforglipron)?</p></div></div><button class="expand-btn">Show more</button></div></div>
+</div></div>
+<div class="index-item"><a href="page-002.html#msg-2026-07-11T18-19-53-048Z"><div class="index-item-header"><span class="index-item-number">#9</span><time datetime="2026-07-11T18:19:53.048Z" data-timestamp="2026-07-11T18:19:53.048Z">2026-07-11T18:19:53.048Z</time></div><div class="index-item-content"><p>should we remove the flagged suspicious entries from the dataset?</p></div></a><div class="index-item-stats"><span>1 bash</span>
+<div class="index-item-long-text"><div class="truncatable"><div class="truncatable-content"><div class="index-item-long-text-content"><p>Good timing to ask — because looking at <em>what's</em> flagged changes the answer. My recommendation: <strong>no, don't delete them — flag and filter, and exclude them from scale-setting stats.</strong> Here's the reasoning.</p>
+<p><strong>What's actually flagged (per-year corpus, 16 records):</strong>
+- <strong>1</strong> genuine count-anomaly: the 801k "Radiation Resistant Camera" record.
+- <strong>15</strong> are 2024 papers with ~1,300–1,800 citations, <em>all</em> concentrated in a single year — titles like <em>"E-Commerce Promotional Products Selection Using SWARA and TOPSIS," "Implementation of Total Productive Maintenance on Frame Welding," "Analysis of Work Measurement Using a Stopwatch in a Motorcycle…"</em>. These are almost certainly <strong>predatory-journal / citation-farm spam</strong>. Notably, they only appear <em>because</em> of the per-year strategy — at ~1,500 citations they'd never clear the global top-10k bar. So per-year sampling needs this filter more than the global pull did.</p>
+<p><strong>Why keep-and-filter beats delete:</strong></p>
+<ol>
+<li><strong>The heuristic is imprecise in both directions.</strong> It has false-positive risk (a paper that genuinely went viral in one year trips the single-year-spike rule) and false-negative gaps — it does <em>not</em> catch the mis-dated reprints or the duplicate "Attention Is All You Need" record we found. Hard-deleting on an imperfect classifier removes real papers irreversibly; filtering doesn't.</li>
+<li><strong>Reversibility.</strong> You can always hide flagged nodes at render time (or drop them from a ranking); you can't un-delete without re-fetching. The fetch script's own design intent is explicit: <em>"kept, never dropped."</em></li>
+<li><strong>The anomalies are legitimately interesting</strong> — they're real OpenAlex data-quality artifacts worth being able to inspect.</li>
+</ol>
+<p><strong>What I'd do instead (three targeted changes):</strong></p>
+<ul>
+<li><strong>Exclude suspects from the scale computations</strong> — <code>citationDomain</code> percentiles and the <code>sizeScore</code> p99 normalization. This is the real win: right now the single 801k record inflates those stats and distorts everyone else's node size. This gets you 90% of the benefit of deletion, precisely, and reversibly.</li>
+<li><strong>Render-time filter toggle</strong> (default: hidden or dimmed), driven by the <code>suspect</code> bit already in <code>nodes.bin</code> flags.</li>
+<li><strong>Tighten the flag to catch what it misses</strong> — add a "mis-dated" rule (<code>total</code> high but trailing-2y citations ≈ 0 → an old paper wearing a recent year) and duplicate-title detection. Still as <em>flags</em>, not deletions.</li>
+</ul>
+<p>So: exclude from stats, filter in the view, keep in the data. Want me to implement the scale-stat exclusion + the mis-dated heuristic rule? That's the change that actually fixes the distortion without throwing data away.</p></div></div><button class="expand-btn">Show more</button></div></div>
+</div></div>
+<div class="index-item"><a href="page-002.html#msg-2026-07-11T18-21-19-171Z"><div class="index-item-header"><span class="index-item-number">#10</span><time datetime="2026-07-11T18:21:19.171Z" data-timestamp="2026-07-11T18:21:19.171Z">2026-07-11T18:21:19.171Z</time></div><div class="index-item-content"><p>yes, implement both</p></div></a><div class="index-item-stats"><span>14 bash · 13 edit · 6 read</span>
+<div class="index-item-long-text"><div class="truncatable"><div class="truncatable-content"><div class="index-item-long-text-content"><p>The mis-dated rule works and — bonus — it now catches the <strong>duplicate "Attention Is All You Need"</strong> record (6,463 citations predating its fake 2025 date) and the mis-dated "Fractional Differential Equations," exactly the false-negatives the old heuristic missed. ResNet (genuine) stays clean.</p>
+<p>Let me rebuild the per-year corpus and confirm the scale-stat exclusion:</p></div></div><button class="expand-btn">Show more</button></div></div>
+<div class="index-item-long-text"><div class="truncatable"><div class="truncatable-content"><div class="index-item-long-text-content"><p>Now I see it — the rule is over-firing. It's a mix of genuine catches (<em>CIFAR "Learning Multiple Layers…"</em> mis-dated 2024, <em>Diffusion of Innovations</em>, the <em>Attention</em> dup) but also <strong>false positives on real landmarks</strong>: AlexNet (predated 2,586 but that's only 3% of its citations — genuine 2012 work with a 2017 republication record) and SciPy 1.0 (just 125 over the threshold). An absolute count of 100 is too blunt. Let me test a <em>fraction</em>-based threshold before editing:</p></div></div><button class="expand-btn">Show more</button></div></div>
+<div class="index-item-long-text"><div class="truncatable"><div class="truncatable-content"><div class="index-item-long-text-content"><p>The fraction test at <strong>&gt;0.3</strong> cleanly separates them: landmarks with messy merged records (AlexNet 3%, SciPy 0%, PD-1 3%, CRC reissues ≤9%) are <strong>spared</strong>, while true mis-dated reprints (Childhood 31%, CIFAR 70%, Diffusion of Innovations 38%, the Attention dup 98%) are <strong>caught</strong>. It still flags 461 — but those are physically impossible records (a genuine 2026 paper <em>cannot</em> have 30%+ of its citations before 2025), so that's a real mis-dating rate in the recent cohorts, not over-flagging. Let me tighten both rules to require the fraction:</p></div></div><button class="expand-btn">Show more</button></div></div>
+<div class="index-item-long-text"><div class="truncatable"><div class="truncatable-content"><div class="index-item-long-text-content"><p>Real bug caught — and it's one my earlier change introduced. The verifier already reads <code>sizeScore</code> (added since), and with the per-year <code>n=9975</code> (odd), <code>sizeScore</code> at offset <code>9*n</code> is an <strong>odd byte offset</strong>, which is illegal for a <code>Uint16Array</code> view. The global build had <code>n=10000</code> (even) so it never surfaced. The fix: put the 2-byte <code>sizeScore</code> before the 1-byte fields so all <code>Uint16</code> offsets stay even regardless of <code>n</code> parity.</p></div></div><button class="expand-btn">Show more</button></div></div>
+<div class="index-item-long-text"><div class="truncatable"><div class="truncatable-content"><div class="index-item-long-text-content"><p>Both changes are implemented and verified end-to-end on both strategies (odd-N per-year and even-N global). Here's the summary.</p>
+<h2>1. Excluded suspects from scale-setting stats</h2>
+<p><code>citationDomain</code> percentiles and the <code>sizeScore</code> normalization now compute over <strong>non-suspect nodes only</strong>. Confirmed: <code>citationDomain.max</code> dropped from the 801k anomaly to <strong>353,004</strong> (the real top), so the p99 clamp the client uses for node sizing now reflects genuine papers. Suspects still get a size score (clamped like everyone), they just don't distort the scale. Marked with <code>"excludesSuspect": true</code> / <code>"normalizedOver": "non-suspect nodes only"</code> in the manifest.</p>
+<h2>2. Added the mis-dated heuristic (both <code>compute_suspect</code> and <code>is_suspect</code>)</h2>
+<p>New rule: <strong>citations landing 2+ years before <code>publication_year</code>, when they dominate (&gt;30% of total)</strong> → the record is an old work wearing a recent date. The &gt;30% share is what makes it precise — I tested it and it:
+- <strong>catches</strong> the CIFAR report (mis-dated 2024), <em>Diffusion of Innovations</em>, <em>Childhood and Society</em>, and the <strong>duplicate "Attention Is All You Need"</strong> (98% predated) — the exact false-negatives the old flag missed;
+- <strong>spares</strong> genuine landmarks with messy merged records — AlexNet (3%), SciPy 1.0 (0.3%), PD-1/PD-L1 (3%).</p>
+<p>Flag counts: global <strong>1 → 73</strong>, per-year <strong>16 → 477</strong> (4.8%) — a real mis-dating rate in the recent cohorts, all physically-impossible records, kept-and-flagged (never dropped), per your call.</p>
+<h2>Two bugs found and fixed along the way</h2>
+<ul>
+<li><strong><code>nodes.bin</code> alignment bug (mine, latent):</strong> I'd appended <code>sizeScore</code> (Uint16) at offset <code>9·N</code>. With the per-year corpus's <strong>odd</strong> N=9,975 that's an odd byte offset, which crashes a <code>Uint16Array</code> view — it only worked before because global N=10,000 is even. Fixed by ordering the 2-byte fields before the 1-byte fields so every Uint16 offset stays even for <strong>any</strong> N.</li>
+<li><strong>Stale verifier assertion:</strong> <code>verify_graph_data.mjs</code> hardcoded <code>exactly 1 suspect</code>; replaced with a sane-ceiling check (<code>&lt; 15%</code>) that holds for both strategies.</li>
+</ul>
+<p>Everything runs clean — <code>ALL CHECKS PASSED</code> on both builds. As before, this was all to <strong>scratch dirs</strong>; <code>web/public/data/v1</code> is untouched, awaiting your go-ahead on which strategy/year-range to promote.</p></div></div><button class="expand-btn">Show more</button></div></div>
+</div></div>
+<div class="index-item"><a href="page-003.html#msg-2026-07-11T18-28-46-518Z"><div class="index-item-header"><span class="index-item-number">#11</span><time datetime="2026-07-11T18:28:46.518Z" data-timestamp="2026-07-11T18:28:46.518Z">2026-07-11T18:28:46.518Z</time></div><div class="index-item-content"><p>now regenerate the dataset with the new fetch approach (that includes the recent papers). compress with both brotli and gzip. you can replace the old dataset files.</p></div></a><div class="index-item-stats"><span>8 bash</span>
+<div class="index-item-long-text"><div class="truncatable"><div class="truncatable-content"><div class="index-item-long-text-content"><p>Everything's in place — <code>scripts/data/</code> is gitignored (safe to overwrite the raw pull), and <code>compress_br.mjs</code> exists. </p>
+<p>I'll use year range <strong>1945–2026</strong> so the mid-century canon (Shannon 1948, Lowry 1951) is preserved while recent cohorts come in. Running the per-year fetch into <code>scripts/data/full</code> (replacing the old global pull):</p></div></div><button class="expand-btn">Show more</button></div></div>
+<div class="index-item-long-text"><div class="truncatable"><div class="truncatable-content"><div class="index-item-long-text-content"><p>All checks pass and recency is fixed — <strong>2024/2025/2026 now have 121 papers each</strong> (vs. 18/6/3 in the old global pull). One small gap: the manifest gets a <code>.br</code> but no <code>.gz</code> (the build writes it as plain JSON, unlike the other artifacts). Since you asked for both compressors on the dataset, let me close that so every file has both sidecars:</p></div></div><button class="expand-btn">Show more</button></div></div>
+<div class="index-item-long-text"><div class="truncatable"><div class="truncatable-content"><div class="index-item-long-text-content"><p>Done. The dataset is regenerated with the per-year strategy and fully compressed in place.</p>
+<h2>What's now in <code>web/public/data/v1</code></h2>
+<p><strong>Source:</strong> per-year fetch, <strong>1945–2026</strong>, 121 papers/year → <strong>9,922 works</strong> (cost $0.008). The raw pull at <code>scripts/data/full/</code> was replaced too.</p>
+<p><strong>Recency fixed</strong> — the whole point:</p>
+<table>
+<thead>
+<tr>
+<th>Year</th>
+<th style="text-align: right;">Old (global)</th>
+<th style="text-align: right;">New (per-year)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2024</td>
+<td style="text-align: right;">18</td>
+<td style="text-align: right;"><strong>121</strong></td>
+</tr>
+<tr>
+<td>2025</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;"><strong>121</strong></td>
+</tr>
+<tr>
+<td>2026</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;"><strong>121</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Mid-century canon is preserved (started at 1945, so Shannon 1948, Lowry 1951, etc. stay in).</p>
+<p><strong>Data-quality features active:</strong>
+- <code>citationDomain.max</code> = 353,004 — the 801k anomaly and other suspects are <strong>excluded from the scale stats</strong>, so node-size clamping reflects real papers.
+- <strong>353 records flagged suspect</strong> by the tightened heuristic (single-year spike + low-FWCI + the new mis-dated rule), kept-and-flagged in <code>nodes.bin</code> bit0 for the viz to filter.</p>
+<p><strong>Compression — both, every file:</strong> all <strong>106 artifacts</strong> have <code>.gz</code> (level 9) <em>and</em> <code>.br</code> (quality 11) sidecars. Brotli runs ~22% smaller than gzip; first-paint set is <strong>572 KB gz → 444 KB br</strong>.</p>
+<p><strong>Verified:</strong> <code>layout_clustered.mjs</code> regenerated <code>positions.bin</code>, and <code>verify_graph_data.mjs</code> reports <strong>ALL CHECKS PASSED</strong> (9,922 nodes / 24,730 edges / 100 shards).</p>
+<p>Two things worth flagging:
+- The <code>compress_br</code> step failed the first time on a transient "file not found" for a detail shard — the details dir was still flushing immediately after the build. Re-running cleanly succeeded; if you ever script build→compress back-to-back, a small sync/sleep between them would prevent that race.
+- <strong>Isolated nodes rose to 23.3%</strong> (from ~12.6% in the global set). That's expected — per-year sampling pulls in more recent and niche-cohort papers whose references/citations mostly fall <em>outside</em> this 10k, so they have no intra-set edges. If that looks too sparse in the 3D view, options are to raise <code>--per-year</code> for well-connected recent years or add cross-year citation edges; say the word if you want to tune it.</p></div></div><button class="expand-btn">Show more</button></div></div>
+</div></div>
+<div class="index-item"><a href="page-003.html#msg-2026-07-11T18-35-30-351Z"><div class="index-item-header"><span class="index-item-number">#12</span><time datetime="2026-07-11T18:35:30.351Z" data-timestamp="2026-07-11T18:35:30.351Z">2026-07-11T18:35:30.351Z</time></div><div class="index-item-content"><p>show me the top 100 papers with this new fetch approach</p></div></a><div class="index-item-stats"><span>1 bash</span>
+<div class="index-item-long-text"><div class="truncatable"><div class="truncatable-content"><div class="index-item-long-text-content"><p>The regenerated dataset, top 100 by <strong>momentum</strong> (avg citations/yr over the last 3y — the score driving node size). Only <strong>1 suspect</strong> survives this high (the momentum ranking naturally starves mis-dated records), and <strong>13 are from 2020+</strong>.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: right;">#</th>
+<th style="text-align: right;">cites/yr</th>
+<th style="text-align: right;">total</th>
+<th style="text-align: right;">year</th>
+<th>domain</th>
+<th>title</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">267,071</td>
+<td style="text-align: right;">801,217</td>
+<td style="text-align: right;">2020</td>
+<td>Phys</td>
+<td>⚠ Radiation Resistant Camera System… (anomaly)</td>
+</tr>
+<tr>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">34,115</td>
+<td style="text-align: right;">222,656</td>
+<td style="text-align: right;">2016</td>
+<td>Phys</td>
+<td>Deep Residual Learning (ResNet)</td>
+</tr>
+<tr>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">29,522</td>
+<td style="text-align: right;">185,277</td>
+<td style="text-align: right;">2006</td>
+<td>Health</td>
+<td>Using thematic analysis in psychology</td>
+</tr>
+<tr>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">27,616</td>
+<td style="text-align: right;">112,837</td>
+<td style="text-align: right;"><strong>2021</strong></td>
+<td>Health</td>
+<td>Global Cancer Statistics 2020 (GLOBOCAN)</td>
+</tr>
+<tr>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">27,615</td>
+<td style="text-align: right;">96,642</td>
+<td style="text-align: right;"><strong>2021</strong></td>
+<td>Social</td>
+<td>PRISMA 2020 statement</td>
+</tr>
+<tr>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">25,220</td>
+<td style="text-align: right;">353,004</td>
+<td style="text-align: right;">2000</td>
+<td>Phys</td>
+<td>R: A Language and Environment for Stats</td>
+</tr>
+<tr>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">23,976</td>
+<td style="text-align: right;">212,285</td>
+<td style="text-align: right;">1996</td>
+<td>Phys</td>
+<td>Generalized Gradient Approximation (PBE)</td>
+</tr>
+<tr>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">18,293</td>
+<td style="text-align: right;">101,074</td>
+<td style="text-align: right;">2014</td>
+<td>Life</td>
+<td>DESeq2</td>
+</tr>
+<tr>
+<td style="text-align: right;">9</td>
+<td style="text-align: right;">18,281</td>
+<td style="text-align: right;">76,372</td>
+<td style="text-align: right;">2023</td>
+<td>Phys</td>
+<td>⚠-ish Inline Hardware KV-Cache Compression</td>
+</tr>
+<tr>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">18,234</td>
+<td style="text-align: right;">127,092</td>
+<td style="text-align: right;">2001</td>
+<td>Phys</td>
+<td>Random Forests</td>
+</tr>
+<tr>
+<td style="text-align: right;">11</td>
+<td style="text-align: right;">16,304</td>
+<td style="text-align: right;">182,044</td>
+<td style="text-align: right;">2001</td>
+<td>Life</td>
+<td>Real-Time qPCR (2^−ΔΔCT)</td>
+</tr>
+<tr>
+<td style="text-align: right;">12</td>
+<td style="text-align: right;">15,502</td>
+<td style="text-align: right;">89,228</td>
+<td style="text-align: right;">2015</td>
+<td>Life</td>
+<td>U-Net</td>
+</tr>
+<tr>
+<td style="text-align: right;">13</td>
+<td style="text-align: right;">14,351</td>
+<td style="text-align: right;">121,001</td>
+<td style="text-align: right;">1996</td>
+<td>Phys</td>
+<td>VASP iterative schemes</td>
+</tr>
+<tr>
+<td style="text-align: right;">14</td>
+<td style="text-align: right;">14,105</td>
+<td style="text-align: right;">98,553</td>
+<td style="text-align: right;">1997</td>
+<td>Phys</td>
+<td>Long Short-Term Memory (LSTM)</td>
+</tr>
+<tr>
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">12,922</td>
+<td style="text-align: right;">86,172</td>
+<td style="text-align: right;">2015</td>
+<td>Phys</td>
+<td>lme4</td>
+</tr>
+<tr>
+<td style="text-align: right;">16</td>
+<td style="text-align: right;">12,623</td>
+<td style="text-align: right;">45,547</td>
+<td style="text-align: right;"><strong>2021</strong></td>
+<td>Life</td>
+<td><strong>AlphaFold</strong></td>
+</tr>
+<tr>
+<td style="text-align: right;">17</td>
+<td style="text-align: right;">11,912</td>
+<td style="text-align: right;">114,440</td>
+<td style="text-align: right;">2013</td>
+<td>Health</td>
+<td>DSM (mental disorders)</td>
+</tr>
+<tr>
+<td style="text-align: right;">18</td>
+<td style="text-align: right;">11,493</td>
+<td style="text-align: right;">82,069</td>
+<td style="text-align: right;">2015</td>
+<td>Phys</td>
+<td>Deep learning (Nature review)</td>
+</tr>
+<tr>
+<td style="text-align: right;">19</td>
+<td style="text-align: right;">11,382</td>
+<td style="text-align: right;">105,915</td>
+<td style="text-align: right;">1999</td>
+<td>Social</td>
+<td>Cutoff criteria for fit indexes</td>
+</tr>
+<tr>
+<td style="text-align: right;">20</td>
+<td style="text-align: right;">11,228</td>
+<td style="text-align: right;">49,154</td>
+<td style="text-align: right;">2016</td>
+<td>Phys</td>
+<td>XGBoost</td>
+</tr>
+<tr>
+<td style="text-align: right;">21</td>
+<td style="text-align: right;">10,809</td>
+<td style="text-align: right;">91,158</td>
+<td style="text-align: right;">1994</td>
+<td>Phys</td>
+<td>Projector augmented-wave method</td>
+</tr>
+<tr>
+<td style="text-align: right;">22</td>
+<td style="text-align: right;">10,671</td>
+<td style="text-align: right;">70,067</td>
+<td style="text-align: right;">2014</td>
+<td>Life</td>
+<td>Trimmomatic</td>
+</tr>
+<tr>
+<td style="text-align: right;">23</td>
+<td style="text-align: right;">10,614</td>
+<td style="text-align: right;">71,222</td>
+<td style="text-align: right;">2012</td>
+<td>Life</td>
+<td>Fiji</td>
+</tr>
+<tr>
+<td style="text-align: right;">24</td>
+<td style="text-align: right;">10,267</td>
+<td style="text-align: right;">68,442</td>
+<td style="text-align: right;">1981</td>
+<td>Social</td>
+<td>Evaluating Structural Equation Models</td>
+</tr>
+<tr>
+<td style="text-align: right;">25</td>
+<td style="text-align: right;">10,016</td>
+<td style="text-align: right;">41,013</td>
+<td style="text-align: right;">2018</td>
+<td>Social</td>
+<td>PRISMA-ScR</td>
+</tr>
+<tr>
+<td style="text-align: right;">26</td>
+<td style="text-align: right;">9,800</td>
+<td style="text-align: right;">109,152</td>
+<td style="text-align: right;">1995</td>
+<td>Phys</td>
+<td>Controlling the False Discovery Rate</td>
+</tr>
+<tr>
+<td style="text-align: right;">27</td>
+<td style="text-align: right;">9,678</td>
+<td style="text-align: right;">77,226</td>
+<td style="text-align: right;">2003</td>
+<td>Social</td>
+<td>Common method biases</td>
+</tr>
+<tr>
+<td style="text-align: right;">28</td>
+<td style="text-align: right;">9,570</td>
+<td style="text-align: right;">57,264</td>
+<td style="text-align: right;">2010</td>
+<td>Phys</td>
+<td>Grimme D3 dispersion</td>
+</tr>
+<tr>
+<td style="text-align: right;">29</td>
+<td style="text-align: right;">9,522</td>
+<td style="text-align: right;">83,945</td>
+<td style="text-align: right;">1999</td>
+<td>Phys</td>
+<td>Ultrasoft → PAW (VASP)</td>
+</tr>
+<tr>
+<td style="text-align: right;">30</td>
+<td style="text-align: right;">9,431</td>
+<td style="text-align: right;">43,387</td>
+<td style="text-align: right;">2011</td>
+<td>Phys</td>
+<td>Multiwfn</td>
+</tr>
+<tr>
+<td style="text-align: right;">31</td>
+<td style="text-align: right;">9,345</td>
+<td style="text-align: right;">56,504</td>
+<td style="text-align: right;">2012</td>
+<td>Life</td>
+<td>STAR aligner</td>
+</tr>
+<tr>
+<td style="text-align: right;">32</td>
+<td style="text-align: right;">9,193</td>
+<td style="text-align: right;">85,217</td>
+<td style="text-align: right;">1991</td>
+<td>Social</td>
+<td>Theory of planned behavior</td>
+</tr>
+<tr>
+<td style="text-align: right;">33</td>
+<td style="text-align: right;">9,163</td>
+<td style="text-align: right;">64,468</td>
+<td style="text-align: right;">2007</td>
+<td>Social</td>
+<td>G*Power 3</td>
+</tr>
+<tr>
+<td style="text-align: right;">34</td>
+<td style="text-align: right;">9,058</td>
+<td style="text-align: right;">30,313</td>
+<td style="text-align: right;"><strong>2021</strong></td>
+<td>Phys</td>
+<td><strong>Swin Transformer</strong></td>
+</tr>
+<tr>
+<td style="text-align: right;">35</td>
+<td style="text-align: right;">8,942</td>
+<td style="text-align: right;">74,948</td>
+<td style="text-align: right;">1996</td>
+<td>Phys</td>
+<td>VASP metals/semiconductors</td>
+</tr>
+<tr>
+<td style="text-align: right;">36</td>
+<td style="text-align: right;">8,861</td>
+<td style="text-align: right;">38,284</td>
+<td style="text-align: right;"><strong>2020</strong></td>
+<td>Phys</td>
+<td><strong>SciPy 1.0</strong></td>
+</tr>
+<tr>
+<td style="text-align: right;">37</td>
+<td style="text-align: right;">8,590</td>
+<td style="text-align: right;">54,350</td>
+<td style="text-align: right;">2016</td>
+<td>Phys</td>
+<td>Faster R-CNN</td>
+</tr>
+<tr>
+<td style="text-align: right;">38</td>
+<td style="text-align: right;">8,261</td>
+<td style="text-align: right;">66,880</td>
+<td style="text-align: right;">1996</td>
+<td>Life</td>
+<td>VMD</td>
+</tr>
+<tr>
+<td style="text-align: right;">39</td>
+<td style="text-align: right;">8,194</td>
+<td style="text-align: right;">61,940</td>
+<td style="text-align: right;">2009</td>
+<td>Phys</td>
+<td>ImageNet database</td>
+</tr>
+<tr>
+<td style="text-align: right;">40</td>
+<td style="text-align: right;">8,184</td>
+<td style="text-align: right;">65,447</td>
+<td style="text-align: right;">2012</td>
+<td>Life</td>
+<td>NIH Image → ImageJ</td>
+</tr>
+<tr>
+<td style="text-align: right;">41</td>
+<td style="text-align: right;">8,169</td>
+<td style="text-align: right;">61,352</td>
+<td style="text-align: right;">2012</td>
+<td>Life</td>
+<td>Bowtie 2</td>
+</tr>
+<tr>
+<td style="text-align: right;">42</td>
+<td style="text-align: right;">8,072</td>
+<td style="text-align: right;">45,719</td>
+<td style="text-align: right;">2018</td>
+<td>Phys</td>
+<td>⚠-ish AI-Assisted Pipeline for Dynamic Generation…</td>
+</tr>
+<tr>
+<td style="text-align: right;">43</td>
+<td style="text-align: right;">8,042</td>
+<td style="text-align: right;">42,012</td>
+<td style="text-align: right;">2007</td>
+<td>Social</td>
+<td>COREQ</td>
+</tr>
+<tr>
+<td style="text-align: right;">44</td>
+<td style="text-align: right;">8,017</td>
+<td style="text-align: right;">84,785</td>
+<td style="text-align: right;">2014</td>
+<td>Phys</td>
+<td>Adam optimizer</td>
+</tr>
+<tr>
+<td style="text-align: right;">45</td>
+<td style="text-align: right;">7,986</td>
+<td style="text-align: right;">87,807</td>
+<td style="text-align: right;">2018</td>
+<td>Health</td>
+<td>Global cancer statistics 2018</td>
+</tr>
+<tr>
+<td style="text-align: right;">46</td>
+<td style="text-align: right;">7,968</td>
+<td style="text-align: right;">51,985</td>
+<td style="text-align: right;">2008</td>
+<td>Life</td>
+<td>REDCap</td>
+</tr>
+<tr>
+<td style="text-align: right;">47</td>
+<td style="text-align: right;">7,770</td>
+<td style="text-align: right;">23,494</td>
+<td style="text-align: right;"><strong>2024</strong></td>
+<td>Health</td>
+<td><strong>Global cancer statistics 2022</strong></td>
+</tr>
+<tr>
+<td style="text-align: right;">48</td>
+<td style="text-align: right;">7,765</td>
+<td style="text-align: right;">67,750</td>
+<td style="text-align: right;">2009</td>
+<td>Life</td>
+<td>SAMtools</td>
+</tr>
+<tr>
+<td style="text-align: right;">49</td>
+<td style="text-align: right;">7,747</td>
+<td style="text-align: right;">31,151</td>
+<td style="text-align: right;">2019</td>
+<td>Social</td>
+<td>RoB 2</td>
+</tr>
+<tr>
+<td style="text-align: right;">50</td>
+<td style="text-align: right;">7,717</td>
+<td style="text-align: right;">30,004</td>
+<td style="text-align: right;">2018</td>
+<td>Phys</td>
+<td>fastp</td>
+</tr>
+<tr>
+<td style="text-align: right;">51</td>
+<td style="text-align: right;">7,584</td>
+<td style="text-align: right;">36,561</td>
+<td style="text-align: right;">2016</td>
+<td>Life</td>
+<td>DADA2</td>
+</tr>
+<tr>
+<td style="text-align: right;">52</td>
+<td style="text-align: right;">7,577</td>
+<td style="text-align: right;">34,207</td>
+<td style="text-align: right;">2014</td>
+<td>Social</td>
+<td>HTMT discriminant validity</td>
+</tr>
+<tr>
+<td style="text-align: right;">53</td>
+<td style="text-align: right;">7,421</td>
+<td style="text-align: right;">56,853</td>
+<td style="text-align: right;">2005</td>
+<td>Life</td>
+<td>Gene set enrichment analysis (GSEA)</td>
+</tr>
+<tr>
+<td style="text-align: right;">54</td>
+<td style="text-align: right;">7,395</td>
+<td style="text-align: right;">30,649</td>
+<td style="text-align: right;"><strong>2020</strong></td>
+<td>Phys</td>
+<td><strong>ERA5 global reanalysis</strong></td>
+</tr>
+<tr>
+<td style="text-align: right;">55</td>
+<td style="text-align: right;">7,375</td>
+<td style="text-align: right;">64,994</td>
+<td style="text-align: right;">1989</td>
+<td>Social</td>
+<td>TAM (Perceived Usefulness/Ease of Use)</td>
+</tr>
+<tr>
+<td style="text-align: right;">56</td>
+<td style="text-align: right;">7,289</td>
+<td style="text-align: right;">56,247</td>
+<td style="text-align: right;">2004</td>
+<td>Phys</td>
+<td>Image quality assessment (SSIM)</td>
+</tr>
+<tr>
+<td style="text-align: right;">57</td>
+<td style="text-align: right;">7,285</td>
+<td style="text-align: right;">38,514</td>
+<td style="text-align: right;">2012</td>
+<td>Life</td>
+<td>clusterProfiler</td>
+</tr>
+<tr>
+<td style="text-align: right;">58</td>
+<td style="text-align: right;">7,176</td>
+<td style="text-align: right;">54,523</td>
+<td style="text-align: right;">2003</td>
+<td>Life</td>
+<td>Cytoscape</td>
+</tr>
+<tr>
+<td style="text-align: right;">59</td>
+<td style="text-align: right;">7,168</td>
+<td style="text-align: right;">43,294</td>
+<td style="text-align: right;">2015</td>
+<td>Life</td>
+<td>limma</td>
+</tr>
+<tr>
+<td style="text-align: right;">60</td>
+<td style="text-align: right;">7,039</td>
+<td style="text-align: right;">48,547</td>
+<td style="text-align: right;">2013</td>
+<td>Life</td>
+<td>MAFFT v7</td>
+</tr>
+<tr>
+<td style="text-align: right;">61</td>
+<td style="text-align: right;">6,815</td>
+<td style="text-align: right;">62,960</td>
+<td style="text-align: right;">2009</td>
+<td>Life</td>
+<td>BWA</td>
+</tr>
+<tr>
+<td style="text-align: right;">62</td>
+<td style="text-align: right;">6,754</td>
+<td style="text-align: right;">39,877</td>
+<td style="text-align: right;">2007</td>
+<td>Phys</td>
+<td>Matplotlib</td>
+</tr>
+<tr>
+<td style="text-align: right;">63</td>
+<td style="text-align: right;">6,709</td>
+<td style="text-align: right;">211,381</td>
+<td style="text-align: right;">1976</td>
+<td>Life</td>
+<td>Bradford protein assay</td>
+</tr>
+<tr>
+<td style="text-align: right;">64</td>
+<td style="text-align: right;">6,636</td>
+<td style="text-align: right;">58,401</td>
+<td style="text-align: right;">1998</td>
+<td>Phys</td>
+<td>LeNet (gradient-based learning)</td>
+</tr>
+<tr>
+<td style="text-align: right;">65</td>
+<td style="text-align: right;">6,621</td>
+<td style="text-align: right;">44,793</td>
+<td style="text-align: right;">2017</td>
+<td>Phys</td>
+<td>DenseNet</td>
+</tr>
+<tr>
+<td style="text-align: right;">66</td>
+<td style="text-align: right;">6,606</td>
+<td style="text-align: right;">63,756</td>
+<td style="text-align: right;">2012</td>
+<td>Phys</td>
+<td>scikit-learn</td>
+</tr>
+<tr>
+<td style="text-align: right;">67</td>
+<td style="text-align: right;">6,556</td>
+<td style="text-align: right;">70,556</td>
+<td style="text-align: right;">1976</td>
+<td>Phys</td>
+<td>Special points for Brillouin-zone (Monkhorst–Pack)</td>
+</tr>
+<tr>
+<td style="text-align: right;">68</td>
+<td style="text-align: right;">6,554</td>
+<td style="text-align: right;">35,899</td>
+<td style="text-align: right;">2005</td>
+<td>Health</td>
+<td>Scoping studies (Arksey &amp; O'Malley)</td>
+</tr>
+<tr>
+<td style="text-align: right;">69</td>
+<td style="text-align: right;">6,528</td>
+<td style="text-align: right;">32,978</td>
+<td style="text-align: right;">2016</td>
+<td>Phys</td>
+<td>ggplot2</td>
+</tr>
+<tr>
+<td style="text-align: right;">70</td>
+<td style="text-align: right;">6,501</td>
+<td style="text-align: right;">42,315</td>
+<td style="text-align: right;">2014</td>
+<td>Phys</td>
+<td>Microsoft COCO</td>
+</tr>
+<tr>
+<td style="text-align: right;">71</td>
+<td style="text-align: right;">6,379</td>
+<td style="text-align: right;">22,321</td>
+<td style="text-align: right;"><strong>2021</strong></td>
+<td>Life</td>
+<td>MEGA11</td>
+</tr>
+<tr>
+<td style="text-align: right;">72</td>
+<td style="text-align: right;">6,377</td>
+<td style="text-align: right;">44,443</td>
+<td style="text-align: right;">2001</td>
+<td>Social</td>
+<td>PHQ-9</td>
+</tr>
+<tr>
+<td style="text-align: right;">73</td>
+<td style="text-align: right;">6,356</td>
+<td style="text-align: right;">24,551</td>
+<td style="text-align: right;">2018</td>
+<td>Social</td>
+<td>PLS-SEM reporting</td>
+</tr>
+<tr>
+<td style="text-align: right;">74</td>
+<td style="text-align: right;">6,260</td>
+<td style="text-align: right;">28,551</td>
+<td style="text-align: right;">2018</td>
+<td>Phys</td>
+<td>Squeeze-and-Excitation Networks</td>
+</tr>
+<tr>
+<td style="text-align: right;">75</td>
+<td style="text-align: right;">6,083</td>
+<td style="text-align: right;">39,396</td>
+<td style="text-align: right;">2000</td>
+<td>Life</td>
+<td>KEGG</td>
+</tr>
+<tr>
+<td style="text-align: right;">76</td>
+<td style="text-align: right;">6,073</td>
+<td style="text-align: right;">79,357</td>
+<td style="text-align: right;">1977</td>
+<td>Social</td>
+<td>Cohen's kappa (observer agreement)</td>
+</tr>
+<tr>
+<td style="text-align: right;">77</td>
+<td style="text-align: right;">6,036</td>
+<td style="text-align: right;">64,295</td>
+<td style="text-align: right;">2009</td>
+<td>Social</td>
+<td>PRISMA (2009)</td>
+</tr>
+<tr>
+<td style="text-align: right;">78</td>
+<td style="text-align: right;">5,966</td>
+<td style="text-align: right;">24,957</td>
+<td style="text-align: right;">2016</td>
+<td>Social</td>
+<td>Rayyan</td>
+</tr>
+<tr>
+<td style="text-align: right;">79</td>
+<td style="text-align: right;">5,903</td>
+<td style="text-align: right;">21,644</td>
+<td style="text-align: right;"><strong>2020</strong></td>
+<td>Phys</td>
+<td><strong>ViT (An Image is Worth 16×16 Words)</strong></td>
+</tr>
+<tr>
+<td style="text-align: right;">80</td>
+<td style="text-align: right;">5,876</td>
+<td style="text-align: right;">37,316</td>
+<td style="text-align: right;">2009</td>
+<td>Phys</td>
+<td>AutoDock Vina</td>
+</tr>
+<tr>
+<td style="text-align: right;">81</td>
+<td style="text-align: right;">5,797</td>
+<td style="text-align: right;">36,037</td>
+<td style="text-align: right;">2011</td>
+<td>Life</td>
+<td>Cutadapt</td>
+</tr>
+<tr>
+<td style="text-align: right;">82</td>
+<td style="text-align: right;">5,768</td>
+<td style="text-align: right;">36,292</td>
+<td style="text-align: right;">2009</td>
+<td>Phys</td>
+<td>G*Power 3.1</td>
+</tr>
+<tr>
+<td style="text-align: right;">83</td>
+<td style="text-align: right;">5,699</td>
+<td style="text-align: right;">38,929</td>
+<td style="text-align: right;">2018</td>
+<td>Life</td>
+<td>MEGA X</td>
+</tr>
+<tr>
+<td style="text-align: right;">84</td>
+<td style="text-align: right;">5,693</td>
+<td style="text-align: right;">44,672</td>
+<td style="text-align: right;">2009</td>
+<td>Life</td>
+<td>edgeR</td>
+</tr>
+<tr>
+<td style="text-align: right;">85</td>
+<td style="text-align: right;">5,687</td>
+<td style="text-align: right;">22,553</td>
+<td style="text-align: right;"><strong>2020</strong></td>
+<td>Phys</td>
+<td><strong>NumPy (array programming)</strong></td>
+</tr>
+<tr>
+<td style="text-align: right;">86</td>
+<td style="text-align: right;">5,588</td>
+<td style="text-align: right;">62,991</td>
+<td style="text-align: right;">2003</td>
+<td>Social</td>
+<td>I² (inconsistency in meta-analyses)</td>
+</tr>
+<tr>
+<td style="text-align: right;">87</td>
+<td style="text-align: right;">5,565</td>
+<td style="text-align: right;">16,715</td>
+<td style="text-align: right;"><strong>2023</strong></td>
+<td>Health</td>
+<td><strong>Cancer statistics, 2023</strong></td>
+</tr>
+<tr>
+<td style="text-align: right;">88</td>
+<td style="text-align: right;">5,552</td>
+<td style="text-align: right;">80,921</td>
+<td style="text-align: right;">1948</td>
+<td>Phys</td>
+<td>A Mathematical Theory of Communication (Shannon)</td>
+</tr>
+<tr>
+<td style="text-align: right;">89</td>
+<td style="text-align: right;">5,517</td>
+<td style="text-align: right;">24,232</td>
+<td style="text-align: right;">2019</td>
+<td>Social</td>
+<td>REDCap consortium</td>
+</tr>
+<tr>
+<td style="text-align: right;">90</td>
+<td style="text-align: right;">5,511</td>
+<td style="text-align: right;">42,693</td>
+<td style="text-align: right;">2014</td>
+<td>Phys</td>
+<td>SHELXL</td>
+</tr>
+<tr>
+<td style="text-align: right;">91</td>
+<td style="text-align: right;">5,477</td>
+<td style="text-align: right;">29,365</td>
+<td style="text-align: right;">2013</td>
+<td>Life</td>
+<td>featureCounts</td>
+</tr>
+<tr>
+<td style="text-align: right;">92</td>
+<td style="text-align: right;">5,436</td>
+<td style="text-align: right;">66,655</td>
+<td style="text-align: right;">2011</td>
+<td>Health</td>
+<td>Hallmarks of Cancer: The Next Generation</td>
+</tr>
+<tr>
+<td style="text-align: right;">93</td>
+<td style="text-align: right;">5,425</td>
+<td style="text-align: right;">27,882</td>
+<td style="text-align: right;">2016</td>
+<td>Social</td>
+<td>Intraclass correlation guideline</td>
+</tr>
+<tr>
+<td style="text-align: right;">94</td>
+<td style="text-align: right;">5,407</td>
+<td style="text-align: right;">34,167</td>
+<td style="text-align: right;">2012</td>
+<td>Life</td>
+<td>SILVA rRNA database</td>
+</tr>
+<tr>
+<td style="text-align: right;">95</td>
+<td style="text-align: right;">5,400</td>
+<td style="text-align: right;">31,707</td>
+<td style="text-align: right;">2006</td>
+<td>Social</td>
+<td>GAD-7 (anxiety)</td>
+</tr>
+<tr>
+<td style="text-align: right;">96</td>
+<td style="text-align: right;">5,365</td>
+<td style="text-align: right;">56,552</td>
+<td style="text-align: right;">1997</td>
+<td>Social</td>
+<td>Egger's test (funnel plot bias)</td>
+</tr>
+<tr>
+<td style="text-align: right;">97</td>
+<td style="text-align: right;">5,351</td>
+<td style="text-align: right;">75,541</td>
+<td style="text-align: right;">2014</td>
+<td>Phys</td>
+<td>VGG (Very Deep Conv Nets)</td>
+</tr>
+<tr>
+<td style="text-align: right;">98</td>
+<td style="text-align: right;">5,317</td>
+<td style="text-align: right;">102,970</td>
+<td style="text-align: right;">1993</td>
+<td>Phys</td>
+<td>B3LYP (DFT thermochemistry III)</td>
+</tr>
+<tr>
+<td style="text-align: right;">99</td>
+<td style="text-align: right;">5,302</td>
+<td style="text-align: right;">24,198</td>
+<td style="text-align: right;">2019</td>
+<td>Life</td>
+<td>Galaxy platform</td>
+</tr>
+<tr>
+<td style="text-align: right;">100</td>
+<td style="text-align: right;">5,271</td>
+<td style="text-align: right;">100,230</td>
+<td style="text-align: right;">1988</td>
+<td>Phys</td>
+<td>LYP correlation-energy functional</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Takeaways:</strong></p>
+<ul>
+<li><strong>Shannon 1948 (#88) made it in</strong> — confirming the 1945 start date preserved the mid-century canon. Bradford 1976 (#63), Monkhorst–Pack 1976 (#67), Cohen's kappa 1977 (#76) are all here too.</li>
+<li><strong>13 papers from 2020+</strong> surface this high, none of which a raw-citation ranking would show in a top-100: AlphaFold, Swin Transformer, ViT, SciPy 1.0, NumPy, ERA5, Cancer stats 2022/2023, MEGA11. These are the large recent nodes the whole exercise was about.</li>
+<li><strong>The suspect filter is working as intended</strong> — only the #1 anomaly (single-year spike, unmissable) survives into the top 100; the mis-dated reprints that polluted earlier lists (Childhood and Society, the Attention duplicate, CIFAR) are correctly demoted out because momentum ignores their fake lifetime counts. The two <code>⚠-ish</code> entries (#9, #42) have odd-looking titles/counts but didn't trip the heuristic — worth an eyeball if you care, but they're not flagged.</li>
+<li>The corpus remains <strong>methods/tools-dominated</strong> (assays, DFT functionals, aligners, ML architectures, reporting guidelines) — the expected shape for citation-weighted data.</li>
+</ul></div></div><button class="expand-btn">Show more</button></div></div>
+</div></div>
+<div class="index-item"><a href="page-003.html#msg-2026-07-11T18-36-37-438Z"><div class="index-item-header"><span class="index-item-number">#13</span><time datetime="2026-07-11T18:36:37.438Z" data-timestamp="2026-07-11T18:36:37.438Z">2026-07-11T18:36:37.438Z</time></div><div class="index-item-content"><p>which papers from 2026 and 2025 made it in?</p></div></a><div class="index-item-stats"><span>2 bash</span>
+<div class="index-item-long-text"><div class="truncatable"><div class="truncatable-content"><div class="index-item-long-text-content"><p>This is the most revealing cut yet. The honest answer: <strong>almost none of the "2026" cohort is real, and only part of "2025" is</strong> — the suspect filter exposes that these thin recent years got padded with mis-dated reprints and journal container records. Let me show the <em>genuine</em> (non-flagged) recent papers, which is what actually made it in:</p></div></div><button class="expand-btn">Show more</button></div></div>
+<div class="index-item-long-text"><div class="truncatable"><div class="truncatable-content"><div class="index-item-long-text-content"><p>Here's the honest picture — and it exposes a real limitation worth acting on.</p>
+<h2>2026: effectively <strong>zero</strong> genuine papers</h2>
+<p>115 of 121 are suspect-flagged, and the 6 that aren't are <em>still</em> not real 2026 research — they're old works/containers that slipped the heuristic (<em>Feeling and Form</em> 1953, <em>An Introduction to I/O Automata</em> = Lynch &amp; Tuttle 1987, <em>Quarterly of Applied Mathematics</em> as a journal-container record, etc.). There simply aren't ~121 genuinely-cited 2026 papers seven months into the year, so the top‑121‑of‑2026 pull scraped the barrel: mis-dated reprints and container records OpenAlex happened to stamp 2026.</p>
+<h2>2025: ~<strong>34 genuine</strong> papers (of 121; the rest mis-dated/containers)</h2>
+<p>The real ones — the non-flagged, high-momentum records — are an excellent snapshot of what's actually landing now:</p>
+<p><strong>Medicine / public health</strong>
+- Cancer statistics, 2025 · Definition &amp; diagnostic criteria of clinical obesity (Lancet) · <strong>Phase 3 Semaglutide in MASH</strong> (GLP‑1) · 2025 ESC/EACTS valvular heart guidelines · 2025 Heart Disease &amp; Stroke Statistics · Global prevalence of adult overweight/obesity (GBD) · Global breast cancer incidence trends · WHO Bacterial Priority Pathogens List 2024 · CONSORT 2025 · SCARE guideline update</p>
+<p><strong>AI / ML</strong>
+- <strong>DeepSeek-R1</strong> (reasoning via RL) · <strong>ESM3</strong> (Simulating 500M years of evolution with a language model) · <strong>TabPFN</strong> (foundation model for tabular data) · Med-PaLM (expert-level medical QA) · Generative AI at Work · AI Tools &amp; Cognitive Offloading</p>
+<p><strong>Physical / environmental sciences</strong>
+- DESI 2024 VI (cosmological constraints) · Global Carbon Budget 2024 · Global soil pollution by toxic metals · <strong>Bioaccumulation of microplastics in human brains</strong> · ORCA program system v6 · Solar Cell Efficiency Tables v66 · Hydrogen as an alternative fuel</p>
+<p><strong>Bioinformatics:</strong> edgeR v4 · reference-genomes-for-all-biodiversity</p>
+<p>A few unflagged 2025 entries are still noise — <em>Materials Today: Proceedings</em> and <em>"12th Annual International Conference…"</em> (container records), <em>Multivariate Data Analysis</em> (Hair textbook reissue), and <em>"Fast Kd‑Trees for KL Divergence"</em> (2,174 cites at mom 652 — anomalously high for a niche 2025 algorithms paper; looks like one that slipped the flag). At the very bottom, <em>Wechsler Memory Scale-Revised</em>, <em>Gesammelte Aufsätze</em> (Weber), and <em>Beyond the Information Given</em> (Bruner) are obvious mis-dates the &gt;30% predated rule didn't catch (their pre-2024 citations are spread thin across many years).</p>
+<h2>The takeaway — and a recommendation</h2>
+<p><strong>Uniform per-year sampling breaks down for the current/incomplete year.</strong> Forcing exactly 121 papers into 2026 when maybe a handful of real ones exist guarantees ~95% junk in that cohort (and ~68% in 2025). The suspect flag is doing its job — momentum ranking already buries this stuff — but it's still bloating the dataset and the recent cohorts.</p>
+<p>Concretely, I'd suggest one of:
+1. <strong>Drop the current partial year (2026)</strong> from the fetch (<code>--year-end 2025</code>) — it contributes essentially no signal.
+2. <strong>Add a per-cohort citation floor</strong> so a year contributes <em>up to</em> K papers above some minimum (e.g. ≥300 cites), rather than always exactly K — thin years just contribute fewer.
+3. <strong>Exclude suspect-flagged records from the final build</strong> (a filter step), now that we're confident the flag is precise — that alone would strip 115/121 of 2026 and 82/121 of 2025.</p>
+<p>My pick is <strong>#2 combined with #3</strong>: a citation floor stops the barrel-scraping at fetch time, and dropping flagged records cleans the mis-dates that remain. Want me to add a <code>--min-citations</code> floor to the per-year fetch and/or a <code>--drop-suspect</code> flag to the build?</p></div></div><button class="expand-btn">Show more</button></div></div>
+</div></div>
+<div class="index-item"><a href="page-003.html#msg-2026-07-11T18-38-53-603Z"><div class="index-item-header"><span class="index-item-number">#14</span><time datetime="2026-07-11T18:38:53.603Z" data-timestamp="2026-07-11T18:38:53.603Z">2026-07-11T18:38:53.603Z</time></div><div class="index-item-content"><p>yes please and re-run the dataset build</p></div></a><div class="index-item-stats"><span>13 bash · 4 edit · 3 read</span>
+<div class="index-item-long-text"><div class="truncatable"><div class="truncatable-content"><div class="index-item-long-text-content"><p><code>layout_clustered.mjs</code> only reads the manifest and writes positions — it doesn't rebuild. Yet nodes.bin is now 9874. That means a <em>non-drop</em> build ran after mine (possibly a file-change hook re-running the default build). Rather than keep chasing it, let me run the whole pipeline as one atomic sequence and verify the final state immediately:</p></div></div><button class="expand-btn">Show more</button></div></div>
+<div class="index-item-long-text"><div class="truncatable"><div class="truncatable-content"><div class="index-item-long-text-content"><p>Done. The dataset is rebuilt with both new controls and fully compressed in place.</p>
+<h2>What I added</h2>
+<ul>
+<li><strong><code>--min-citations</code> (per-year fetch):</strong> a per-cohort floor. A year contributes <em>up to</em> <code>--per-year</code> works but only those at/above the floor, so thin/incomplete years contribute their real count instead of being padded. Since results are citation-sorted, it stops each year as soon as one drops below the floor. Recorded in <code>run_meta.json</code>.</li>
+<li><strong><code>--drop-suspect</code> (build):</strong> filters suspect-flagged records (mis-dated reprints, count anomalies, citation-farm spikes) out of the built dataset entirely, before indices/edges/shards are computed.</li>
+</ul>
+<h2>The re-run (fetch floor 500 → build --drop-suspect)</h2>
+<ul>
+<li><strong>9,566 clean nodes</strong> (from 9,874 fetched; 308 suspects dropped — fetch and build agree exactly).</li>
+<li><strong>Zero suspects remain</strong>; the 801k anomaly is gone — top node is now R (353k cites).</li>
+<li><code>citationDomain</code>: min <strong>532</strong>, max <strong>353,004</strong> — every paper now has ≥500 citations and the scale is anomaly-free.</li>
+<li><strong>Recent cohorts survived the cleanup:</strong> 2023: 90 · 2024: 58 · 2025: 39 · 2026: 3. The floor did its job — 2026 collapsed from 121 padded records to the handful of real ones, while 2025's genuine papers (Cancer statistics 2025, clinical-obesity definition, DESI, DeepSeek-R1, ESM3, the semaglutide MASH trial, etc.) came through.</li>
+<li><strong>Verified:</strong> layout regenerated, <code>ALL CHECKS PASSED</code>, no orphan shards, and all <strong>102 files carry both <code>.gz</code> (level 9) and <code>.br</code> (quality 11)</strong> sidecars (~22% smaller than gzip; first-paint 595 KB gz → 447 KB br).</li>
+</ul>
+<h2>Two things worth flagging</h2>
+<ol>
+<li><strong>A phantom rebuild clobbered my first <code>--drop-suspect</code> pass</strong> — after the build wrote 9,566, something re-ran the <em>default</em> (no-drop) build and restored 9,874 before I compressed. It almost certainly is a file-change hook that runs <code>build_graph_data.py</code> on edits. Running the whole pipeline as one uninterrupted sequence produced the correct, consistent result, but if that hook exists it will overwrite a <code>--drop-suspect</code> build whenever you next edit a file. Worth checking <code>.claude/settings.json</code> hooks — want me to look?</li>
+<li><strong><code>--drop-suspect</code> isn't perfect recall.</strong> A few slipped-through records survive in 2025 (e.g. <em>Wechsler Memory Scale-Revised</em>, <em>Gesammelte Aufsätze</em> = Weber, container records like <em>Materials Today: Proceedings</em>) — their pre-publication citations are spread too thin to trip the &gt;30% rule. They're a small minority and rank low by momentum. I can tighten the heuristic further (e.g. flag obvious container/journal-title records, or lower the predated fraction) if you want them gone too.</li>
+</ol></div></div><button class="expand-btn">Show more</button></div></div>
+</div></div>
+<div class="index-item"><a href="page-003.html#msg-2026-07-11T18-44-56-610Z"><div class="index-item-header"><span class="index-item-number">#15</span><time datetime="2026-07-11T18:44:56.610Z" data-timestamp="2026-07-11T18:44:56.610Z">2026-07-11T18:44:56.610Z</time></div><div class="index-item-content"><p>show me the top 50 results now</p></div></a><div class="index-item-stats"><span>1 bash</span>
+<div class="index-item-long-text"><div class="truncatable"><div class="truncatable-content"><div class="index-item-long-text-content"><p>The top 50 of the final cleaned dataset, ranked by momentum (avg citations/yr over the last 3y). <strong>No suspects, no anomalies</strong> — the 801k camera record is gone, and the list opens with real infrastructure papers.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: right;">#</th>
+<th style="text-align: right;">cites/yr</th>
+<th style="text-align: right;">total</th>
+<th style="text-align: right;">year</th>
+<th>domain</th>
+<th>title</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">34,115</td>
+<td style="text-align: right;">222,656</td>
+<td style="text-align: right;">2016</td>
+<td>Phys</td>
+<td>Deep Residual Learning (ResNet)</td>
+</tr>
+<tr>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">29,522</td>
+<td style="text-align: right;">185,277</td>
+<td style="text-align: right;">2006</td>
+<td>Health</td>
+<td>Using thematic analysis in psychology</td>
+</tr>
+<tr>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">27,616</td>
+<td style="text-align: right;">112,837</td>
+<td style="text-align: right;"><strong>2021</strong></td>
+<td>Health</td>
+<td>Global Cancer Statistics 2020 (GLOBOCAN)</td>
+</tr>
+<tr>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">27,615</td>
+<td style="text-align: right;">96,642</td>
+<td style="text-align: right;"><strong>2021</strong></td>
+<td>Social</td>
+<td>PRISMA 2020 statement</td>
+</tr>
+<tr>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">25,220</td>
+<td style="text-align: right;">353,004</td>
+<td style="text-align: right;">2000</td>
+<td>Phys</td>
+<td>R: A Language and Environment for Stats</td>
+</tr>
+<tr>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">23,976</td>
+<td style="text-align: right;">212,285</td>
+<td style="text-align: right;">1996</td>
+<td>Phys</td>
+<td>Generalized Gradient Approximation (PBE)</td>
+</tr>
+<tr>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">18,293</td>
+<td style="text-align: right;">101,074</td>
+<td style="text-align: right;">2014</td>
+<td>Life</td>
+<td>DESeq2</td>
+</tr>
+<tr>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">18,281</td>
+<td style="text-align: right;">76,372</td>
+<td style="text-align: right;">2023</td>
+<td>Phys</td>
+<td>Inline Hardware KV-Cache Compression</td>
+</tr>
+<tr>
+<td style="text-align: right;">9</td>
+<td style="text-align: right;">18,234</td>
+<td style="text-align: right;">127,092</td>
+<td style="text-align: right;">2001</td>
+<td>Phys</td>
+<td>Random Forests</td>
+</tr>
+<tr>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">16,304</td>
+<td style="text-align: right;">182,044</td>
+<td style="text-align: right;">2001</td>
+<td>Life</td>
+<td>Real-Time qPCR (2^−ΔΔCT)</td>
+</tr>
+<tr>
+<td style="text-align: right;">11</td>
+<td style="text-align: right;">15,502</td>
+<td style="text-align: right;">89,228</td>
+<td style="text-align: right;">2015</td>
+<td>Life</td>
+<td>U-Net</td>
+</tr>
+<tr>
+<td style="text-align: right;">12</td>
+<td style="text-align: right;">14,351</td>
+<td style="text-align: right;">121,001</td>
+<td style="text-align: right;">1996</td>
+<td>Phys</td>
+<td>VASP iterative schemes</td>
+</tr>
+<tr>
+<td style="text-align: right;">13</td>
+<td style="text-align: right;">14,105</td>
+<td style="text-align: right;">98,553</td>
+<td style="text-align: right;">1997</td>
+<td>Phys</td>
+<td>Long Short-Term Memory (LSTM)</td>
+</tr>
+<tr>
+<td style="text-align: right;">14</td>
+<td style="text-align: right;">12,922</td>
+<td style="text-align: right;">86,172</td>
+<td style="text-align: right;">2015</td>
+<td>Phys</td>
+<td>lme4</td>
+</tr>
+<tr>
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">12,623</td>
+<td style="text-align: right;">45,547</td>
+<td style="text-align: right;"><strong>2021</strong></td>
+<td>Life</td>
+<td><strong>AlphaFold</strong></td>
+</tr>
+<tr>
+<td style="text-align: right;">16</td>
+<td style="text-align: right;">11,912</td>
+<td style="text-align: right;">114,440</td>
+<td style="text-align: right;">2013</td>
+<td>Health</td>
+<td>DSM (mental disorders)</td>
+</tr>
+<tr>
+<td style="text-align: right;">17</td>
+<td style="text-align: right;">11,493</td>
+<td style="text-align: right;">82,069</td>
+<td style="text-align: right;">2015</td>
+<td>Phys</td>
+<td>Deep learning (Nature review)</td>
+</tr>
+<tr>
+<td style="text-align: right;">18</td>
+<td style="text-align: right;">11,382</td>
+<td style="text-align: right;">105,915</td>
+<td style="text-align: right;">1999</td>
+<td>Social</td>
+<td>Cutoff criteria for fit indexes</td>
+</tr>
+<tr>
+<td style="text-align: right;">19</td>
+<td style="text-align: right;">11,228</td>
+<td style="text-align: right;">49,154</td>
+<td style="text-align: right;">2016</td>
+<td>Phys</td>
+<td>XGBoost</td>
+</tr>
+<tr>
+<td style="text-align: right;">20</td>
+<td style="text-align: right;">10,809</td>
+<td style="text-align: right;">91,158</td>
+<td style="text-align: right;">1994</td>
+<td>Phys</td>
+<td>Projector augmented-wave method</td>
+</tr>
+<tr>
+<td style="text-align: right;">21</td>
+<td style="text-align: right;">10,671</td>
+<td style="text-align: right;">70,067</td>
+<td style="text-align: right;">2014</td>
+<td>Life</td>
+<td>Trimmomatic</td>
+</tr>
+<tr>
+<td style="text-align: right;">22</td>
+<td style="text-align: right;">10,614</td>
+<td style="text-align: right;">71,222</td>
+<td style="text-align: right;">2012</td>
+<td>Life</td>
+<td>Fiji</td>
+</tr>
+<tr>
+<td style="text-align: right;">23</td>
+<td style="text-align: right;">10,267</td>
+<td style="text-align: right;">68,442</td>
+<td style="text-align: right;">1981</td>
+<td>Social</td>
+<td>Evaluating Structural Equation Models</td>
+</tr>
+<tr>
+<td style="text-align: right;">24</td>
+<td style="text-align: right;">10,016</td>
+<td style="text-align: right;">41,013</td>
+<td style="text-align: right;">2018</td>
+<td>Social</td>
+<td>PRISMA-ScR</td>
+</tr>
+<tr>
+<td style="text-align: right;">25</td>
+<td style="text-align: right;">9,800</td>
+<td style="text-align: right;">109,152</td>
+<td style="text-align: right;">1995</td>
+<td>Phys</td>
+<td>Controlling the False Discovery Rate</td>
+</tr>
+<tr>
+<td style="text-align: right;">26</td>
+<td style="text-align: right;">9,678</td>
+<td style="text-align: right;">77,226</td>
+<td style="text-align: right;">2003</td>
+<td>Social</td>
+<td>Common method biases</td>
+</tr>
+<tr>
+<td style="text-align: right;">27</td>
+<td style="text-align: right;">9,570</td>
+<td style="text-align: right;">57,264</td>
+<td style="text-align: right;">2010</td>
+<td>Phys</td>
+<td>Grimme D3 dispersion</td>
+</tr>
+<tr>
+<td style="text-align: right;">28</td>
+<td style="text-align: right;">9,522</td>
+<td style="text-align: right;">83,945</td>
+<td style="text-align: right;">1999</td>
+<td>Phys</td>
+<td>Ultrasoft → PAW (VASP)</td>
+</tr>
+<tr>
+<td style="text-align: right;">29</td>
+<td style="text-align: right;">9,431</td>
+<td style="text-align: right;">43,387</td>
+<td style="text-align: right;">2011</td>
+<td>Phys</td>
+<td>Multiwfn</td>
+</tr>
+<tr>
+<td style="text-align: right;">30</td>
+<td style="text-align: right;">9,345</td>
+<td style="text-align: right;">56,504</td>
+<td style="text-align: right;">2012</td>
+<td>Life</td>
+<td>STAR aligner</td>
+</tr>
+<tr>
+<td style="text-align: right;">31</td>
+<td style="text-align: right;">9,193</td>
+<td style="text-align: right;">85,217</td>
+<td style="text-align: right;">1991</td>
+<td>Social</td>
+<td>Theory of planned behavior</td>
+</tr>
+<tr>
+<td style="text-align: right;">32</td>
+<td style="text-align: right;">9,163</td>
+<td style="text-align: right;">64,468</td>
+<td style="text-align: right;">2007</td>
+<td>Social</td>
+<td>G*Power 3</td>
+</tr>
+<tr>
+<td style="text-align: right;">33</td>
+<td style="text-align: right;">9,058</td>
+<td style="text-align: right;">30,313</td>
+<td style="text-align: right;"><strong>2021</strong></td>
+<td>Phys</td>
+<td><strong>Swin Transformer</strong></td>
+</tr>
+<tr>
+<td style="text-align: right;">34</td>
+<td style="text-align: right;">8,942</td>
+<td style="text-align: right;">74,948</td>
+<td style="text-align: right;">1996</td>
+<td>Phys</td>
+<td>VASP metals/semiconductors</td>
+</tr>
+<tr>
+<td style="text-align: right;">35</td>
+<td style="text-align: right;">8,861</td>
+<td style="text-align: right;">38,284</td>
+<td style="text-align: right;"><strong>2020</strong></td>
+<td>Phys</td>
+<td><strong>SciPy 1.0</strong></td>
+</tr>
+<tr>
+<td style="text-align: right;">36</td>
+<td style="text-align: right;">8,590</td>
+<td style="text-align: right;">54,350</td>
+<td style="text-align: right;">2016</td>
+<td>Phys</td>
+<td>Faster R-CNN</td>
+</tr>
+<tr>
+<td style="text-align: right;">37</td>
+<td style="text-align: right;">8,261</td>
+<td style="text-align: right;">66,880</td>
+<td style="text-align: right;">1996</td>
+<td>Life</td>
+<td>VMD</td>
+</tr>
+<tr>
+<td style="text-align: right;">38</td>
+<td style="text-align: right;">8,194</td>
+<td style="text-align: right;">61,940</td>
+<td style="text-align: right;">2009</td>
+<td>Phys</td>
+<td>ImageNet database</td>
+</tr>
+<tr>
+<td style="text-align: right;">39</td>
+<td style="text-align: right;">8,184</td>
+<td style="text-align: right;">65,447</td>
+<td style="text-align: right;">2012</td>
+<td>Life</td>
+<td>NIH Image → ImageJ</td>
+</tr>
+<tr>
+<td style="text-align: right;">40</td>
+<td style="text-align: right;">8,169</td>
+<td style="text-align: right;">61,352</td>
+<td style="text-align: right;">2012</td>
+<td>Life</td>
+<td>Bowtie 2</td>
+</tr>
+<tr>
+<td style="text-align: right;">41</td>
+<td style="text-align: right;">8,072</td>
+<td style="text-align: right;">45,719</td>
+<td style="text-align: right;">2018</td>
+<td>Phys</td>
+<td>AI-Assisted Pipeline for Dynamic Generation…</td>
+</tr>
+<tr>
+<td style="text-align: right;">42</td>
+<td style="text-align: right;">8,042</td>
+<td style="text-align: right;">42,012</td>
+<td style="text-align: right;">2007</td>
+<td>Social</td>
+<td>COREQ</td>
+</tr>
+<tr>
+<td style="text-align: right;">43</td>
+<td style="text-align: right;">8,017</td>
+<td style="text-align: right;">84,785</td>
+<td style="text-align: right;">2014</td>
+<td>Phys</td>
+<td>Adam optimizer</td>
+</tr>
+<tr>
+<td style="text-align: right;">44</td>
+<td style="text-align: right;">7,986</td>
+<td style="text-align: right;">87,807</td>
+<td style="text-align: right;">2018</td>
+<td>Health</td>
+<td>Global cancer statistics 2018</td>
+</tr>
+<tr>
+<td style="text-align: right;">45</td>
+<td style="text-align: right;">7,968</td>
+<td style="text-align: right;">51,985</td>
+<td style="text-align: right;">2008</td>
+<td>Life</td>
+<td>REDCap</td>
+</tr>
+<tr>
+<td style="text-align: right;">46</td>
+<td style="text-align: right;">7,770</td>
+<td style="text-align: right;">23,494</td>
+<td style="text-align: right;"><strong>2024</strong></td>
+<td>Health</td>
+<td><strong>Global cancer statistics 2022</strong></td>
+</tr>
+<tr>
+<td style="text-align: right;">47</td>
+<td style="text-align: right;">7,765</td>
+<td style="text-align: right;">67,750</td>
+<td style="text-align: right;">2009</td>
+<td>Life</td>
+<td>SAMtools</td>
+</tr>
+<tr>
+<td style="text-align: right;">48</td>
+<td style="text-align: right;">7,747</td>
+<td style="text-align: right;">31,151</td>
+<td style="text-align: right;">2019</td>
+<td>Social</td>
+<td>RoB 2</td>
+</tr>
+<tr>
+<td style="text-align: right;">49</td>
+<td style="text-align: right;">7,717</td>
+<td style="text-align: right;">30,004</td>
+<td style="text-align: right;">2018</td>
+<td>Phys</td>
+<td>fastp</td>
+</tr>
+<tr>
+<td style="text-align: right;">50</td>
+<td style="text-align: right;">7,584</td>
+<td style="text-align: right;">36,561</td>
+<td style="text-align: right;">2016</td>
+<td>Life</td>
+<td>DADA2</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Notes:</strong>
+- <strong>7 papers from 2020+</strong> — AlphaFold, Swin Transformer, SciPy 1.0, Global cancer stats 2022, plus the two 2021 GLOBOCAN/PRISMA statements — surface in the top 50, none of which a raw-citation ranking shows.
+- <strong>Compared to the pre-cleanup top 50</strong>, the anomaly (#1, 801k) is dropped and everything shifts up one; the rest of the ordering is unchanged since momentum already buried the mis-dated records. This is now an honest "biggest current nodes" list.
+- <strong>Two entries still deserve an eyeball:</strong> #8 <em>Inline Hardware KV-Cache Compression</em> (2023, 76k) and #41 <em>AI-Assisted Pipeline for Dynamic Generation…</em> — odd titles with high counts that didn't trip the heuristic. If you want, I can add a container/anomaly check to catch these, but they're not flagged and may be legitimate.</p></div></div><button class="expand-btn">Show more</button></div></div>
+</div></div>
+        
+
+<div class="pagination">
+<span class="current">Index</span>
+<span class="disabled">&larr; Prev</span>
+<a href="page-001.html">1</a>
+<a href="page-002.html">2</a>
+<a href="page-003.html">3</a>
+<a href="page-001.html">Next &rarr;</a>
+</div>
+
+
+        <dialog id="search-modal">
+            <div class="search-modal-header">
+                <input type="text" id="modal-search-input" placeholder="Search..." aria-label="Search transcripts">
+                <button id="modal-search-btn" type="button" aria-label="Search">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
+                </button>
+                <button id="modal-close-btn" type="button" aria-label="Close">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+                </button>
+            </div>
+            <div id="search-status"></div>
+            <div id="search-results"></div>
+        </dialog>
+        <script>
+(function() {
+    var totalPages = 3;
+    var searchBox = document.getElementById('search-box');
+    var searchInput = document.getElementById('search-input');
+    var searchBtn = document.getElementById('search-btn');
+    var modal = document.getElementById('search-modal');
+    var modalInput = document.getElementById('modal-search-input');
+    var modalSearchBtn = document.getElementById('modal-search-btn');
+    var modalCloseBtn = document.getElementById('modal-close-btn');
+    var searchStatus = document.getElementById('search-status');
+    var searchResults = document.getElementById('search-results');
+
+    if (!searchBox || !modal) return;
+
+    // Hide search on file:// protocol (doesn't work due to CORS restrictions)
+    if (window.location.protocol === 'file:') return;
+
+    // Show search box (progressive enhancement)
+    searchBox.style.display = 'flex';
+
+    // Gist preview support - detect if we're on gisthost.github.io or gistpreview.github.io
+    var hostname = window.location.hostname;
+    var isGistPreview = hostname === 'gisthost.github.io' || hostname === 'gistpreview.github.io';
+    var gistId = null;
+    var gistOwner = null;
+    var gistInfoLoaded = false;
+
+    if (isGistPreview) {
+        // Extract gist ID from URL query string like ?78a436a8a9e7a2e603738b8193b95410/index.html
+        var queryMatch = window.location.search.match(/^\?([a-f0-9]+)/i);
+        if (queryMatch) {
+            gistId = queryMatch[1];
+        }
+    }
+
+    async function loadGistInfo() {
+        if (!isGistPreview || !gistId || gistInfoLoaded) return;
+        try {
+            var response = await fetch('https://api.github.com/gists/' + gistId);
+            if (response.ok) {
+                var info = await response.json();
+                gistOwner = info.owner.login;
+                gistInfoLoaded = true;
+            }
+        } catch (e) {
+            console.error('Failed to load gist info:', e);
+        }
+    }
+
+    function getPageFetchUrl(pageFile) {
+        if (isGistPreview && gistOwner && gistId) {
+            // Use raw gist URL for fetching content
+            return 'https://gist.githubusercontent.com/' + gistOwner + '/' + gistId + '/raw/' + pageFile;
+        }
+        return pageFile;
+    }
+
+    function getPageLinkUrl(pageFile) {
+        if (isGistPreview && gistId) {
+            // Use gistpreview URL format for navigation links
+            return '?' + gistId + '/' + pageFile;
+        }
+        return pageFile;
+    }
+
+    function escapeHtml(text) {
+        var div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function escapeRegex(string) {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    function openModal(query) {
+        modalInput.value = query || '';
+        searchResults.innerHTML = '';
+        searchStatus.textContent = '';
+        modal.showModal();
+        modalInput.focus();
+        if (query) {
+            performSearch(query);
+        }
+    }
+
+    function closeModal() {
+        modal.close();
+        // Update URL to remove search fragment, preserving path and query string
+        if (window.location.hash.startsWith('#search=')) {
+            history.replaceState(null, '', window.location.pathname + window.location.search);
+        }
+    }
+
+    function updateUrlHash(query) {
+        if (query) {
+            // Preserve path and query string when adding hash
+            history.replaceState(null, '', window.location.pathname + window.location.search + '#search=' + encodeURIComponent(query));
+        }
+    }
+
+    function highlightTextNodes(element, searchTerm) {
+        var walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false);
+        var nodesToReplace = [];
+
+        while (walker.nextNode()) {
+            var node = walker.currentNode;
+            if (node.nodeValue.toLowerCase().indexOf(searchTerm.toLowerCase()) !== -1) {
+                nodesToReplace.push(node);
+            }
+        }
+
+        nodesToReplace.forEach(function(node) {
+            var text = node.nodeValue;
+            var regex = new RegExp('(' + escapeRegex(searchTerm) + ')', 'gi');
+            var parts = text.split(regex);
+            if (parts.length > 1) {
+                var span = document.createElement('span');
+                parts.forEach(function(part) {
+                    if (part.toLowerCase() === searchTerm.toLowerCase()) {
+                        var mark = document.createElement('mark');
+                        mark.textContent = part;
+                        span.appendChild(mark);
+                    } else {
+                        span.appendChild(document.createTextNode(part));
+                    }
+                });
+                node.parentNode.replaceChild(span, node);
+            }
+        });
+    }
+
+    function fixInternalLinks(element, pageFile) {
+        // Update all internal anchor links to include the page file
+        var links = element.querySelectorAll('a[href^="#"]');
+        links.forEach(function(link) {
+            var href = link.getAttribute('href');
+            link.setAttribute('href', pageFile + href);
+        });
+    }
+
+    function processPage(pageFile, html, query) {
+        var parser = new DOMParser();
+        var doc = parser.parseFromString(html, 'text/html');
+        var resultsFromPage = 0;
+
+        // Find all message blocks
+        var messages = doc.querySelectorAll('.message');
+        messages.forEach(function(msg) {
+            var text = msg.textContent || '';
+            if (text.toLowerCase().indexOf(query.toLowerCase()) !== -1) {
+                resultsFromPage++;
+
+                // Get the message ID for linking
+                var msgId = msg.id || '';
+                var pageLinkUrl = getPageLinkUrl(pageFile);
+                var link = pageLinkUrl + (msgId ? '#' + msgId : '');
+
+                // Clone the message HTML and highlight matches
+                var clone = msg.cloneNode(true);
+                // Fix internal links to include the page file
+                fixInternalLinks(clone, pageLinkUrl);
+                highlightTextNodes(clone, query);
+
+                var resultDiv = document.createElement('div');
+                resultDiv.className = 'search-result';
+                resultDiv.innerHTML = '<a href="' + link + '">' +
+                    '<div class="search-result-page">' + escapeHtml(pageFile) + '</div>' +
+                    '<div class="search-result-content">' + clone.innerHTML + '</div>' +
+                    '</a>';
+                searchResults.appendChild(resultDiv);
+            }
+        });
+
+        return resultsFromPage;
+    }
+
+    async function performSearch(query) {
+        if (!query.trim()) {
+            searchStatus.textContent = 'Enter a search term';
+            return;
+        }
+
+        updateUrlHash(query);
+        searchResults.innerHTML = '';
+        searchStatus.textContent = 'Searching...';
+
+        // Load gist info if on gistpreview (needed for constructing URLs)
+        if (isGistPreview && !gistInfoLoaded) {
+            searchStatus.textContent = 'Loading gist info...';
+            await loadGistInfo();
+            if (!gistOwner) {
+                searchStatus.textContent = 'Failed to load gist info. Search unavailable.';
+                return;
+            }
+        }
+
+        var resultsFound = 0;
+        var pagesSearched = 0;
+
+        // Build list of pages to fetch
+        var pagesToFetch = [];
+        for (var i = 1; i <= totalPages; i++) {
+            pagesToFetch.push('page-' + String(i).padStart(3, '0') + '.html');
+        }
+
+        searchStatus.textContent = 'Searching...';
+
+        // Process pages in batches of 3, but show results immediately as each completes
+        var batchSize = 3;
+        for (var i = 0; i < pagesToFetch.length; i += batchSize) {
+            var batch = pagesToFetch.slice(i, i + batchSize);
+
+            // Create promises that process results immediately when each fetch completes
+            var promises = batch.map(function(pageFile) {
+                return fetch(getPageFetchUrl(pageFile))
+                    .then(function(response) {
+                        if (!response.ok) throw new Error('Failed to fetch');
+                        return response.text();
+                    })
+                    .then(function(html) {
+                        // Process and display results immediately
+                        var count = processPage(pageFile, html, query);
+                        resultsFound += count;
+                        pagesSearched++;
+                        searchStatus.textContent = 'Found ' + resultsFound + ' result(s) in ' + pagesSearched + '/' + totalPages + ' pages...';
+                    })
+                    .catch(function() {
+                        pagesSearched++;
+                        searchStatus.textContent = 'Found ' + resultsFound + ' result(s) in ' + pagesSearched + '/' + totalPages + ' pages...';
+                    });
+            });
+
+            // Wait for this batch to complete before starting the next
+            await Promise.all(promises);
+        }
+
+        searchStatus.textContent = 'Found ' + resultsFound + ' result(s) in ' + totalPages + ' pages';
+    }
+
+    // Event listeners
+    searchBtn.addEventListener('click', function() {
+        openModal(searchInput.value);
+    });
+
+    searchInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            openModal(searchInput.value);
+        }
+    });
+
+    modalSearchBtn.addEventListener('click', function() {
+        performSearch(modalInput.value);
+    });
+
+    modalInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            performSearch(modalInput.value);
+        }
+    });
+
+    modalCloseBtn.addEventListener('click', closeModal);
+
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            closeModal();
+        }
+    });
+
+    // Check for #search= in URL on page load
+    if (window.location.hash.startsWith('#search=')) {
+        var query = decodeURIComponent(window.location.hash.substring(8));
+        if (query) {
+            searchInput.value = query;
+            openModal(query);
+        }
+    }
+})();
+        </script>
+    </div>
+    <script>
+document.querySelectorAll('time[data-timestamp]').forEach(function(el) {
+    const timestamp = el.getAttribute('data-timestamp');
+    const date = new Date(timestamp);
+    const now = new Date();
+    const isToday = date.toDateString() === now.toDateString();
+    const timeStr = date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+    if (isToday) { el.textContent = timeStr; }
+    else { el.textContent = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' ' + timeStr; }
+});
+document.querySelectorAll('pre.json').forEach(function(el) {
+    let text = el.textContent;
+    text = text.replace(/"([^"]+)":/g, '<span style="color: #ce93d8">"$1"</span>:');
+    text = text.replace(/: "([^"]*)"/g, ': <span style="color: #81d4fa">"$1"</span>');
+    text = text.replace(/: (\d+)/g, ': <span style="color: #ffcc80">$1</span>');
+    text = text.replace(/: (true|false|null)/g, ': <span style="color: #f48fb1">$1</span>');
+    el.innerHTML = text;
+});
+document.querySelectorAll('.truncatable').forEach(function(wrapper) {
+    const content = wrapper.querySelector('.truncatable-content');
+    const btn = wrapper.querySelector('.expand-btn');
+    if (content.scrollHeight > 250) {
+        wrapper.classList.add('truncated');
+        btn.addEventListener('click', function() {
+            if (wrapper.classList.contains('truncated')) { wrapper.classList.remove('truncated'); wrapper.classList.add('expanded'); btn.textContent = 'Show less'; }
+            else { wrapper.classList.remove('expanded'); wrapper.classList.add('truncated'); btn.textContent = 'Show more'; }
+        });
+    }
+});
+</script>
+</body>
+</html>

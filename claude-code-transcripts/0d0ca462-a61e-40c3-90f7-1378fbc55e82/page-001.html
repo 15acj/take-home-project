@@ -1,0 +1,1624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claude Code transcript - page 1</title>
+    <style>
+:root { --bg-color: #f5f5f5; --card-bg: #ffffff; --user-bg: #e3f2fd; --user-border: #1976d2; --assistant-bg: #f5f5f5; --assistant-border: #9e9e9e; --thinking-bg: #fff8e1; --thinking-border: #ffc107; --thinking-text: #666; --tool-bg: #f3e5f5; --tool-border: #9c27b0; --tool-result-bg: #e8f5e9; --tool-error-bg: #ffebee; --text-color: #212121; --text-muted: #757575; --code-bg: #263238; --code-text: #aed581; }
+* { box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg-color); color: var(--text-color); margin: 0; padding: 16px; line-height: 1.6; }
+.container { max-width: 800px; margin: 0 auto; }
+h1 { font-size: 1.5rem; margin-bottom: 24px; padding-bottom: 8px; border-bottom: 2px solid var(--user-border); }
+.header-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; border-bottom: 2px solid var(--user-border); padding-bottom: 8px; margin-bottom: 24px; }
+.header-row h1 { border-bottom: none; padding-bottom: 0; margin-bottom: 0; flex: 1; min-width: 200px; }
+.message { margin-bottom: 16px; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.message.user { background: var(--user-bg); border-left: 4px solid var(--user-border); }
+.message.assistant { background: var(--card-bg); border-left: 4px solid var(--assistant-border); }
+.message.tool-reply { background: #fff8e1; border-left: 4px solid #ff9800; }
+.tool-reply .role-label { color: #e65100; }
+.tool-reply .tool-result { background: transparent; padding: 0; margin: 0; }
+.tool-reply .tool-result .truncatable.truncated::after { background: linear-gradient(to bottom, transparent, #fff8e1); }
+.message-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 16px; background: rgba(0,0,0,0.03); font-size: 0.85rem; }
+.role-label { font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+.user .role-label { color: var(--user-border); }
+time { color: var(--text-muted); font-size: 0.8rem; }
+.timestamp-link { color: inherit; text-decoration: none; }
+.timestamp-link:hover { text-decoration: underline; }
+.message:target { animation: highlight 2s ease-out; }
+@keyframes highlight { 0% { background-color: rgba(25, 118, 210, 0.2); } 100% { background-color: transparent; } }
+.message-content { padding: 16px; }
+.message-content p { margin: 0 0 12px 0; }
+.message-content p:last-child { margin-bottom: 0; }
+.thinking { background: var(--thinking-bg); border: 1px solid var(--thinking-border); border-radius: 8px; padding: 12px; margin: 12px 0; font-size: 0.9rem; color: var(--thinking-text); }
+.thinking-label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: #f57c00; margin-bottom: 8px; }
+.thinking p { margin: 8px 0; }
+.assistant-text { margin: 8px 0; }
+.tool-use { background: var(--tool-bg); border: 1px solid var(--tool-border); border-radius: 8px; padding: 12px; margin: 12px 0; }
+.tool-header { font-weight: 600; color: var(--tool-border); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+.tool-icon { font-size: 1.1rem; }
+.tool-description { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 8px; font-style: italic; }
+.tool-result { background: var(--tool-result-bg); border-radius: 8px; padding: 12px; margin: 12px 0; }
+.tool-result.tool-error { background: var(--tool-error-bg); }
+.file-tool { border-radius: 8px; padding: 12px; margin: 12px 0; }
+.write-tool { background: linear-gradient(135deg, #e3f2fd 0%, #e8f5e9 100%); border: 1px solid #4caf50; }
+.edit-tool { background: linear-gradient(135deg, #fff3e0 0%, #fce4ec 100%); border: 1px solid #ff9800; }
+.file-tool-header { font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; font-size: 0.95rem; }
+.write-header { color: #2e7d32; }
+.edit-header { color: #e65100; }
+.file-tool-icon { font-size: 1rem; }
+.file-tool-path { font-family: monospace; background: rgba(0,0,0,0.08); padding: 2px 8px; border-radius: 4px; }
+.file-tool-fullpath { font-family: monospace; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 8px; word-break: break-all; }
+.file-content { margin: 0; }
+.edit-section { display: flex; margin: 4px 0; border-radius: 4px; overflow: hidden; }
+.edit-label { padding: 8px 12px; font-weight: bold; font-family: monospace; display: flex; align-items: flex-start; }
+.edit-old { background: #fce4ec; }
+.edit-old .edit-label { color: #b71c1c; background: #f8bbd9; }
+.edit-old .edit-content { color: #880e4f; }
+.edit-new { background: #e8f5e9; }
+.edit-new .edit-label { color: #1b5e20; background: #a5d6a7; }
+.edit-new .edit-content { color: #1b5e20; }
+.edit-content { margin: 0; flex: 1; background: transparent; font-size: 0.85rem; }
+.edit-replace-all { font-size: 0.75rem; font-weight: normal; color: var(--text-muted); }
+.write-tool .truncatable.truncated::after { background: linear-gradient(to bottom, transparent, #e6f4ea); }
+.edit-tool .truncatable.truncated::after { background: linear-gradient(to bottom, transparent, #fff0e5); }
+.todo-list { background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%); border: 1px solid #81c784; border-radius: 8px; padding: 12px; margin: 12px 0; }
+.todo-header { font-weight: 600; color: #2e7d32; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; font-size: 0.95rem; }
+.todo-items { list-style: none; margin: 0; padding: 0; }
+.todo-item { display: flex; align-items: flex-start; gap: 10px; padding: 6px 0; border-bottom: 1px solid rgba(0,0,0,0.06); font-size: 0.9rem; }
+.todo-item:last-child { border-bottom: none; }
+.todo-icon { flex-shrink: 0; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-weight: bold; border-radius: 50%; }
+.todo-completed .todo-icon { color: #2e7d32; background: rgba(46, 125, 50, 0.15); }
+.todo-completed .todo-content { color: #558b2f; text-decoration: line-through; }
+.todo-in-progress .todo-icon { color: #f57c00; background: rgba(245, 124, 0, 0.15); }
+.todo-in-progress .todo-content { color: #e65100; font-weight: 500; }
+.todo-pending .todo-icon { color: #757575; background: rgba(0,0,0,0.05); }
+.todo-pending .todo-content { color: #616161; }
+pre { background: var(--code-bg); color: var(--code-text); padding: 12px; border-radius: 6px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5; margin: 8px 0; white-space: pre-wrap; word-wrap: break-word; }
+pre.json { color: #e0e0e0; }
+code { background: rgba(0,0,0,0.08); padding: 2px 6px; border-radius: 4px; font-size: 0.9em; }
+pre code { background: none; padding: 0; }
+.user-content { margin: 0; }
+.truncatable { position: relative; }
+.truncatable.truncated .truncatable-content { max-height: 200px; overflow: hidden; }
+.truncatable.truncated::after { content: ''; position: absolute; bottom: 32px; left: 0; right: 0; height: 60px; background: linear-gradient(to bottom, transparent, var(--card-bg)); pointer-events: none; }
+.message.user .truncatable.truncated::after { background: linear-gradient(to bottom, transparent, var(--user-bg)); }
+.message.tool-reply .truncatable.truncated::after { background: linear-gradient(to bottom, transparent, #fff8e1); }
+.tool-use .truncatable.truncated::after { background: linear-gradient(to bottom, transparent, var(--tool-bg)); }
+.tool-result .truncatable.truncated::after { background: linear-gradient(to bottom, transparent, var(--tool-result-bg)); }
+.expand-btn { display: none; width: 100%; padding: 8px 16px; margin-top: 4px; background: rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.1); border-radius: 6px; cursor: pointer; font-size: 0.85rem; color: var(--text-muted); }
+.expand-btn:hover { background: rgba(0,0,0,0.1); }
+.truncatable.truncated .expand-btn, .truncatable.expanded .expand-btn { display: block; }
+.pagination { display: flex; justify-content: center; gap: 8px; margin: 24px 0; flex-wrap: wrap; }
+.pagination a, .pagination span { padding: 5px 10px; border-radius: 6px; text-decoration: none; font-size: 0.85rem; }
+.pagination a { background: var(--card-bg); color: var(--user-border); border: 1px solid var(--user-border); }
+.pagination a:hover { background: var(--user-bg); }
+.pagination .current { background: var(--user-border); color: white; }
+.pagination .disabled { color: var(--text-muted); border: 1px solid #ddd; }
+.pagination .index-link { background: var(--user-border); color: white; }
+details.continuation { margin-bottom: 16px; }
+details.continuation summary { cursor: pointer; padding: 12px 16px; background: var(--user-bg); border-left: 4px solid var(--user-border); border-radius: 12px; font-weight: 500; color: var(--text-muted); }
+details.continuation summary:hover { background: rgba(25, 118, 210, 0.15); }
+details.continuation[open] summary { border-radius: 12px 12px 0 0; margin-bottom: 0; }
+.index-item { margin-bottom: 16px; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); background: var(--user-bg); border-left: 4px solid var(--user-border); }
+.index-item a { display: block; text-decoration: none; color: inherit; }
+.index-item a:hover { background: rgba(25, 118, 210, 0.1); }
+.index-item-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 16px; background: rgba(0,0,0,0.03); font-size: 0.85rem; }
+.index-item-number { font-weight: 600; color: var(--user-border); }
+.index-item-content { padding: 16px; }
+.index-item-stats { padding: 8px 16px 12px 32px; font-size: 0.85rem; color: var(--text-muted); border-top: 1px solid rgba(0,0,0,0.06); }
+.index-item-commit { margin-top: 6px; padding: 4px 8px; background: #fff3e0; border-radius: 4px; font-size: 0.85rem; color: #e65100; }
+.index-item-commit code { background: rgba(0,0,0,0.08); padding: 1px 4px; border-radius: 3px; font-size: 0.8rem; margin-right: 6px; }
+.commit-card { margin: 8px 0; padding: 10px 14px; background: #fff3e0; border-left: 4px solid #ff9800; border-radius: 6px; }
+.commit-card a { text-decoration: none; color: #5d4037; display: block; }
+.commit-card a:hover { color: #e65100; }
+.commit-card-hash { font-family: monospace; color: #e65100; font-weight: 600; margin-right: 8px; }
+.index-commit { margin-bottom: 12px; padding: 10px 16px; background: #fff3e0; border-left: 4px solid #ff9800; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+.index-commit a { display: block; text-decoration: none; color: inherit; }
+.index-commit a:hover { background: rgba(255, 152, 0, 0.1); margin: -10px -16px; padding: 10px 16px; border-radius: 8px; }
+.index-commit-header { display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; margin-bottom: 4px; }
+.index-commit-hash { font-family: monospace; color: #e65100; font-weight: 600; }
+.index-commit-msg { color: #5d4037; }
+.index-item-long-text { margin-top: 8px; padding: 12px; background: var(--card-bg); border-radius: 8px; border-left: 3px solid var(--assistant-border); }
+.index-item-long-text .truncatable.truncated::after { background: linear-gradient(to bottom, transparent, var(--card-bg)); }
+.index-item-long-text-content { color: var(--text-color); }
+#search-box { display: none; align-items: center; gap: 8px; }
+#search-box input { padding: 6px 12px; border: 1px solid var(--assistant-border); border-radius: 6px; font-size: 16px; width: 180px; }
+#search-box button, #modal-search-btn, #modal-close-btn { background: var(--user-border); color: white; border: none; border-radius: 6px; padding: 6px 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+#search-box button:hover, #modal-search-btn:hover { background: #1565c0; }
+#modal-close-btn { background: var(--text-muted); margin-left: 8px; }
+#modal-close-btn:hover { background: #616161; }
+#search-modal[open] { border: none; border-radius: 12px; box-shadow: 0 4px 24px rgba(0,0,0,0.2); padding: 0; width: 90vw; max-width: 900px; height: 80vh; max-height: 80vh; display: flex; flex-direction: column; }
+#search-modal::backdrop { background: rgba(0,0,0,0.5); }
+.search-modal-header { display: flex; align-items: center; gap: 8px; padding: 16px; border-bottom: 1px solid var(--assistant-border); background: var(--bg-color); border-radius: 12px 12px 0 0; }
+.search-modal-header input { flex: 1; padding: 8px 12px; border: 1px solid var(--assistant-border); border-radius: 6px; font-size: 16px; }
+#search-status { padding: 8px 16px; font-size: 0.85rem; color: var(--text-muted); border-bottom: 1px solid rgba(0,0,0,0.06); }
+#search-results { flex: 1; overflow-y: auto; padding: 16px; }
+.search-result { margin-bottom: 16px; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.search-result a { display: block; text-decoration: none; color: inherit; }
+.search-result a:hover { background: rgba(25, 118, 210, 0.05); }
+.search-result-page { padding: 6px 12px; background: rgba(0,0,0,0.03); font-size: 0.8rem; color: var(--text-muted); border-bottom: 1px solid rgba(0,0,0,0.06); }
+.search-result-content { padding: 12px; }
+.search-result mark { background: #fff59d; padding: 1px 2px; border-radius: 2px; }
+@media (max-width: 600px) { body { padding: 8px; } .message, .index-item { border-radius: 8px; } .message-content, .index-item-content { padding: 12px; } pre { font-size: 0.8rem; padding: 8px; } #search-box input { width: 120px; } #search-modal[open] { width: 95vw; height: 90vh; } }
+</style>
+</head>
+<body>
+    <div class="container">
+        <h1><a href="index.html" style="color: inherit; text-decoration: none;">Claude Code transcript</a> - page 1/3</h1>
+        
+
+<div class="pagination">
+<a href="index.html" class="index-link">Index</a>
+<span class="disabled">&larr; Prev</span>
+<span class="current">1</span>
+<a href="page-002.html">2</a>
+<a href="page-003.html">3</a>
+<a href="page-002.html">Next &rarr;</a>
+</div>
+
+        
+<div class="message user" id="msg-2026-07-11T17-36-11-717Z"><div class="message-header"><span class="role-label">User</span><a href="#msg-2026-07-11T17-36-11-717Z" class="timestamp-link"><time datetime="2026-07-11T17:36:11.717Z" data-timestamp="2026-07-11T17:36:11.717Z">2026-07-11T17:36:11.717Z</time></a></div><div class="message-content">
+<div class="user-content"><p>write a script to explore the data you pulled for the top 10k cited papers. i want to know things like:</p>
+<ul>
+<li>distribution across domains</li>
+<li>what portion is open access vs. not</li>
+<li>what portion has pdf urls</li>
+<li>what portion has grobid urls</li>
+</ul></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-36-12-876Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-36-12-876Z" class="timestamp-link"><time datetime="2026-07-11T17:36:12.876Z" data-timestamp="2026-07-11T17:36:12.876Z">2026-07-11T17:36:12.876Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-36-13-174Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-36-13-174Z" class="timestamp-link"><time datetime="2026-07-11T17:36:13.174Z" data-timestamp="2026-07-11T17:36:13.174Z">2026-07-11T17:36:13.174Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p>I'll first look at the existing script and the data it produced to understand the structure.</p></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-36-13-668Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-36-13-668Z" class="timestamp-link"><time datetime="2026-07-11T17:36:13.668Z" data-timestamp="2026-07-11T17:36:13.668Z">2026-07-11T17:36:13.668Z</time></a></div><div class="message-content">
+<div class="tool-use bash-tool" data-tool-id="toolu_01QdcoAQKeG9CqjbQPPFrhj5">
+<div class="tool-header"><span class="tool-icon">$</span> Bash</div>
+<div class="tool-description">List repo structure and data files</div><div class="truncatable"><div class="truncatable-content"><pre class="bash-command">ls -la &amp;&amp; echo &#34;---SCRIPTS---&#34; &amp;&amp; ls -la scripts/ &amp;&amp; echo &#34;---DATA---&#34; &amp;&amp; find . -name &#34;*.json&#34; -not -path &#34;*/node_modules/*&#34; -not -name &#34;package*.json&#34; | head -50</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-36-13-708Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-36-13-708Z" class="timestamp-link"><time datetime="2026-07-11T17:36:13.708Z" data-timestamp="2026-07-11T17:36:13.708Z">2026-07-11T17:36:13.708Z</time></a></div><div class="message-content">
+<div class="tool-use" data-tool-id="toolu_01K42ZFN43855aF9pcEnohR7"><div class="tool-header"><span class="tool-icon">⚙</span> Read</div><div class="truncatable"><div class="truncatable-content"><pre class="json">{
+  &#34;file_path&#34;: &#34;/Users/andrewjin/Desktop/anthropic-take-home/scripts/build_graph_data.py&#34;
+}</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T17-36-13-718Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T17-36-13-718Z" class="timestamp-link"><time datetime="2026-07-11T17:36:13.718Z" data-timestamp="2026-07-11T17:36:13.718Z">2026-07-11T17:36:13.718Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>1	#!/usr/bin/env python3
+2	&quot;&quot;&quot;Transform the raw top-cited JSONL into CDN-optimized artifacts for the 3D graph viz.
+3	
+4	Produces (into --out):
+5	  manifest.json      metadata: counts, citation scale domain, color legends, byte offsets
+6	  nodes.bin          SoA binary: Uint32 citations[N], Uint16 year[N],
+7	                     Uint8 domainIdx[N], Uint8 fieldIdx[N], Uint8 flags[N] (bit0=suspect)
+8	  nodes-text.json    title[], author[](first), topicIdx[] + topicTable[]  (string-table encoded)
+9	  search-kw.json     kwIdx[][] + kwTable[]  (keyword search terms; loaded after first paint)
+10	  edges.bin          Uint16 SoA: src[E] then dst[E], sorted, deduped (N&lt;65536 so 16-bit is safe)
+11	  details/shard-NNN.json  Tier-2 full details, SHARD records each
+12	
+13	Node index (0..N-1, citation-rank order = input order) is the canonical key across every file.
+14	positions.bin is produced separately by layout_3d.mjs, which also patches positionScale into the
+15	manifest.
+16	
+17	Stdlib only. gzip sidecars (.gz) are written for each artifact; Brotli is left to the CDN.
+18	&quot;&quot;&quot;
+19	
+20	from __future__ import annotations
+21	
+22	import argparse
+23	import array
+24	import gzip
+25	import hashlib
+26	import json
+27	import os
+28	import shutil
+29	import sys
+30	
+31	# ------------------------------------------------------------------ helpers
+32	
+33	def short_id(url: str | None) -&gt; str | None:
+34	    return url.rsplit(&quot;/&quot;, 1)[-1] if url else None
+35	
+36	
+37	def reconstruct_abstract(inv: dict | None) -&gt; str | None:
+38	    &quot;&quot;&quot;Rebuild plain text from OpenAlex&#x27;s abstract_inverted_index (word -&gt; [positions]).&quot;&quot;&quot;
+39	    if not inv:
+40	        return None
+41	    pos: dict[int, str] = {}
+42	    for word, positions in inv.items():
+43	        for p in positions:
+44	            pos[p] = word
+45	    return &quot; &quot;.join(pos[k] for k in sorted(pos))
+46	
+47	
+48	def first_author(work: dict) -&gt; str:
+49	    a = work.get(&quot;authorships&quot;) or []
+50	    return ((a[0].get(&quot;author&quot;) or {}).get(&quot;display_name&quot;) or &quot;&quot;) if a else &quot;&quot;
+51	
+52	
+53	def all_authors(work: dict) -&gt; list[dict]:
+54	    out = []
+55	    for a in work.get(&quot;authorships&quot;) or []:
+56	        out.append({
+57	            &quot;name&quot;: (a.get(&quot;author&quot;) or {}).get(&quot;display_name&quot;),
+58	            &quot;institutions&quot;: [i.get(&quot;display_name&quot;) for i in (a.get(&quot;institutions&quot;) or []) if i.get(&quot;display_name&quot;)],
+59	        })
+60	    return out
+61	
+62	
+63	def public_pdf_url(work: dict) -&gt; str | None:
+64	    for loc in (work.get(&quot;best_oa_location&quot;), work.get(&quot;primary_location&quot;)):
+65	        url = (loc or {}).get(&quot;pdf_url&quot;)
+66	        if url:
+67	            return url
+68	    for loc in work.get(&quot;locations&quot;) or []:
+69	        url = (loc or {}).get(&quot;pdf_url&quot;)
+70	        if url:
+71	            return url
+72	    return None
+73	
+74	
+75	def is_suspect(work: dict) -&gt; bool:
+76	    &quot;&quot;&quot;Same citation-anomaly heuristic as the fetch script: single-year spike + impact mismatch.&quot;&quot;&quot;
+77	    total = work.get(&quot;cited_by_count&quot;) or 0
+78	    counts = work.get(&quot;counts_by_year&quot;) or []
+79	    if total &gt; 1000 and counts:
+80	        top = max((c.get(&quot;cited_by_count&quot;) or 0) for c in counts)
+81	        if top / total &gt; 0.90:
+82	            return True
+83	    fwci = work.get(&quot;fwci&quot;)
+84	    return total &gt; 100000 and fwci is not None and fwci &lt; 5
+85	
+86	
+87	def percentile(sorted_vals: list[int], q: float) -&gt; int:
+88	    if not sorted_vals:
+89	        return 0
+90	    i = min(len(sorted_vals) - 1, int(q * (len(sorted_vals) - 1)))
+91	    return sorted_vals[i]
+92	
+93	
+94	def le_bytes(a: &quot;array.array&quot;) -&gt; bytes:
+95	    &quot;&quot;&quot;Little-endian bytes for a typed array, regardless of host byte order.&quot;&quot;&quot;
+96	    if sys.byteorder == &quot;big&quot;:
+97	        a = array.array(a.typecode, a)
+98	        a.byteswap()
+99	    return a.tobytes()
+100	
+101	
+102	def write_gz(path: str, data: bytes) -&gt; None:
+103	    with open(path, &quot;wb&quot;) as f:
+104	        f.write(data)
+105	    with gzip.open(path + &quot;.gz&quot;, &quot;wb&quot;, compresslevel=9) as f:
+106	        f.write(data)
+107	
+108	
+109	def sha8(data: bytes) -&gt; str:
+110	    return hashlib.sha256(data).hexdigest()[:8]
+111	
+112	
+113	# ------------------------------------------------------------------ main
+114	
+115	def main() -&gt; int:
+116	    p = argparse.ArgumentParser(description=&quot;Build CDN artifacts for the 3D force-graph viz.&quot;)
+117	    p.add_argument(&quot;--in&quot;, dest=&quot;inp&quot;, default=&quot;scripts/data/full/top_cited.jsonl&quot;)
+118	    p.add_argument(&quot;--out&quot;, default=&quot;web/public/data/v1&quot;)
+119	    p.add_argument(&quot;--shard&quot;, type=int, default=100, help=&quot;Records per detail shard.&quot;)
+120	    args = p.parse_args()
+121	
+122	    print(f&quot;Loading {args.inp} ...&quot;, file=sys.stderr)
+123	    rows = [json.loads(line) for line in open(args.inp, encoding=&quot;utf-8&quot;)]
+124	    n = len(rows)
+125	    index = {short_id(r[&quot;id&quot;]): i for i, r in enumerate(rows)}
+126	    print(f&quot;  {n} nodes&quot;, file=sys.stderr)
+127	
+128	    os.makedirs(args.out, exist_ok=True)
+129	    details_dir = os.path.join(args.out, &quot;details&quot;)
+130	    if os.path.isdir(details_dir):
+131	        shutil.rmtree(details_dir)
+132	    os.makedirs(details_dir)
+133	
+134	    # --- edges: intra-set, deduped, sorted, columnar Uint16 SoA ---
+135	    edge_set = set()
+136	    for r in rows:
+137	        s = index[short_id(r[&quot;id&quot;])]
+138	        for x in r.get(&quot;referenced_works&quot;) or []:
+139	            t = index.get(short_id(x))
+140	            if t is not None and t != s:
+141	                edge_set.add((s, t))
+142	    edges = sorted(edge_set)
+143	    src = array.array(&quot;H&quot;, (a for a, _ in edges))
+144	    dst = array.array(&quot;H&quot;, (b for _, b in edges))
+145	    edges_bin = le_bytes(src) + le_bytes(dst)
+146	    write_gz(os.path.join(args.out, &quot;edges.bin&quot;), edges_bin)
+147	    print(f&quot;  {len(edges)} edges -&gt; edges.bin ({len(edges_bin)//1024} KB)&quot;, file=sys.stderr)
+148	
+149	    # --- string tables for categorical fields ---
+150	    def table(values):
+151	        uniq = sorted(set(values))
+152	        idx = {v: i for i, v in enumerate(uniq)}
+153	        return uniq, [idx[v] for v in values]
+154	
+155	    domains = [((r.get(&quot;primary_topic&quot;) or {}).get(&quot;domain&quot;) or {}).get(&quot;display_name&quot;) or &quot;Unknown&quot; for r in rows]
+156	    fields = [((r.get(&quot;primary_topic&quot;) or {}).get(&quot;field&quot;) or {}).get(&quot;display_name&quot;) or &quot;Unknown&quot; for r in rows]
+157	    topics = [(r.get(&quot;primary_topic&quot;) or {}).get(&quot;display_name&quot;) or &quot;&quot; for r in rows]
+158	    domain_table, domain_idx = table(domains)
+159	    field_table, field_idx = table(fields)
+160	    topic_table, topic_idx = table(topics)
+161	    assert len(domain_table) &lt; 256 and len(field_table) &lt; 256, &quot;categorical index exceeds Uint8&quot;
+162	
+163	    # --- nodes.bin: SoA numerics ---
+164	    citations = array.array(&quot;I&quot;, (r.get(&quot;cited_by_count&quot;) or 0 for r in rows))
+165	    years = array.array(&quot;H&quot;, (r.get(&quot;publication_year&quot;) or 0 for r in rows))
+166	    dom = array.array(&quot;B&quot;, domain_idx)
+167	    fld = array.array(&quot;B&quot;, field_idx)
+168	    flags = array.array(&quot;B&quot;, (1 if is_suspect(r) else 0 for r in rows))
+169	    assert citations.itemsize == 4 and years.itemsize == 2
+170	    nodes_bin = le_bytes(citations) + le_bytes(years) + le_bytes(dom) + le_bytes(fld) + le_bytes(flags)
+171	    write_gz(os.path.join(args.out, &quot;nodes.bin&quot;), nodes_bin)
+172	
+173	    # --- nodes-text.json: title, first author, topic index ---
+174	    nodes_text = {
+175	        &quot;title&quot;: [r.get(&quot;title&quot;) or &quot;&quot; for r in rows],
+176	        &quot;author&quot;: [first_author(r) for r in rows],
+177	        &quot;topicIdx&quot;: topic_idx,
+178	        &quot;topicTable&quot;: topic_table,
+179	    }
+180	    nt = json.dumps(nodes_text, separators=(&quot;,&quot;, &quot;:&quot;), ensure_ascii=False).encode()
+181	    write_gz(os.path.join(args.out, &quot;nodes-text.json&quot;), nt)
+182	
+183	    # --- search-kw.json: keyword terms, string-table encoded (loaded post-paint) ---
+184	    kw_lists = [[k.get(&quot;display_name&quot;, &quot;&quot;) for k in (r.get(&quot;keywords&quot;) or [])] for r in rows]
+185	    kw_table, _ = table([x for lst in kw_lists for x in lst])
+186	    kw_pos = {v: i for i, v in enumerate(kw_table)}
+187	    search_kw = {&quot;kwTable&quot;: kw_table, &quot;kwIdx&quot;: [[kw_pos[x] for x in lst] for lst in kw_lists]}
+188	    sk = json.dumps(search_kw, separators=(&quot;,&quot;, &quot;:&quot;), ensure_ascii=False).encode()
+189	    write_gz(os.path.join(args.out, &quot;search-kw.json&quot;), sk)
+190	
+191	    # --- detail shards ---
+192	    n_shards = (n + args.shard - 1) // args.shard
+193	    for s in range(n_shards):
+194	        chunk = rows[s * args.shard:(s + 1) * args.shard]
+195	        recs = []
+196	        for r in chunk:
+197	            recs.append({
+198	                &quot;id&quot;: short_id(r[&quot;id&quot;]),
+199	                &quot;title&quot;: r.get(&quot;title&quot;),
+200	                &quot;year&quot;: r.get(&quot;publication_year&quot;),
+201	                &quot;type&quot;: r.get(&quot;type&quot;),
+202	                &quot;cited_by_count&quot;: r.get(&quot;cited_by_count&quot;),
+203	                &quot;fwci&quot;: r.get(&quot;fwci&quot;),
+204	                &quot;doi&quot;: r.get(&quot;doi&quot;),
+205	                &quot;landing_url&quot;: (r.get(&quot;primary_location&quot;) or {}).get(&quot;landing_page_url&quot;),
+206	                &quot;pdf_url&quot;: public_pdf_url(r),
+207	                &quot;oa_url&quot;: (r.get(&quot;open_access&quot;) or {}).get(&quot;oa_url&quot;),
+208	                &quot;grobid_xml_url&quot;: (r.get(&quot;content_urls&quot;) or {}).get(&quot;grobid_xml&quot;),
+209	                &quot;abstract&quot;: reconstruct_abstract(r.get(&quot;abstract_inverted_index&quot;)),
+210	                &quot;authors&quot;: all_authors(r),
+211	                &quot;topics&quot;: [t.get(&quot;display_name&quot;) for t in (r.get(&quot;topics&quot;) or [])],
+212	                &quot;keywords&quot;: [k.get(&quot;display_name&quot;) for k in (r.get(&quot;keywords&quot;) or [])],
+213	                &quot;biblio&quot;: r.get(&quot;biblio&quot;),
+214	            })
+215	        blob = json.dumps(recs, separators=(&quot;,&quot;, &quot;:&quot;), ensure_ascii=False).encode()
+216	        write_gz(os.path.join(details_dir, f&quot;shard-{s:03d}.json&quot;), blob)
+217	    print(f&quot;  {n_shards} detail shards -&gt; details/&quot;, file=sys.stderr)
+218	
+219	    # --- citation scale domain (sqrt/log sizing + p95 clamp for the anomaly) ---
+220	    cit_sorted = sorted(r.get(&quot;cited_by_count&quot;) or 0 for r in rows)
+221	    cit_domain = {
+222	        &quot;min&quot;: cit_sorted[0], &quot;p50&quot;: percentile(cit_sorted, 0.50),
+223	        &quot;p95&quot;: percentile(cit_sorted, 0.95), &quot;p99&quot;: percentile(cit_sorted, 0.99),
+224	        &quot;max&quot;: cit_sorted[-1],
+225	    }
+226	
+227	    # --- manifest ---
+228	    manifest = {
+229	        &quot;version&quot;: &quot;v1&quot;,
+230	        &quot;counts&quot;: {&quot;nodes&quot;: n, &quot;edges&quot;: len(edges), &quot;shards&quot;: n_shards},
+231	        &quot;shardSize&quot;: args.shard,
+232	        &quot;citationDomain&quot;: cit_domain,
+233	        &quot;colorLegend&quot;: {&quot;domains&quot;: domain_table, &quot;fields&quot;: field_table},
+234	        &quot;nodesBin&quot;: {
+235	            &quot;count&quot;: n,
+236	            &quot;layout&quot;: [
+237	                {&quot;name&quot;: &quot;citations&quot;, &quot;type&quot;: &quot;Uint32&quot;, &quot;offset&quot;: 0},
+238	                {&quot;name&quot;: &quot;year&quot;, &quot;type&quot;: &quot;Uint16&quot;, &quot;offset&quot;: 4 * n},
+239	                {&quot;name&quot;: &quot;domainIdx&quot;, &quot;type&quot;: &quot;Uint8&quot;, &quot;offset&quot;: 6 * n},
+240	                {&quot;name&quot;: &quot;fieldIdx&quot;, &quot;type&quot;: &quot;Uint8&quot;, &quot;offset&quot;: 7 * n},
+241	                {&quot;name&quot;: &quot;flags&quot;, &quot;type&quot;: &quot;Uint8&quot;, &quot;offset&quot;: 8 * n},
+242	            ],
+243	            &quot;flags&quot;: {&quot;suspect&quot;: 1},
+244	        },
+245	        &quot;edgesBin&quot;: {&quot;count&quot;: len(edges), &quot;type&quot;: &quot;Uint16&quot;, &quot;layout&quot;: &quot;src[E] then dst[E]&quot;},
+246	        &quot;positions&quot;: {&quot;file&quot;: &quot;positions.bin&quot;, &quot;type&quot;: &quot;Int16&quot;, &quot;layout&quot;: &quot;x,y,z interleaved&quot;,
+247	                      &quot;scale&quot;: None, &quot;note&quot;: &quot;decode: value/32767*scale; filled by layout_3d.mjs&quot;},
+248	        &quot;files&quot;: {
+249	            &quot;nodesBin&quot;: &quot;nodes.bin&quot;, &quot;nodesText&quot;: &quot;nodes-text.json&quot;,
+250	            &quot;searchKw&quot;: &quot;search-kw.json&quot;, &quot;edgesBin&quot;: &quot;edges.bin&quot;,
+251	            &quot;positions&quot;: &quot;positions.bin&quot;, &quot;detailsPattern&quot;: &quot;details/shard-{shard:03d}.json&quot;,
+252	        },
+253	        &quot;hashes&quot;: {
+254	            &quot;nodes.bin&quot;: sha8(nodes_bin), &quot;nodes-text.json&quot;: sha8(nt),
+255	            &quot;search-kw.json&quot;: sha8(sk), &quot;edges.bin&quot;: sha8(edges_bin),
+256	        },
+257	    }
+258	    with open(os.path.join(args.out, &quot;manifest.json&quot;), &quot;w&quot;, encoding=&quot;utf-8&quot;) as f:
+259	        json.dump(manifest, f, indent=2, ensure_ascii=False)
+260	
+261	    print(f&quot;Done -&gt; {args.out}&quot;, file=sys.stderr)
+262	    return 0
+263	
+264	
+265	if __name__ == &quot;__main__&quot;:
+266	    sys.exit(main())
+267	</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T17-36-14-146Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T17-36-14-146Z" class="timestamp-link"><time datetime="2026-07-11T17:36:14.146Z" data-timestamp="2026-07-11T17:36:14.146Z">2026-07-11T17:36:14.146Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>total 24
+drwxr-xr-x@  7 andrewjin  staff   224 Jul 11 10:22 .
+drwx------@ 42 andrewjin  staff  1344 Jul 11 08:48 ..
+-rw-r--r--@  1 andrewjin  staff  6148 Jul 11 09:58 .DS_Store
+drwxr-xr-x  12 andrewjin  staff   384 Jul 11 10:34 .git
+-rw-r--r--   1 andrewjin  staff   383 Jul 11 10:22 .gitignore
+drwxr-xr-x  16 andrewjin  staff   512 Jul 11 10:35 scripts
+drwxr-xr-x   3 andrewjin  staff    96 Jul 11 10:34 web
+---SCRIPTS---
+total 136
+drwxr-xr-x  16 andrewjin  staff    512 Jul 11 10:35 .
+drwxr-xr-x@  7 andrewjin  staff    224 Jul 11 10:22 ..
+-rw-r--r--@  1 andrewjin  staff   6148 Jul 11 09:58 .DS_Store
+-rw-r--r--   1 andrewjin  staff    437 Jul 11 10:02 .env
+-rw-r--r--   1 andrewjin  staff    150 Jul 11 10:02 .env.example
+-rw-r--r--   1 andrewjin  staff    105 Jul 11 10:35 .gitignore
+-rw-r--r--   1 andrewjin  staff   3673 Jul 11 10:35 README-graph-data.md
+drwxr-xr-x   3 andrewjin  staff     96 Jul 11 10:02 __pycache__
+-rw-r--r--   1 andrewjin  staff  11027 Jul 11 10:34 build_graph_data.py
+drwxr-xr-x   6 andrewjin  staff    192 Jul 11 10:04 data
+-rw-r--r--   1 andrewjin  staff  12729 Jul 11 10:02 fetch_top_cited.py
+-rw-r--r--   1 andrewjin  staff   3449 Jul 11 10:34 layout_3d.mjs
+drwxr-xr-x   9 andrewjin  staff    288 Jul 11 10:35 node_modules
+-rw-r--r--   1 andrewjin  staff   2380 Jul 11 10:35 package-lock.json
+-rw-r--r--   1 andrewjin  staff    282 Jul 11 10:34 package.json
+-rw-r--r--   1 andrewjin  staff   3969 Jul 11 10:35 verify_graph_data.mjs
+---DATA---
+./web/public/data/v1/search-kw.json
+./web/public/data/v1/nodes-text.json
+./web/public/data/v1/manifest.json
+./web/public/data/v1/details/shard-064.json
+./web/public/data/v1/details/shard-033.json
+./web/public/data/v1/details/shard-025.json
+./web/public/data/v1/details/shard-072.json
+./web/public/data/v1/details/shard-009.json
+./web/public/data/v1/details/shard-048.json
+./web/public/data/v1/details/shard-087.json
+./web/public/data/v1/details/shard-068.json
+./web/public/data/v1/details/shard-029.json
+./web/public/data/v1/details/shard-091.json
+./web/public/data/v1/details/shard-005.json
+./web/public/data/v1/details/shard-052.json
+./web/public/data/v1/details/shard-044.json
+./web/public/data/v1/details/shard-013.json
+./web/public/data/v1/details/shard-012.json
+./web/public/data/v1/details/shard-045.json
+./web/public/data/v1/details/shard-053.json
+./web/public/data/v1/details/shard-004.json
+./web/public/data/v1/details/shard-090.json
+./web/public/data/v1/details/shard-028.json
+./web/public/data/v1/details/shard-086.json
+./web/public/data/v1/details/shard-069.json
+./web/public/data/v1/details/shard-049.json
+./web/public/data/v1/details/shard-008.json
+./web/public/data/v1/details/shard-073.json
+./web/public/data/v1/details/shard-024.json
+./web/public/data/v1/details/shard-032.json
+./web/public/data/v1/details/shard-065.json
+./web/public/data/v1/details/shard-081.json
+./web/public/data/v1/details/shard-039.json
+./web/public/data/v1/details/shard-097.json
+./web/public/data/v1/details/shard-078.json
+./web/public/data/v1/details/shard-003.json
+./web/public/data/v1/details/shard-054.json
+./web/public/data/v1/details/shard-042.json
+./web/public/data/v1/details/shard-015.json
+./web/public/data/v1/details/shard-062.json
+./web/public/data/v1/details/shard-035.json
+./web/public/data/v1/details/shard-023.json
+./web/public/data/v1/details/shard-074.json
+./web/public/data/v1/details/shard-058.json
+./web/public/data/v1/details/shard-019.json
+./web/public/data/v1/details/shard-018.json
+./web/public/data/v1/details/shard-059.json
+./web/public/data/v1/details/shard-075.json
+./web/public/data/v1/details/shard-022.json
+./web/public/data/v1/details/shard-034.json</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-36-15-233Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-36-15-233Z" class="timestamp-link"><time datetime="2026-07-11T17:36:15.233Z" data-timestamp="2026-07-11T17:36:15.233Z">2026-07-11T17:36:15.233Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-36-15-390Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-36-15-390Z" class="timestamp-link"><time datetime="2026-07-11T17:36:15.390Z" data-timestamp="2026-07-11T17:36:15.390Z">2026-07-11T17:36:15.390Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p>Let me look at the raw data and the fetch script to understand available fields.</p></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-36-16-036Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-36-16-036Z" class="timestamp-link"><time datetime="2026-07-11T17:36:16.036Z" data-timestamp="2026-07-11T17:36:16.036Z">2026-07-11T17:36:16.036Z</time></a></div><div class="message-content">
+<div class="tool-use bash-tool" data-tool-id="toolu_01WCb1vdnG4MXpSU9sy29A11">
+<div class="tool-header"><span class="tool-icon">$</span> Bash</div>
+<div class="tool-description">Inspect data directory and jsonl files</div><div class="truncatable"><div class="truncatable-content"><pre class="bash-command">ls -la scripts/data/ &amp;&amp; echo &#34;---FULL---&#34; &amp;&amp; ls -la scripts/data/full/ 2&gt;/dev/null &amp;&amp; echo &#34;---JSONL LINE COUNT---&#34; &amp;&amp; for f in scripts/data/full/*.jsonl scripts/data/*/*.jsonl; do [ -f &#34;$f&#34; ] &amp;&amp; echo &#34;$f: $(wc -l &lt; &#34;$f&#34;) lines&#34;; done 2&gt;/dev/null</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T17-36-17-692Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T17-36-17-692Z" class="timestamp-link"><time datetime="2026-07-11T17:36:17.692Z" data-timestamp="2026-07-11T17:36:17.692Z">2026-07-11T17:36:17.692Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>total 16
+drwxr-xr-x   6 andrewjin  staff   192 Jul 11 10:04 .
+drwxr-xr-x  16 andrewjin  staff   512 Jul 11 10:35 ..
+-rw-r--r--@  1 andrewjin  staff  6148 Jul 11 10:08 .DS_Store
+drwxr-xr-x   5 andrewjin  staff   160 Jul 11 10:06 full
+drwxr-xr-x   5 andrewjin  staff   160 Jul 11 09:45 sample
+drwxr-xr-x   6 andrewjin  staff   192 Jul 11 10:03 sample50
+---FULL---
+total 368688
+drwxr-xr-x  5 andrewjin  staff        160 Jul 11 10:06 .
+drwxr-xr-x  6 andrewjin  staff        192 Jul 11 10:04 ..
+-rw-r--r--  1 andrewjin  staff        885 Jul 11 10:06 run_meta.json
+-rw-r--r--  1 andrewjin  staff    3494552 Jul 11 10:06 top_cited.csv
+-rw-r--r--  1 andrewjin  staff  168639951 Jul 11 10:06 top_cited.jsonl
+---JSONL LINE COUNT---
+scripts/data/full/top_cited.jsonl:    10000 lines
+scripts/data/full/top_cited.jsonl:    10000 lines
+scripts/data/sample/top_cited.jsonl:       15 lines
+scripts/data/sample50/top_cited.jsonl:       50 lines</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-36-18-813Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-36-18-813Z" class="timestamp-link"><time datetime="2026-07-11T17:36:18.813Z" data-timestamp="2026-07-11T17:36:18.813Z">2026-07-11T17:36:18.813Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-36-19-257Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-36-19-257Z" class="timestamp-link"><time datetime="2026-07-11T17:36:19.257Z" data-timestamp="2026-07-11T17:36:19.257Z">2026-07-11T17:36:19.257Z</time></a></div><div class="message-content">
+<div class="tool-use bash-tool" data-tool-id="toolu_011VutFBsA8xEWwNtjTzoaum">
+<div class="tool-header"><span class="tool-icon">$</span> Bash</div>
+<div class="tool-description">Show run meta and record keys</div><div class="truncatable"><div class="truncatable-content"><pre class="bash-command">cat scripts/data/full/run_meta.json &amp;&amp; echo &#34;---KEYS OF FIRST RECORD---&#34; &amp;&amp; head -1 scripts/data/full/top_cited.jsonl | python3 -c &#34;import json,sys; d=json.loads(sys.stdin.read()); print(&#39;\n&#39;.join(sorted(d.keys())))&#34;</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T17-36-21-304Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T17-36-21-304Z" class="timestamp-link"><time datetime="2026-07-11T17:36:21.304Z" data-timestamp="2026-07-11T17:36:21.304Z">2026-07-11T17:36:21.304Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>{
+  &quot;fetched_at&quot;: &quot;2026-07-11T17:06:46.034863+00:00&quot;,
+  &quot;limit&quot;: 10000,
+  &quot;records_written&quot;: 10000,
+  &quot;requests&quot;: 50,
+  &quot;per_page&quot;: 200,
+  &quot;total_cost_usd&quot;: 0.005,
+  &quot;suspect_count&quot;: 1,
+  &quot;api_reported_total_works&quot;: 319342124,
+  &quot;elapsed_seconds&quot;: 128.9,
+  &quot;endpoint&quot;: &quot;https://api.openalex.org/works&quot;,
+  &quot;sort&quot;: &quot;cited_by_count:desc&quot;,
+  &quot;select_fields&quot;: [
+    &quot;id&quot;,
+    &quot;doi&quot;,
+    &quot;title&quot;,
+    &quot;publication_year&quot;,
+    &quot;publication_date&quot;,
+    &quot;type&quot;,
+    &quot;language&quot;,
+    &quot;cited_by_count&quot;,
+    &quot;counts_by_year&quot;,
+    &quot;fwci&quot;,
+    &quot;authorships&quot;,
+    &quot;primary_location&quot;,
+    &quot;best_oa_location&quot;,
+    &quot;locations&quot;,
+    &quot;open_access&quot;,
+    &quot;has_content&quot;,
+    &quot;content_urls&quot;,
+    &quot;referenced_works_count&quot;,
+    &quot;primary_topic&quot;,
+    &quot;abstract_inverted_index&quot;,
+    &quot;referenced_works&quot;,
+    &quot;related_works&quot;,
+    &quot;topics&quot;,
+    &quot;keywords&quot;
+  ],
+  &quot;mailto&quot;: &quot;15andrewj@gmail.com&quot;,
+  &quot;used_api_key&quot;: true
+}---KEYS OF FIRST RECORD---
+abstract_inverted_index
+authorships
+best_oa_location
+cited_by_count
+content_urls
+counts_by_year
+doi
+fwci
+has_content
+id
+keywords
+language
+locations
+open_access
+primary_location
+primary_topic
+publication_date
+publication_year
+referenced_works
+referenced_works_count
+related_works
+title
+topics
+type</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-36-22-904Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-36-22-904Z" class="timestamp-link"><time datetime="2026-07-11T17:36:22.904Z" data-timestamp="2026-07-11T17:36:22.904Z">2026-07-11T17:36:22.904Z</time></a></div><div class="message-content">
+<div class="tool-use bash-tool" data-tool-id="toolu_01RmfXVx4bm2ofiXwN6uexM9">
+<div class="tool-header"><span class="tool-icon">$</span> Bash</div>
+<div class="tool-description">Inspect open_access, content_urls, primary_topic on first record</div><div class="truncatable"><div class="truncatable-content"><pre class="bash-command">head -1 scripts/data/full/top_cited.jsonl | python3 -c &#34;
+import json,sys
+d=json.loads(sys.stdin.read())
+print(&#39;open_access:&#39;, json.dumps(d.get(&#39;open_access&#39;)))
+print(&#39;content_urls:&#39;, json.dumps(d.get(&#39;content_urls&#39;)))
+print(&#39;has_content:&#39;, json.dumps(d.get(&#39;has_content&#39;)))
+print(&#39;primary_topic keys:&#39;, list((d.get(&#39;primary_topic&#39;) or {}).keys()))
+pt=d.get(&#39;primary_topic&#39;) or {}
+print(&#39;  domain:&#39;, (pt.get(&#39;domain&#39;) or {}).get(&#39;display_name&#39;))
+print(&#39;  field:&#39;, (pt.get(&#39;field&#39;) or {}).get(&#39;display_name&#39;))
+&#34;</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T17-36-29-856Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T17-36-29-856Z" class="timestamp-link"><time datetime="2026-07-11T17:36:29.856Z" data-timestamp="2026-07-11T17:36:29.856Z">2026-07-11T17:36:29.856Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>open_access: {&quot;is_oa&quot;: true, &quot;oa_status&quot;: &quot;diamond&quot;, &quot;oa_url&quot;: &quot;https://www.jstage.jst.go.jp/article/pfr/15/0/15_2402039/_pdf&quot;, &quot;any_repository_has_fulltext&quot;: true}
+content_urls: {&quot;pdf&quot;: &quot;https://content.openalex.org/works/W3038568908.pdf&quot;, &quot;grobid_xml&quot;: &quot;https://content.openalex.org/works/W3038568908.grobid-xml&quot;}
+has_content: {&quot;grobid_xml&quot;: true, &quot;pdf&quot;: true}
+primary_topic keys: [&#x27;id&#x27;, &#x27;display_name&#x27;, &#x27;score&#x27;, &#x27;subfield&#x27;, &#x27;field&#x27;, &#x27;domain&#x27;]
+  domain: Physical Sciences
+  field: Physics and Astronomy</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-36-32-546Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-36-32-546Z" class="timestamp-link"><time datetime="2026-07-11T17:36:32.546Z" data-timestamp="2026-07-11T17:36:32.546Z">2026-07-11T17:36:32.546Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-36-32-547Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-36-32-547Z" class="timestamp-link"><time datetime="2026-07-11T17:36:32.547Z" data-timestamp="2026-07-11T17:36:32.547Z">2026-07-11T17:36:32.547Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p>Now I understand the data shape. Let me write an exploration script.</p></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-36-40-766Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-36-40-766Z" class="timestamp-link"><time datetime="2026-07-11T17:36:40.766Z" data-timestamp="2026-07-11T17:36:40.766Z">2026-07-11T17:36:40.766Z</time></a></div><div class="message-content"><div class="file-tool write-tool" data-tool-id="toolu_01Bt5TZpAo4YhQsyXg1SvpEJ">
+<div class="file-tool-header write-header"><span class="file-tool-icon">📝</span> Write <span class="file-tool-path">explore_data.py</span></div>
+<div class="file-tool-fullpath">/Users/andrewjin/Desktop/anthropic-take-home/scripts/explore_data.py</div>
+<div class="truncatable"><div class="truncatable-content"><pre class="file-content">#!/usr/bin/env python3
+&#34;&#34;&#34;Explore the top-cited OpenAlex dataset: coverage &amp; distribution stats.
+
+Reads the raw JSONL pulled by fetch_top_cited.py and prints a report covering:
+  - distribution across domains (and top fields)
+  - open-access share (by is_oa and by oa_status)
+  - PDF url coverage (OpenAlex content pdf vs. any public/landing pdf)
+  - GROBID XML url coverage
+  - a few adjacent coverage stats (abstract, references, DOI) for context
+
+Stdlib only. Text report to stdout; add --json to also emit machine-readable stats.
+&#34;&#34;&#34;
+
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from collections import Counter
+
+
+# ------------------------------------------------------------------ field accessors
+
+def domain_of(work: dict) -&gt; str:
+    return ((work.get(&#34;primary_topic&#34;) or {}).get(&#34;domain&#34;) or {}).get(&#34;display_name&#34;) or &#34;Unknown&#34;
+
+
+def field_of(work: dict) -&gt; str:
+    return ((work.get(&#34;primary_topic&#34;) or {}).get(&#34;field&#34;) or {}).get(&#34;display_name&#34;) or &#34;Unknown&#34;
+
+
+def content_pdf_url(work: dict) -&gt; str | None:
+    &#34;&#34;&#34;OpenAlex-hosted full-text pdf (content.openalex.org).&#34;&#34;&#34;
+    return (work.get(&#34;content_urls&#34;) or {}).get(&#34;pdf&#34;)
+
+
+def grobid_xml_url(work: dict) -&gt; str | None:
+    &#34;&#34;&#34;OpenAlex-hosted GROBID-parsed XML.&#34;&#34;&#34;
+    return (work.get(&#34;content_urls&#34;) or {}).get(&#34;grobid_xml&#34;)
+
+
+def public_pdf_url(work: dict) -&gt; str | None:
+    &#34;&#34;&#34;Any publisher/repository pdf reachable from the work&#39;s locations.&#34;&#34;&#34;
+    for loc in (work.get(&#34;best_oa_location&#34;), work.get(&#34;primary_location&#34;)):
+        url = (loc or {}).get(&#34;pdf_url&#34;)
+        if url:
+            return url
+    for loc in work.get(&#34;locations&#34;) or []:
+        url = (loc or {}).get(&#34;pdf_url&#34;)
+        if url:
+            return url
+    return None
+
+
+# ------------------------------------------------------------------ reporting helpers
+
+def pct(n: int, total: int) -&gt; str:
+    return f&#34;{100 * n / total:5.1f}%&#34; if total else &#34;  n/a&#34;
+
+
+def bar(n: int, total: int, width: int = 30) -&gt; str:
+    filled = round(width * n / total) if total else 0
+    return &#34;█&#34; * filled + &#34;·&#34; * (width - filled)
+
+
+def print_dist(title: str, counter: Counter, total: int, limit: int | None = None) -&gt; None:
+    print(f&#34;\n{title}&#34;)
+    print(&#34;-&#34; * len(title))
+    items = counter.most_common(limit)
+    label_w = max((len(k) for k, _ in items), default=0)
+    for label, count in items:
+        print(f&#34;  {label:&lt;{label_w}}  {count:&gt;6,}  {pct(count, total)}  {bar(count, total)}&#34;)
+    if limit is not None and len(counter) &gt; limit:
+        rest = sum(counter.values()) - sum(c for _, c in items)
+        print(f&#34;  {&#39;(other)&#39;:&lt;{label_w}}  {rest:&gt;6,}  {pct(rest, total)}&#34;)
+
+
+def print_coverage(title: str, flags: dict[str, int], total: int) -&gt; None:
+    print(f&#34;\n{title}&#34;)
+    print(&#34;-&#34; * len(title))
+    label_w = max(len(k) for k in flags)
+    for label, count in flags.items():
+        print(f&#34;  {label:&lt;{label_w}}  {count:&gt;6,} / {total:,}  {pct(count, total)}  {bar(count, total)}&#34;)
+
+
+# ------------------------------------------------------------------ main
+
+def main() -&gt; int:
+    p = argparse.ArgumentParser(description=&#34;Explore the top-cited dataset.&#34;)
+    p.add_argument(&#34;--in&#34;, dest=&#34;inp&#34;, default=&#34;scripts/data/full/top_cited.jsonl&#34;)
+    p.add_argument(&#34;--top-fields&#34;, type=int, default=15, help=&#34;How many fields to list.&#34;)
+    p.add_argument(&#34;--json&#34;, action=&#34;store_true&#34;, help=&#34;Also print a JSON stats block to stderr.&#34;)
+    args = p.parse_args()
+
+    rows = [json.loads(line) for line in open(args.inp, encoding=&#34;utf-8&#34;)]
+    n = len(rows)
+    if not n:
+        print(&#34;No records.&#34;, file=sys.stderr)
+        return 1
+
+    domains = Counter(domain_of(r) for r in rows)
+    fields = Counter(field_of(r) for r in rows)
+    oa_status = Counter((r.get(&#34;open_access&#34;) or {}).get(&#34;oa_status&#34;) or &#34;unknown&#34; for r in rows)
+
+    # coverage counts
+    is_oa = sum(1 for r in rows if (r.get(&#34;open_access&#34;) or {}).get(&#34;is_oa&#34;))
+    has_content_pdf = sum(1 for r in rows if content_pdf_url(r))
+    has_public_pdf = sum(1 for r in rows if public_pdf_url(r))
+    has_any_pdf = sum(1 for r in rows if content_pdf_url(r) or public_pdf_url(r))
+    has_grobid = sum(1 for r in rows if grobid_xml_url(r))
+    has_content_flag = sum(1 for r in rows if (r.get(&#34;has_content&#34;) or {}).get(&#34;grobid_xml&#34;))
+    has_abstract = sum(1 for r in rows if r.get(&#34;abstract_inverted_index&#34;))
+    has_doi = sum(1 for r in rows if r.get(&#34;doi&#34;))
+    has_refs = sum(1 for r in rows if r.get(&#34;referenced_works&#34;))
+
+    # ---- report ----
+    print(&#34;=&#34; * 60)
+    print(f&#34;  Top-cited dataset exploration — {n:,} works&#34;)
+    print(f&#34;  source: {args.inp}&#34;)
+    print(&#34;=&#34; * 60)
+
+    print_dist(&#34;Distribution across domains&#34;, domains, n)
+    print_dist(f&#34;Top {args.top_fields} fields&#34;, fields, n, limit=args.top_fields)
+
+    print_coverage(&#34;Open access&#34;, {
+        &#34;is_oa (open access)&#34;: is_oa,
+        &#34;closed / not OA&#34;:     n - is_oa,
+    }, n)
+    print_dist(&#34;OA status breakdown&#34;, oa_status, n)
+
+    print_coverage(&#34;PDF url coverage&#34;, {
+        &#34;OpenAlex content pdf&#34;: has_content_pdf,
+        &#34;public/landing pdf&#34;:   has_public_pdf,
+        &#34;any pdf url&#34;:          has_any_pdf,
+    }, n)
+
+    print_coverage(&#34;GROBID XML coverage&#34;, {
+        &#34;content_urls.grobid_xml&#34;: has_grobid,
+        &#34;has_content.grobid_xml flag&#34;: has_content_flag,
+    }, n)
+
+    print_coverage(&#34;Other coverage (context)&#34;, {
+        &#34;abstract&#34;:           has_abstract,
+        &#34;DOI&#34;:                has_doi,
+        &#34;referenced_works&#34;:   has_refs,
+    }, n)
+
+    print()
+
+    if args.json:
+        stats = {
+            &#34;n&#34;: n,
+            &#34;domains&#34;: dict(domains),
+            &#34;fields&#34;: dict(fields),
+            &#34;oa_status&#34;: dict(oa_status),
+            &#34;coverage&#34;: {
+                &#34;is_oa&#34;: is_oa,
+                &#34;content_pdf&#34;: has_content_pdf,
+                &#34;public_pdf&#34;: has_public_pdf,
+                &#34;any_pdf&#34;: has_any_pdf,
+                &#34;grobid_xml&#34;: has_grobid,
+                &#34;grobid_flag&#34;: has_content_flag,
+                &#34;abstract&#34;: has_abstract,
+                &#34;doi&#34;: has_doi,
+                &#34;referenced_works&#34;: has_refs,
+            },
+        }
+        json.dump(stats, sys.stderr, indent=2, ensure_ascii=False)
+        print(file=sys.stderr)
+
+    return 0
+
+
+if __name__ == &#34;__main__&#34;:
+    sys.exit(main())
+</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T17-36-40-801Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T17-36-40-801Z" class="timestamp-link"><time datetime="2026-07-11T17:36:40.801Z" data-timestamp="2026-07-11T17:36:40.801Z">2026-07-11T17:36:40.801Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>File created successfully at: /Users/andrewjin/Desktop/anthropic-take-home/scripts/explore_data.py (file state is current in your context — no need to Read it back)</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-36-41-834Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-36-41-834Z" class="timestamp-link"><time datetime="2026-07-11T17:36:41.834Z" data-timestamp="2026-07-11T17:36:41.834Z">2026-07-11T17:36:41.834Z</time></a></div><div class="message-content">
+<div class="tool-use bash-tool" data-tool-id="toolu_01HFQ4BSazwqDxmbBNMkP1GK">
+<div class="tool-header"><span class="tool-icon">$</span> Bash</div>
+<div class="tool-description">Run exploration script</div><div class="truncatable"><div class="truncatable-content"><pre class="bash-command">python3 scripts/explore_data.py</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T17-36-44-996Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T17-36-44-996Z" class="timestamp-link"><time datetime="2026-07-11T17:36:44.996Z" data-timestamp="2026-07-11T17:36:44.996Z">2026-07-11T17:36:44.996Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>============================================================
+  Top-cited dataset exploration — 10,000 works
+  source: scripts/data/full/top_cited.jsonl
+============================================================
+
+Distribution across domains
+---------------------------
+  Physical Sciences   4,155   41.5%  ████████████··················
+  Social Sciences     2,634   26.3%  ████████······················
+  Life Sciences       1,709   17.1%  █████·························
+  Health Sciences     1,488   14.9%  ████··························
+  Unknown                14    0.1%  ······························
+
+Top 15 fields
+-------------
+  Medicine                                       1,327   13.3%  ████··························
+  Computer Science                               1,285   12.8%  ████··························
+  Biochemistry, Genetics and Molecular Biology   1,234   12.3%  ████··························
+  Social Sciences                                  814    8.1%  ██····························
+  Engineering                                      664    6.6%  ██····························
+  Physics and Astronomy                            539    5.4%  ██····························
+  Psychology                                       534    5.3%  ██····························
+  Environmental Science                            398    4.0%  █·····························
+  Economics, Econometrics and Finance              391    3.9%  █·····························
+  Materials Science                                387    3.9%  █·····························
+  Business, Management and Accounting              379    3.8%  █·····························
+  Mathematics                                      370    3.7%  █·····························
+  Decision Sciences                                370    3.7%  █·····························
+  Chemistry                                        291    2.9%  █·····························
+  Neuroscience                                     200    2.0%  █·····························
+  (other)                                          817    8.2%
+
+Open access
+-----------
+  is_oa (open access)   3,257 / 10,000   32.6%  ██████████····················
+  closed / not OA       6,743 / 10,000   67.4%  ████████████████████··········
+
+OA status breakdown
+-------------------
+  closed    6,743   67.4%  ████████████████████··········
+  green     1,213   12.1%  ████··························
+  bronze    1,211   12.1%  ████··························
+  gold        389    3.9%  █·····························
+  hybrid      330    3.3%  █·····························
+  diamond     114    1.1%  ······························
+
+PDF url coverage
+----------------
+  OpenAlex content pdf   1,802 / 10,000   18.0%  █████·························
+  public/landing pdf     2,373 / 10,000   23.7%  ███████·······················
+  any pdf url            2,373 / 10,000   23.7%  ███████·······················
+
+GROBID XML coverage
+-------------------
+  content_urls.grobid_xml       1,469 / 10,000   14.7%  ████··························
+  has_content.grobid_xml flag   1,469 / 10,000   14.7%  ████··························
+
+Other coverage (context)
+------------------------
+  abstract           6,659 / 10,000   66.6%  ████████████████████··········
+  DOI                9,174 / 10,000   91.7%  ████████████████████████████··
+  referenced_works   7,217 / 10,000   72.2%  ██████████████████████········</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-36-46-477Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-36-46-477Z" class="timestamp-link"><time datetime="2026-07-11T17:36:46.477Z" data-timestamp="2026-07-11T17:36:46.477Z">2026-07-11T17:36:46.477Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-36-49-714Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-36-49-714Z" class="timestamp-link"><time datetime="2026-07-11T17:36:49.714Z" data-timestamp="2026-07-11T17:36:49.714Z">2026-07-11T17:36:49.714Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p>Done. The script is at <code>scripts/explore_data.py</code> — stdlib-only, reads the raw JSONL, and prints the coverage/distribution report above (add <code>--json</code> for a machine-readable dump).</p>
+<h2>What the 10k top-cited papers look like</h2>
+<p><strong>Domains</strong> — heavily physical-sciences-weighted:
+- Physical Sciences 41.5% · Social Sciences 26.3% · Life Sciences 17.1% · Health Sciences 14.9% (14 works unclassified). Top fields are Medicine, Computer Science, and Biochem/Molecular Bio (~12–13% each).</p>
+<p><strong>Open access</strong> — only <strong>~1/3 is OA</strong> (32.6%); 67.4% closed. Of the OA slice, it's mostly green (self-archived, 12.1%) and bronze (free-to-read but no license, 12.1%), with true gold/hybrid/diamond a small minority (~8% combined).</p>
+<p><strong>PDF urls</strong> — coverage is low:
+- Any public/landing pdf: <strong>23.7%</strong>
+- OpenAlex-hosted content pdf: <strong>18.0%</strong> (a subset of the above)</p>
+<p><strong>GROBID XML</strong> — <strong>14.7%</strong> have a <code>content_urls.grobid_xml</code> url (matches the <code>has_content.grobid_xml</code> flag exactly).</p>
+<p><strong>Notable for the graph viz:</strong> the full-text pipeline (pdf → GROBID) only reaches ~15–24% of these papers, even though 91.7% have DOIs and 72.2% carry <code>referenced_works</code> (which is what your intra-set edges are built from). So citation-graph edges are well-covered, but anything depending on parsed full text will be sparse.</p>
+<p>One thing worth calling out: "pdf url" is ambiguous in this dataset — there's the OpenAlex-hosted content pdf (<code>content_urls.pdf</code>, 18%) and any publisher/repository pdf from the work's <code>locations</code> (23.7%, which is what <code>build_graph_data.py</code> surfaces as <code>pdf_url</code>). I reported both. Want me to break GROBID/pdf coverage down <em>by domain</em> (e.g. is full-text far better covered in CS than Medicine)?</p></div></div></div>
+<div class="message user" id="msg-2026-07-11T17-40-41-806Z"><div class="message-header"><span class="role-label">User</span><a href="#msg-2026-07-11T17-40-41-806Z" class="timestamp-link"><time datetime="2026-07-11T17:40:41.806Z" data-timestamp="2026-07-11T17:40:41.806Z">2026-07-11T17:40:41.806Z</time></a></div><div class="message-content">
+<div class="user-content"><p>show me the top 50 most cited papers in a table (with citations, year of publication, domain)</p></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-40-43-882Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-40-43-882Z" class="timestamp-link"><time datetime="2026-07-11T17:40:43.882Z" data-timestamp="2026-07-11T17:40:43.882Z">2026-07-11T17:40:43.882Z</time></a></div><div class="message-content">
+<div class="tool-use bash-tool" data-tool-id="toolu_01RwqVNZpnZJtQGiTNao59bB">
+<div class="tool-header"><span class="tool-icon">$</span> Bash</div>
+<div class="tool-description">Extract top 50 cited papers</div><div class="truncatable"><div class="truncatable-content"><pre class="bash-command">python3 -c &#34;
+import json
+rows=[json.loads(l) for l in open(&#39;scripts/data/full/top_cited.jsonl&#39;,encoding=&#39;utf-8&#39;)]
+rows.sort(key=lambda r: r.get(&#39;cited_by_count&#39;) or 0, reverse=True)
+for i,r in enumerate(rows[:50],1):
+    dom=((r.get(&#39;primary_topic&#39;) or {}).get(&#39;domain&#39;) or {}).get(&#39;display_name&#39;) or &#39;Unknown&#39;
+    title=(r.get(&#39;title&#39;) or &#39;&#39;).replace(&#39;\n&#39;,&#39; &#39;)
+    if len(title)&gt;70: title=title[:69]+&#39;…&#39;
+    print(f&#39;{i}\t{r.get(\&#34;cited_by_count\&#34;) or 0}\t{r.get(\&#34;publication_year\&#34;)}\t{dom}\t{title}&#39;)
+&#34;</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T17-40-47-384Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T17-40-47-384Z" class="timestamp-link"><time datetime="2026-07-11T17:40:47.384Z" data-timestamp="2026-07-11T17:40:47.384Z">2026-07-11T17:40:47.384Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>1	801217	2020	Physical Sciences	Radiation Resistant Camera System for Monitoring Deuterium Plasma Dis…
+2	353004	2000	Physical Sciences	R: A Language and Environment for Statistical Computing
+3	318442	1951	Life Sciences	PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT
+4	251709	1970	Physical Sciences	Cleavage of Structural Proteins during the Assembly of the Head of Ba…
+5	225381	1976	Life Sciences	A Rapid and Sensitive Method for the Quantitation of Microgram Quanti…
+6	222656	2016	Physical Sciences	Deep Residual Learning for Image Recognition
+7	212285	1996	Physical Sciences	Generalized Gradient Approximation Made Simple
+8	211381	1976	Life Sciences	A rapid and sensitive method for the quantitation of microgram quanti…
+9	185277	2006	Health Sciences	Using thematic analysis in psychology
+10	182044	2001	Life Sciences	Analysis of Relative Gene Expression Data Using Real-Time Quantitativ…
+11	169601	None	Physical Sciences	Yaşlı Kadınlarda Üreme Sağlığı
+12	129998	1989	Life Sciences	Molecular Cloning: A Laboratory Manual
+13	127092	2001	Physical Sciences	Random Forests
+14	121001	1996	Physical Sciences	Efficient iterative schemes for&lt;i&gt;ab initio&lt;/i&gt;total-energy calculati…
+15	114440	2013	Health Sciences	Diagnostic and Statistical Manual of Mental Disorders
+16	112837	2021	Health Sciences	Global Cancer Statistics 2020: GLOBOCAN Estimates of Incidence and Mo…
+17	109983	2013	Social Sciences	Diagnostic and Statistical Manual of Mental Disorders
+18	109152	1995	Physical Sciences	Controlling the False Discovery Rate: A Practical and Powerful Approa…
+19	105915	1999	Social Sciences	Cutoff criteria for fit indexes in covariance structure analysis: Con…
+20	102970	1993	Physical Sciences	Density-functional thermochemistry. III. The role of exact exchange
+21	101074	2014	Life Sciences	Moderated estimation of fold change and dispersion for RNA-seq data w…
+22	100230	1988	Physical Sciences	Development of the Colle-Salvetti correlation-energy formula into a f…
+23	98553	1997	Physical Sciences	Long Short-Term Memory
+24	96642	2021	Social Sciences	The PRISMA 2020 statement: an updated guideline for reporting systema…
+25	94691	1990	Life Sciences	Basic local alignment search tool
+26	91158	1994	Physical Sciences	Projector augmented-wave method
+27	89228	2015	Life Sciences	U-Net: Convolutional Networks for Biomedical Image Segmentation
+28	87807	2018	Health Sciences	Global cancer statistics 2018: GLOBOCAN estimates of incidence and mo…
+29	87500	2007	Physical Sciences	A short history of&lt;i&gt;SHELX&lt;/i&gt;
+30	86959	1975	Health Sciences	“Mini-mental state”
+31	86172	2015	Physical Sciences	Fitting Linear Mixed-Effects Models Using &lt;b&gt;lme4&lt;/b&gt;
+32	86161	1990	Life Sciences	Molecular cloning: A laboratory manual
+33	85217	1991	Social Sciences	The theory of planned behavior
+34	84785	2014	Physical Sciences	Adam: A Method for Stochastic Optimization
+35	83945	1999	Physical Sciences	From ultrasoft pseudopotentials to the projector augmented-wave method
+36	83881	1989	Social Sciences	Statistical Power Analysis for the Behavioral Sciences
+37	83369	2009	Social Sciences	Preferred reporting items for systematic reviews and meta-analyses: t…
+38	82069	2015	Physical Sciences	Deep learning
+39	80921	1948	Physical Sciences	A Mathematical Theory of Communication
+40	79357	1977	Social Sciences	The Measurement of Observer Agreement for Categorical Data
+41	77497	1983	Physical Sciences	Using multivariate statistics
+42	77226	2003	Social Sciences	Common method biases in behavioral research: A critical review of the…
+43	76372	2023	Physical Sciences	Inline Hardware KV-Cache Compression for Long-Context Transformer Inf…
+44	75710	2017	Physical Sciences	ImageNet classification with deep convolutional neural networks
+45	75541	2014	Physical Sciences	Very Deep Convolutional Networks for Large-Scale Image Recognition
+46	74973	1984	Physical Sciences	Case Study Research: Design and Methods
+47	74948	1996	Physical Sciences	Efficiency of ab-initio total energy calculations for metals and semi…
+48	74574	1997	Life Sciences	Gapped BLAST and PSI-BLAST: a new generation of protein database sear…
+49	72472	1990	Physical Sciences	Standard methods: For the examination of water and waste water
+50	72166	1986	Social Sciences	The moderator-mediator variable distinction in social psychological r…</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-40-53-177Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-40-53-177Z" class="timestamp-link"><time datetime="2026-07-11T17:40:53.177Z" data-timestamp="2026-07-11T17:40:53.177Z">2026-07-11T17:40:53.177Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-40-59-295Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-40-59-295Z" class="timestamp-link"><time datetime="2026-07-11T17:40:59.295Z" data-timestamp="2026-07-11T17:40:59.295Z">2026-07-11T17:40:59.295Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p>Here are the top 50 by citation count. Titles included for context; <strong>⚠ flags likely citation-count anomalies</strong> (see note below).</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: right;">#</th>
+<th style="text-align: right;">Citations</th>
+<th style="text-align: right;">Year</th>
+<th>Domain</th>
+<th>Title</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">801,217</td>
+<td style="text-align: right;">2020</td>
+<td>Physical Sciences</td>
+<td>⚠ Radiation Resistant Camera System for Monitoring Deuterium Plasma</td>
+</tr>
+<tr>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">353,004</td>
+<td style="text-align: right;">2000</td>
+<td>Physical Sciences</td>
+<td>R: A Language and Environment for Statistical Computing</td>
+</tr>
+<tr>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">318,442</td>
+<td style="text-align: right;">1951</td>
+<td>Life Sciences</td>
+<td>Protein Measurement with the Folin Phenol Reagent</td>
+</tr>
+<tr>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">251,709</td>
+<td style="text-align: right;">1970</td>
+<td>Physical Sciences</td>
+<td>Cleavage of Structural Proteins during Assembly of the Head of Bacteriophage T4</td>
+</tr>
+<tr>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">225,381</td>
+<td style="text-align: right;">1976</td>
+<td>Life Sciences</td>
+<td>A Rapid and Sensitive Method for Quantitation of Microgram Quantities of Protein (Bradford)</td>
+</tr>
+<tr>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">222,656</td>
+<td style="text-align: right;">2016</td>
+<td>Physical Sciences</td>
+<td>Deep Residual Learning for Image Recognition</td>
+</tr>
+<tr>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">212,285</td>
+<td style="text-align: right;">1996</td>
+<td>Physical Sciences</td>
+<td>Generalized Gradient Approximation Made Simple</td>
+</tr>
+<tr>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">211,381</td>
+<td style="text-align: right;">1976</td>
+<td>Life Sciences</td>
+<td>A Rapid and Sensitive Method for Quantitation of Microgram Quantities of Protein</td>
+</tr>
+<tr>
+<td style="text-align: right;">9</td>
+<td style="text-align: right;">185,277</td>
+<td style="text-align: right;">2006</td>
+<td>Health Sciences</td>
+<td>Using thematic analysis in psychology</td>
+</tr>
+<tr>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">182,044</td>
+<td style="text-align: right;">2001</td>
+<td>Life Sciences</td>
+<td>Analysis of Relative Gene Expression Data Using Real-Time qPCR (2^−ΔΔCT)</td>
+</tr>
+<tr>
+<td style="text-align: right;">11</td>
+<td style="text-align: right;">169,601</td>
+<td style="text-align: right;">—</td>
+<td>Physical Sciences</td>
+<td>⚠ Yaşlı Kadınlarda Üreme Sağlığı (no pub year)</td>
+</tr>
+<tr>
+<td style="text-align: right;">12</td>
+<td style="text-align: right;">129,998</td>
+<td style="text-align: right;">1989</td>
+<td>Life Sciences</td>
+<td>Molecular Cloning: A Laboratory Manual</td>
+</tr>
+<tr>
+<td style="text-align: right;">13</td>
+<td style="text-align: right;">127,092</td>
+<td style="text-align: right;">2001</td>
+<td>Physical Sciences</td>
+<td>Random Forests</td>
+</tr>
+<tr>
+<td style="text-align: right;">14</td>
+<td style="text-align: right;">121,001</td>
+<td style="text-align: right;">1996</td>
+<td>Physical Sciences</td>
+<td>Efficient iterative schemes for ab initio total-energy calculations</td>
+</tr>
+<tr>
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">114,440</td>
+<td style="text-align: right;">2013</td>
+<td>Health Sciences</td>
+<td>Diagnostic and Statistical Manual of Mental Disorders (DSM-5)</td>
+</tr>
+<tr>
+<td style="text-align: right;">16</td>
+<td style="text-align: right;">112,837</td>
+<td style="text-align: right;">2021</td>
+<td>Health Sciences</td>
+<td>Global Cancer Statistics 2020: GLOBOCAN</td>
+</tr>
+<tr>
+<td style="text-align: right;">17</td>
+<td style="text-align: right;">109,983</td>
+<td style="text-align: right;">2013</td>
+<td>Social Sciences</td>
+<td>Diagnostic and Statistical Manual of Mental Disorders</td>
+</tr>
+<tr>
+<td style="text-align: right;">18</td>
+<td style="text-align: right;">109,152</td>
+<td style="text-align: right;">1995</td>
+<td>Physical Sciences</td>
+<td>Controlling the False Discovery Rate (Benjamini–Hochberg)</td>
+</tr>
+<tr>
+<td style="text-align: right;">19</td>
+<td style="text-align: right;">105,915</td>
+<td style="text-align: right;">1999</td>
+<td>Social Sciences</td>
+<td>Cutoff criteria for fit indexes in covariance structure analysis</td>
+</tr>
+<tr>
+<td style="text-align: right;">20</td>
+<td style="text-align: right;">102,970</td>
+<td style="text-align: right;">1993</td>
+<td>Physical Sciences</td>
+<td>Density-functional thermochemistry. III (B3LYP)</td>
+</tr>
+<tr>
+<td style="text-align: right;">21</td>
+<td style="text-align: right;">101,074</td>
+<td style="text-align: right;">2014</td>
+<td>Life Sciences</td>
+<td>Moderated estimation of fold change and dispersion for RNA-seq (DESeq2)</td>
+</tr>
+<tr>
+<td style="text-align: right;">22</td>
+<td style="text-align: right;">100,230</td>
+<td style="text-align: right;">1988</td>
+<td>Physical Sciences</td>
+<td>Development of the Colle-Salvetti correlation-energy formula (LYP)</td>
+</tr>
+<tr>
+<td style="text-align: right;">23</td>
+<td style="text-align: right;">98,553</td>
+<td style="text-align: right;">1997</td>
+<td>Physical Sciences</td>
+<td>Long Short-Term Memory</td>
+</tr>
+<tr>
+<td style="text-align: right;">24</td>
+<td style="text-align: right;">96,642</td>
+<td style="text-align: right;">2021</td>
+<td>Social Sciences</td>
+<td>The PRISMA 2020 statement</td>
+</tr>
+<tr>
+<td style="text-align: right;">25</td>
+<td style="text-align: right;">94,691</td>
+<td style="text-align: right;">1990</td>
+<td>Life Sciences</td>
+<td>Basic Local Alignment Search Tool (BLAST)</td>
+</tr>
+<tr>
+<td style="text-align: right;">26</td>
+<td style="text-align: right;">91,158</td>
+<td style="text-align: right;">1994</td>
+<td>Physical Sciences</td>
+<td>Projector augmented-wave method</td>
+</tr>
+<tr>
+<td style="text-align: right;">27</td>
+<td style="text-align: right;">89,228</td>
+<td style="text-align: right;">2015</td>
+<td>Life Sciences</td>
+<td>U-Net: Convolutional Networks for Biomedical Image Segmentation</td>
+</tr>
+<tr>
+<td style="text-align: right;">28</td>
+<td style="text-align: right;">87,807</td>
+<td style="text-align: right;">2018</td>
+<td>Health Sciences</td>
+<td>Global cancer statistics 2018: GLOBOCAN</td>
+</tr>
+<tr>
+<td style="text-align: right;">29</td>
+<td style="text-align: right;">87,500</td>
+<td style="text-align: right;">2007</td>
+<td>Physical Sciences</td>
+<td>A short history of SHELX</td>
+</tr>
+<tr>
+<td style="text-align: right;">30</td>
+<td style="text-align: right;">86,959</td>
+<td style="text-align: right;">1975</td>
+<td>Health Sciences</td>
+<td>"Mini-mental state"</td>
+</tr>
+<tr>
+<td style="text-align: right;">31</td>
+<td style="text-align: right;">86,172</td>
+<td style="text-align: right;">2015</td>
+<td>Physical Sciences</td>
+<td>Fitting Linear Mixed-Effects Models Using lme4</td>
+</tr>
+<tr>
+<td style="text-align: right;">32</td>
+<td style="text-align: right;">86,161</td>
+<td style="text-align: right;">1990</td>
+<td>Life Sciences</td>
+<td>Molecular Cloning: A Laboratory Manual</td>
+</tr>
+<tr>
+<td style="text-align: right;">33</td>
+<td style="text-align: right;">85,217</td>
+<td style="text-align: right;">1991</td>
+<td>Social Sciences</td>
+<td>The theory of planned behavior</td>
+</tr>
+<tr>
+<td style="text-align: right;">34</td>
+<td style="text-align: right;">84,785</td>
+<td style="text-align: right;">2014</td>
+<td>Physical Sciences</td>
+<td>Adam: A Method for Stochastic Optimization</td>
+</tr>
+<tr>
+<td style="text-align: right;">35</td>
+<td style="text-align: right;">83,945</td>
+<td style="text-align: right;">1999</td>
+<td>Physical Sciences</td>
+<td>From ultrasoft pseudopotentials to the projector augmented-wave method</td>
+</tr>
+<tr>
+<td style="text-align: right;">36</td>
+<td style="text-align: right;">83,881</td>
+<td style="text-align: right;">1989</td>
+<td>Social Sciences</td>
+<td>Statistical Power Analysis for the Behavioral Sciences</td>
+</tr>
+<tr>
+<td style="text-align: right;">37</td>
+<td style="text-align: right;">83,369</td>
+<td style="text-align: right;">2009</td>
+<td>Social Sciences</td>
+<td>Preferred reporting items for systematic reviews (PRISMA)</td>
+</tr>
+<tr>
+<td style="text-align: right;">38</td>
+<td style="text-align: right;">82,069</td>
+<td style="text-align: right;">2015</td>
+<td>Physical Sciences</td>
+<td>Deep learning</td>
+</tr>
+<tr>
+<td style="text-align: right;">39</td>
+<td style="text-align: right;">80,921</td>
+<td style="text-align: right;">1948</td>
+<td>Physical Sciences</td>
+<td>A Mathematical Theory of Communication</td>
+</tr>
+<tr>
+<td style="text-align: right;">40</td>
+<td style="text-align: right;">79,357</td>
+<td style="text-align: right;">1977</td>
+<td>Social Sciences</td>
+<td>The Measurement of Observer Agreement for Categorical Data</td>
+</tr>
+<tr>
+<td style="text-align: right;">41</td>
+<td style="text-align: right;">77,497</td>
+<td style="text-align: right;">1983</td>
+<td>Physical Sciences</td>
+<td>Using Multivariate Statistics</td>
+</tr>
+<tr>
+<td style="text-align: right;">42</td>
+<td style="text-align: right;">77,226</td>
+<td style="text-align: right;">2003</td>
+<td>Social Sciences</td>
+<td>Common method biases in behavioral research</td>
+</tr>
+<tr>
+<td style="text-align: right;">43</td>
+<td style="text-align: right;">76,372</td>
+<td style="text-align: right;">2023</td>
+<td>Physical Sciences</td>
+<td>⚠ Inline Hardware KV-Cache Compression for Long-Context Transformer Inference</td>
+</tr>
+<tr>
+<td style="text-align: right;">44</td>
+<td style="text-align: right;">75,710</td>
+<td style="text-align: right;">2017</td>
+<td>Physical Sciences</td>
+<td>ImageNet classification with deep convolutional neural networks (AlexNet)</td>
+</tr>
+<tr>
+<td style="text-align: right;">45</td>
+<td style="text-align: right;">75,541</td>
+<td style="text-align: right;">2014</td>
+<td>Physical Sciences</td>
+<td>Very Deep Convolutional Networks (VGG)</td>
+</tr>
+<tr>
+<td style="text-align: right;">46</td>
+<td style="text-align: right;">74,973</td>
+<td style="text-align: right;">1984</td>
+<td>Physical Sciences</td>
+<td>Case Study Research: Design and Methods</td>
+</tr>
+<tr>
+<td style="text-align: right;">47</td>
+<td style="text-align: right;">74,948</td>
+<td style="text-align: right;">1996</td>
+<td>Physical Sciences</td>
+<td>Efficiency of ab-initio total energy calculations for metals and semiconductors</td>
+</tr>
+<tr>
+<td style="text-align: right;">48</td>
+<td style="text-align: right;">74,574</td>
+<td style="text-align: right;">1997</td>
+<td>Life Sciences</td>
+<td>Gapped BLAST and PSI-BLAST</td>
+</tr>
+<tr>
+<td style="text-align: right;">49</td>
+<td style="text-align: right;">72,472</td>
+<td style="text-align: right;">1990</td>
+<td>Physical Sciences</td>
+<td>Standard Methods for the Examination of Water and Wastewater</td>
+</tr>
+<tr>
+<td style="text-align: right;">50</td>
+<td style="text-align: right;">72,166</td>
+<td style="text-align: right;">1986</td>
+<td>Social Sciences</td>
+<td>The moderator–mediator variable distinction (Baron &amp; Kenny)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Notes:</strong>
+- <strong>Anomalies (⚠):</strong> #1 (801k citations, an obscure 2020 plasma-camera paper), #11 (a Turkish-titled work with no publication year), and #43 (a 2023 hardware paper already at 76k cites) are almost certainly OpenAlex citation-count errors or reference-parsing artifacts — they don't match the profile of genuinely foundational methods papers around them. Your fetch script's <code>is_suspect</code> heuristic only flagged <strong>1</strong> of these, so it's under-catching; #11 and #43 slip through because they don't trip the single-year-spike or high-count-low-FWCI rules.
+- <strong>Domain caveat:</strong> "Physical Sciences" is inflated here because OpenAlex classifies statistics/ML/CS methods papers (R, Random Forests, LSTM, Adam, ResNet, VGG) under it — that's why so many deep-learning and stats works show as Physical Sciences rather than a dedicated CS domain.
+- The list is dominated by <strong>methods/tools papers</strong> (assays, DFT functionals, statistical tests, ML architectures) rather than discoveries — the expected shape for a citation-ranked corpus.</p>
+<p>Want me to save this as a script (e.g. <code>scripts/top_papers.py --n 50</code>), or tighten the anomaly detector to catch #11 and #43?</p></div></div></div>
+<div class="message user" id="msg-2026-07-11T17-41-32-382Z"><div class="message-header"><span class="role-label">User</span><a href="#msg-2026-07-11T17-41-32-382Z" class="timestamp-link"><time datetime="2026-07-11T17:41:32.382Z" data-timestamp="2026-07-11T17:41:32.382Z">2026-07-11T17:41:32.382Z</time></a></div><div class="message-content">
+<div class="user-content"><p>where is the "attention is all you need" paper ranked in this top 10k dataset</p></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-41-34-424Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-41-34-424Z" class="timestamp-link"><time datetime="2026-07-11T17:41:34.424Z" data-timestamp="2026-07-11T17:41:34.424Z">2026-07-11T17:41:34.424Z</time></a></div><div class="message-content">
+<div class="tool-use bash-tool" data-tool-id="toolu_01AYG9vNktbtRSmXLK5tyU29">
+<div class="tool-header"><span class="tool-icon">$</span> Bash</div>
+<div class="tool-description">Find Attention Is All You Need rank</div><div class="truncatable"><div class="truncatable-content"><pre class="bash-command">python3 -c &#34;
+import json
+rows=[json.loads(l) for l in open(&#39;scripts/data/full/top_cited.jsonl&#39;,encoding=&#39;utf-8&#39;)]
+rows.sort(key=lambda r: r.get(&#39;cited_by_count&#39;) or 0, reverse=True)
+for i,r in enumerate(rows,1):
+    t=(r.get(&#39;title&#39;) or &#39;&#39;)
+    if &#39;attention is all you need&#39; in t.lower():
+        dom=((r.get(&#39;primary_topic&#39;) or {}).get(&#39;domain&#39;) or {}).get(&#39;display_name&#39;) or &#39;Unknown&#39;
+        print(f&#39;rank {i} | {r.get(\&#34;cited_by_count\&#34;)} citations | {r.get(\&#34;publication_year\&#34;)} | {dom} | {t}&#39;)
+&#34;</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T17-41-37-430Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T17-41-37-430Z" class="timestamp-link"><time datetime="2026-07-11T17:41:37.430Z" data-timestamp="2026-07-11T17:41:37.430Z">2026-07-11T17:41:37.430Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>rank 4969 | 6583 citations | 2025 | Physical Sciences | Attention Is All You Need</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-41-38-929Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-41-38-929Z" class="timestamp-link"><time datetime="2026-07-11T17:41:38.929Z" data-timestamp="2026-07-11T17:41:38.929Z">2026-07-11T17:41:38.929Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T17-41-40-840Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T17-41-40-840Z" class="timestamp-link"><time datetime="2026-07-11T17:41:40.840Z" data-timestamp="2026-07-11T17:41:40.840Z">2026-07-11T17:41:40.840Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p><strong>"Attention Is All You Need" ranks #4,969</strong> in the dataset — 6,583 citations, listed under Physical Sciences.</p>
+<p>But that ranking is <strong>almost certainly wrong / a bad record</strong>. The entry OpenAlex returned is dated <strong>2025</strong> with only 6,583 citations. The actual Vaswani et al. paper is from <strong>2017</strong> and has well over 100,000 citations — which would place it in roughly the <strong>top 20</strong> of this dataset, not near the middle.</p>
+<p>What you're seeing is a known OpenAlex data-quality issue: the seminal 2017 paper often has its citations fragmented across duplicate/variant work records (preprint vs. conference vs. reprints), and the copy that surfaced here is a low-citation 2025 duplicate rather than the canonical one. The real one either got split or didn't make it into the top-10k pull under this deduplicated form.</p>
+<p>Want me to:
+1. Search the raw data for <strong>all</strong> records whose title matches "attention is all you need" (to confirm whether the canonical 2017 record is present at all), or
+2. Query the OpenAlex API directly for the canonical work ID to see its true citation count and where it <em>should</em> rank?</p></div></div></div>
+<div class="message user" id="msg-2026-07-11T18-04-16-690Z"><div class="message-header"><span class="role-label">User</span><a href="#msg-2026-07-11T18-04-16-690Z" class="timestamp-link"><time datetime="2026-07-11T18:04:16.690Z" data-timestamp="2026-07-11T18:04:16.690Z">2026-07-11T18:04:16.690Z</time></a></div><div class="message-content">
+<div class="user-content"><p>do you think it makes more sense to rank papers by fwci instead of pure citation counts (since different fields may dominate depending on their citation profiles)?</p></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T18-04-21-574Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T18-04-21-574Z" class="timestamp-link"><time datetime="2026-07-11T18:04:21.574Z" data-timestamp="2026-07-11T18:04:21.574Z">2026-07-11T18:04:21.574Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T18-04-21-804Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T18-04-21-804Z" class="timestamp-link"><time datetime="2026-07-11T18:04:21.804Z" data-timestamp="2026-07-11T18:04:21.804Z">2026-07-11T18:04:21.804Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p>Good question — but let me check the data before opining, because whether FWCI helps depends a lot on its coverage and how noisy it is in <em>this particular</em> corpus.</p></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T18-04-24-430Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T18-04-24-430Z" class="timestamp-link"><time datetime="2026-07-11T18:04:24.430Z" data-timestamp="2026-07-11T18:04:24.430Z">2026-07-11T18:04:24.430Z</time></a></div><div class="message-content">
+<div class="tool-use bash-tool" data-tool-id="toolu_018zvxJZqLo2wSXEot2voiWu">
+<div class="tool-header"><span class="tool-icon">$</span> Bash</div>
+<div class="tool-description">Analyze FWCI coverage, distribution, and top-by-FWCI</div><div class="truncatable"><div class="truncatable-content"><pre class="bash-command">python3 -c &#34;
+import json
+rows=[json.loads(l) for l in open(&#39;scripts/data/full/top_cited.jsonl&#39;,encoding=&#39;utf-8&#39;)]
+n=len(rows)
+have=[r for r in rows if r.get(&#39;fwci&#39;) is not None]
+print(f&#39;FWCI present: {len(have)}/{n} ({100*len(have)/n:.1f}%)&#39;)
+fw=sorted((r.get(&#39;fwci&#39;) for r in have))
+import statistics
+print(f&#39;FWCI min={fw[0]:.2f} p50={fw[len(fw)//2]:.2f} p95={fw[int(.95*len(fw))]:.2f} p99={fw[int(.99*len(fw))]:.2f} max={fw[-1]:.2f}&#39;)
+# how many have huge fwci
+print(f&#39;FWCI&gt;50: {sum(1 for x in fw if x&gt;50)}, &gt;100: {sum(1 for x in fw if x&gt;100)}&#39;)
+print()
+print(&#39;=== TOP 20 BY FWCI ===&#39;)
+rw=sorted(have,key=lambda r:r.get(&#39;fwci&#39;),reverse=True)[:20]
+for i,r in enumerate(rw,1):
+    dom=((r.get(&#39;primary_topic&#39;) or {}).get(&#39;domain&#39;) or {}).get(&#39;display_name&#39;) or &#39;?&#39;
+    t=(r.get(&#39;title&#39;) or &#39;&#39;)[:55]
+    print(f&#39;{i:2} fwci={r.get(\&#34;fwci\&#34;):8.1f} cites={r.get(\&#34;cited_by_count\&#34;):&gt;7} yr={r.get(\&#34;publication_year\&#34;)} {dom[:16]:16} {t}&#39;)
+print()
+print(&#39;=== domain avg FWCI &amp; avg citations ===&#39;)
+from collections import defaultdict
+byd=defaultdict(list)
+for r in have:
+    d=((r.get(&#39;primary_topic&#39;) or {}).get(&#39;domain&#39;) or {}).get(&#39;display_name&#39;) or &#39;?&#39;
+    byd[d].append((r.get(&#39;fwci&#39;), r.get(&#39;cited_by_count&#39;) or 0))
+for d,v in sorted(byd.items(),key=lambda kv:-len(kv[1])):
+    fws=[a for a,_ in v]; cs=[b for _,b in v]
+    print(f&#39;{d:18} n={len(v):5} medFWCI={statistics.median(fws):6.1f} medCites={int(statistics.median(cs)):&gt;6}&#39;)
+&#34;</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T18-04-27-766Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T18-04-27-766Z" class="timestamp-link"><time datetime="2026-07-11T18:04:27.766Z" data-timestamp="2026-07-11T18:04:27.766Z">2026-07-11T18:04:27.766Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>FWCI present: 9718/10000 (97.2%)
+FWCI min=0.00 p50=79.66 p95=756.88 p99=2196.92 max=26990.73
+FWCI&gt;50: 6102, &gt;100: 4225
+
+=== TOP 20 BY FWCI ===
+ 1 fwci= 26990.7 cites=  19939 yr=2023 Social Sciences  Generative Adversarial Nets
+ 2 fwci= 23829.2 cites=  46513 yr=1994 Physical Science Harvard business review
+ 3 fwci= 20572.0 cites=  55332 yr=2004 Physical Science Distinctive Image Features from Scale-Invariant Keypoin
+ 4 fwci= 11176.8 cites=  18342 yr=1993 Physical Science Harvard business review
+ 5 fwci= 11132.5 cites=   5677 yr=2013 Physical Science IntCal13とMarine13放射性炭素年代較正曲線0-50,000年cal BP
+ 6 fwci= 10774.2 cites=  28320 yr=2016 Social Sciences  null
+ 7 fwci=  8418.3 cites=  24540 yr=2003 Physical Science Geant4—a simulation toolkit
+ 8 fwci=  8357.9 cites= 112837 yr=2021 Health Sciences  Global Cancer Statistics 2020: GLOBOCAN Estimates of In
+ 9 fwci=  7536.2 cites=  15968 yr=2009 Social Sciences  Development as Freedom
+10 fwci=  7222.5 cites=  12114 yr=1993 Physical Science Harvard business review
+11 fwci=  6953.8 cites=  10778 yr=2017 Social Sciences  Borderlands/La Frontera: The New Mestiza
+12 fwci=  6505.3 cites=  20381 yr=2018 Social Sciences  Distinction: A Social Critique of the Judgement of Tast
+13 fwci=  6447.1 cites=  19751 yr=2015 Social Sciences  Older Adults&#x27; Reasons for Using Technology while Aging 
+14 fwci=  6279.6 cites=   6486 yr=2015 Physical Science ORB-SLAM: A Versatile and Accurate Monocular SLAM Syste
+15 fwci=  5898.5 cites=   5335 yr=2015 Social Sciences  Stanford Encyclopedia of Philosophy
+16 fwci=  5642.3 cites=  21415 yr=2020 Social Sciences  Cancer statistics, 2020
+17 fwci=  5483.0 cites= 222656 yr=2016 Physical Science Deep Residual Learning for Image Recognition
+18 fwci=  5325.0 cites=  23494 yr=2024 Health Sciences  Global cancer statistics 2022: GLOBOCAN estimates of in
+19 fwci=  5313.4 cites=  27808 yr=2013 Social Sciences  Stress: Appraisal and Coping
+20 fwci=  5253.9 cites=  11407 yr=2009 Social Sciences  Building theories from case study research
+
+=== domain avg FWCI &amp; avg citations ===
+Physical Sciences  n= 4008 medFWCI=  64.9 medCites=  6680
+Social Sciences    n= 2570 medFWCI=  81.8 medCites=  6611
+Life Sciences      n= 1671 medFWCI=  71.5 medCites=  6453
+Health Sciences    n= 1469 medFWCI= 137.1 medCites=  6216</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T18-04-33-822Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T18-04-33-822Z" class="timestamp-link"><time datetime="2026-07-11T18:04:33.822Z" data-timestamp="2026-07-11T18:04:33.822Z">2026-07-11T18:04:33.822Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T18-04-39-561Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T18-04-39-561Z" class="timestamp-link"><time datetime="2026-07-11T18:04:39.561Z" data-timestamp="2026-07-11T18:04:39.561Z">2026-07-11T18:04:39.561Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p>Short answer: <strong>no — I wouldn't replace citation count with FWCI as the primary rank for this dataset.</strong> They answer different questions, and in <em>this</em> corpus FWCI has some disqualifying problems. But field-normalization is a real concern worth addressing a different way. Here's the reasoning, grounded in what the data actually shows:</p>
+<h2>What the data says</h2>
+<p><strong>1. Your selection is already conditioned on raw citations.</strong> This corpus was pulled <code>sort=cited_by_count:desc</code>. Look at the per-domain medians:</p>
+<table>
+<thead>
+<tr>
+<th>Domain</th>
+<th style="text-align: right;">median FWCI</th>
+<th style="text-align: right;">median citations</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Physical Sciences</td>
+<td style="text-align: right;">64.9</td>
+<td style="text-align: right;">6,680</td>
+</tr>
+<tr>
+<td>Social Sciences</td>
+<td style="text-align: right;">81.8</td>
+<td style="text-align: right;">6,611</td>
+</tr>
+<tr>
+<td>Life Sciences</td>
+<td style="text-align: right;">71.5</td>
+<td style="text-align: right;">6,453</td>
+</tr>
+<tr>
+<td>Health Sciences</td>
+<td style="text-align: right;">137.1</td>
+<td style="text-align: right;">6,216</td>
+</tr>
+</tbody>
+</table>
+<p>The domains are <em>already</em> balanced at the median citation level (~6,200–6,700 across all four) — because you filtered on citations. Re-ranking that same sample by FWCI is a bit incoherent: you'd be conditioning on citations to build the set, then optimizing a different objective inside it. The papers that FWCI is designed to surface — modest raw counts but exceptional for their field — were <strong>never pulled into the top-10k in the first place</strong>. So FWCI-ranking here has built-in survivorship bias.</p>
+<p><strong>2. FWCI amplifies the exact metadata errors that plague the raw-count ranking — it doesn't fix them.</strong> FWCI = actual citations ÷ <em>expected</em> citations for that field+<strong>year</strong>+type. When a paper's year is wrong (which we've now seen repeatedly — "Attention" tagged 2025, GANs, etc.), the denominator collapses and FWCI explodes. The top-by-FWCI list is <em>worse</em> than top-by-citations:</p>
+<ul>
+<li>
+<h1>1 "Generative Adversarial Nets", FWCI <strong>26,990</strong>, dated 2023 (real paper: 2014 — year error inflating it)</h1>
+</li>
+<li>
+<h1>2/#4/#10 three separate <strong>"Harvard business review"</strong> container-junk records with FWCI 7k–24k</h1>
+</li>
+<li>
+<h1>6 title <code>null</code>, #5 a Japanese-titled calibration-curve reprint</h1>
+</li>
+</ul>
+<p>FWCI's dynamic range is enormous (p50≈80, max≈27,000) and it's extremely sensitive to the denominator, so bad metadata gets amplified, not smoothed.</p>
+<p><strong>3. Coverage gap.</strong> 282 papers (2.8%) have no FWCI at all and would silently drop out of a pure-FWCI ranking. Raw <code>cited_by_count</code> is present for everything.</p>
+<h2>What I'd actually recommend</h2>
+<p>Keep <strong>raw citations as the primary rank/size encoding</strong> — for a citation-<em>graph</em> viz it's the honest primitive (the edges <em>are</em> real citations; node size should reflect the actual structure). Then address field bias explicitly, without FWCI's noise:</p>
+<ul>
+<li><strong>Best:</strong> select/rank <em>within domain</em> — e.g. top-N per field, or percentile-within-field-and-decade. Gives explicit, interpretable field balance with none of FWCI's denominator blowups.</li>
+<li><strong>Good:</strong> use FWCI as a <strong>secondary</strong> channel — a color scale or a filter ("show papers that over-performed their field"), not the ranking. That captures the "punched above its weight" story where it's genuinely interesting.</li>
+<li>If you do want a normalized <em>headline</em> metric, a <strong>capped log-FWCI</strong> (clamp at ~p99, drop nulls) is far more robust than raw FWCI.</li>
+</ul>
+<p>So: FWCI is a good <em>lens</em>, a bad <em>primary sort</em> here. Want me to add a <code>--rank {citations,fwci,within-field}</code> mode to the explore script so you can eyeball the three side by side?</p></div></div></div>
+<div class="message user" id="msg-2026-07-11T18-05-54-802Z"><div class="message-header"><span class="role-label">User</span><a href="#msg-2026-07-11T18-05-54-802Z" class="timestamp-link"><time datetime="2026-07-11T18:05:54.802Z" data-timestamp="2026-07-11T18:05:54.802Z">2026-07-11T18:05:54.802Z</time></a></div><div class="message-content">
+<div class="user-content"><p>recent papers (e.g., from 2026 and 2025) won't make it into this dataset because they're too recent to accumulate enough citations. how would you recommend boosting to account for them as well?</p></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T18-05-56-660Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T18-05-56-660Z" class="timestamp-link"><time datetime="2026-07-11T18:05:56.660Z" data-timestamp="2026-07-11T18:05:56.660Z">2026-07-11T18:05:56.660Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T18-05-56-819Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T18-05-56-819Z" class="timestamp-link"><time datetime="2026-07-11T18:05:56.819Z" data-timestamp="2026-07-11T18:05:56.819Z">2026-07-11T18:05:56.819Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p>Let me look at the actual recency profile of the current pull before recommending — I want to see how sharp the cutoff really is.</p></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T18-05-58-675Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T18-05-58-675Z" class="timestamp-link"><time datetime="2026-07-11T18:05:58.675Z" data-timestamp="2026-07-11T18:05:58.675Z">2026-07-11T18:05:58.675Z</time></a></div><div class="message-content">
+<div class="tool-use bash-tool" data-tool-id="toolu_01GN4k79DXd2V7t2GM8adMiC">
+<div class="tool-header"><span class="tool-icon">$</span> Bash</div>
+<div class="tool-description">Analyze year distribution and citation cutoff</div><div class="truncatable"><div class="truncatable-content"><pre class="bash-command">python3 -c &#34;
+import json
+from collections import Counter
+rows=[json.loads(l) for l in open(&#39;scripts/data/full/top_cited.jsonl&#39;,encoding=&#39;utf-8&#39;)]
+n=len(rows)
+cutoff=min(r.get(&#39;cited_by_count&#39;) or 0 for r in rows)
+print(f&#39;N={n}  min citations to make the cut = {cutoff}&#39;)
+yr=Counter(r.get(&#39;publication_year&#39;) for r in rows)
+print()
+print(&#39;year : count : min-cites-in-that-year&#39;)
+recent=[y for y in yr if y and y&gt;=2015]
+for y in sorted(yr, key=lambda x:(x is None,x)):
+    if y is None or y&gt;=2012:
+        cs=[r.get(&#39;cited_by_count&#39;) or 0 for r in rows if r.get(&#39;publication_year&#39;)==y]
+        print(f&#39;{str(y):&gt;5} : {yr[y]:&gt;5} : min={min(cs):&gt;6} max={max(cs):&gt;7}&#39;)
+print()
+# what fraction is 2020+
+for thr in (2020,2022,2023,2024,2025,2026):
+    c=sum(v for k,v in yr.items() if k and k&gt;=thr)
+    print(f&#39;&gt;= {thr}: {c:&gt;5} ({100*c/n:.1f}%)&#39;)
+&#34;</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T18-06-01-993Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T18-06-01-993Z" class="timestamp-link"><time datetime="2026-07-11T18:06:01.993Z" data-timestamp="2026-07-11T18:06:01.993Z">2026-07-11T18:06:01.993Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>N=10000  min citations to make the cut = 4460
+
+year : count : min-cites-in-that-year
+ 2012 :   224 : min=  4487 max=  71222
+ 2013 :   241 : min=  4473 max= 114440
+ 2014 :   221 : min=  4475 max= 101074
+ 2015 :   210 : min=  4474 max=  89228
+ 2016 :   205 : min=  4484 max= 222656
+ 2017 :   236 : min=  4464 max=  75710
+ 2018 :   159 : min=  4534 max=  87807
+ 2019 :   122 : min=  4527 max=  37204
+ 2020 :   190 : min=  4461 max= 801217
+ 2021 :    79 : min=  4586 max= 112837
+ 2022 :    33 : min=  4636 max=  22492
+ 2023 :    25 : min=  4519 max=  76372
+ 2024 :    18 : min=  4539 max=  25499
+ 2025 :     6 : min=  4610 max=  20501
+ 2026 :     3 : min=  4542 max=  11316
+ None :     7 : min=  4755 max= 169601
+
+&gt;= 2020:   354 (3.5%)
+&gt;= 2022:    85 (0.8%)
+&gt;= 2023:    52 (0.5%)
+&gt;= 2024:    27 (0.3%)
+&gt;= 2025:     9 (0.1%)
+&gt;= 2026:     3 (0.0%)</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T18-06-11-660Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T18-06-11-660Z" class="timestamp-link"><time datetime="2026-07-11T18:06:11.660Z" data-timestamp="2026-07-11T18:06:11.660Z">2026-07-11T18:06:11.660Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T18-06-16-674Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T18-06-16-674Z" class="timestamp-link"><time datetime="2026-07-11T18:06:16.674Z" data-timestamp="2026-07-11T18:06:16.674Z">2026-07-11T18:06:16.674Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p>The data confirms the problem is severe and, importantly, <strong>structural — you can't fix it by reweighting the current file.</strong> Here's the sharp version:</p>
+<ul>
+<li>The floor to enter this pull is <strong>4,460 citations</strong>. The fetch was sorted <code>cited_by_count:desc</code> and truncated at 10k, so <em>every paper below 4,460 citations was never fetched</em> — including virtually the entire recent long tail.</li>
+<li>Recent representation falls off a cliff: 2022 → 33 papers, 2023 → 25, 2024 → 18, <strong>2025 → 6, 2026 → 3</strong>. And the handful that did clear the bar are disproportionately the <em>anomalies</em> we already found (the "801k in 2020", "76k in 2023" bad records).</li>
+</ul>
+<p>So the key realization: <strong>no post-hoc boost on <code>top_cited.jsonl</code> can recover recent papers — the data isn't in the file.</strong> Any real solution has to change the <em>fetch/sampling</em> stage. Raw citation count conflates quality with elapsed time, and recent papers simply haven't had the time; you can't manufacture that signal by reweighting.</p>
+<h2>What I'd recommend</h2>
+<p><strong>Primary fix — cohort-stratified sampling (change the fetch):</strong> Instead of one global <code>cited_by_count:desc</code> truncated at 10k, pull <strong>top-K per publication year</strong> (e.g. top ~300/year × ~35 years ≈ 10k). This <em>guarantees</em> every recent year is represented and turns "the 10k most-cited papers ever" into "the most-cited papers of each era" — which is what you actually want if recent work should appear. Tag each node with its cohort so the viz can color/filter by it.</p>
+<p><strong>For the most-recent cohorts specifically (say 2023–2026), rank by a time-robust metric instead of raw count</strong>, because raw counts are near-meaningless there:
+- <strong>Citation velocity</strong> — recent-year citations from <code>counts_by_year</code> (you already select this field), e.g. citations in the trailing 24 months, or <code>cited_by_count / years_since_pub</code>. This surfaces <em>currently-hot</em> papers regardless of age. This is the most natural "boost."
+- <strong>FWCI</strong> is <em>not</em> a good choice for the recent boost even though it's year-normalized — its denominator (expected citations for a 2025 paper) is tiny and unstable, so it's most volatile exactly in the years you're trying to include. We saw that blow up earlier (GANs at FWCI 27k from a wrong year).</p>
+<p><strong>Practical composition</strong> for the viz: keep the citation-ranked backbone for historical depth, then layer in a stratified recent-cohort set selected by velocity, and encode <code>cohort</code>/<code>is_recent</code> as a node attribute so the two populations are visually distinguishable rather than silently mixed on an unfair axis.</p>
+<p>One caveat to decide up front: stratifying means the corpus is no longer "the most cited papers, period" — you're explicitly trading some raw-impact purity for temporal coverage. That's the right trade <em>if</em> the goal is a representative map of the field over time, the wrong one if the goal is strictly "what the citation graph's biggest nodes are."</p>
+<p>Want me to modify <code>fetch_top_cited.py</code> to support a <code>--strategy {global,per-year}</code> mode (per-year doing top-K-by-citations with a velocity sort for the recent cohorts)? That's the change that actually gets recent papers in.</p></div></div></div>
+        
+
+<div class="pagination">
+<a href="index.html" class="index-link">Index</a>
+<span class="disabled">&larr; Prev</span>
+<span class="current">1</span>
+<a href="page-002.html">2</a>
+<a href="page-003.html">3</a>
+<a href="page-002.html">Next &rarr;</a>
+</div>
+
+    </div>
+    <script>
+document.querySelectorAll('time[data-timestamp]').forEach(function(el) {
+    const timestamp = el.getAttribute('data-timestamp');
+    const date = new Date(timestamp);
+    const now = new Date();
+    const isToday = date.toDateString() === now.toDateString();
+    const timeStr = date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+    if (isToday) { el.textContent = timeStr; }
+    else { el.textContent = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' ' + timeStr; }
+});
+document.querySelectorAll('pre.json').forEach(function(el) {
+    let text = el.textContent;
+    text = text.replace(/"([^"]+)":/g, '<span style="color: #ce93d8">"$1"</span>:');
+    text = text.replace(/: "([^"]*)"/g, ': <span style="color: #81d4fa">"$1"</span>');
+    text = text.replace(/: (\d+)/g, ': <span style="color: #ffcc80">$1</span>');
+    text = text.replace(/: (true|false|null)/g, ': <span style="color: #f48fb1">$1</span>');
+    el.innerHTML = text;
+});
+document.querySelectorAll('.truncatable').forEach(function(wrapper) {
+    const content = wrapper.querySelector('.truncatable-content');
+    const btn = wrapper.querySelector('.expand-btn');
+    if (content.scrollHeight > 250) {
+        wrapper.classList.add('truncated');
+        btn.addEventListener('click', function() {
+            if (wrapper.classList.contains('truncated')) { wrapper.classList.remove('truncated'); wrapper.classList.add('expanded'); btn.textContent = 'Show less'; }
+            else { wrapper.classList.remove('expanded'); wrapper.classList.add('truncated'); btn.textContent = 'Show more'; }
+        });
+    }
+});
+</script>
+</body>
+</html>
