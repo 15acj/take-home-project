@@ -1,0 +1,4 @@
+# Python deps for scripts/embed_turbopuffer.py (semantic embeddings ingest).
+# The rest of the pipeline (fetch_top_cited.py, build_graph_data.py) is stdlib-only.
+openai>=1.0
+turbopuffer>=0.5

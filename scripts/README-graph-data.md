@@ -80,6 +80,29 @@ Search: build an in-memory lowercased index from `T.title` + `T.author` (+ `topi
 (instant substring over 10k); fold in `search-kw.json` once it arrives. Matches drive
 `nodeVisibility`.
 
+## Semantic embeddings (hybrid search)
+
+`embed_turbopuffer.py` embeds the top-cited papers into a turbopuffer namespace for hybrid
+(dense vector + BM25) retrieval, complementing the lexical `search-kw.json`. Unlike the
+stdlib-only pipeline above, it uses the OpenAI + turbopuffer SDKs.
+
+```bash
+pip install -r scripts/requirements.txt   # openai, turbopuffer (first pip deps)
+
+# credentials live in scripts/.env: OPENAI_API_KEY, TURBOPUFFER_API_KEY,
+# TURBOPUFFER_REGION, TURBOPUFFER_NAMESPACE
+
+python3 scripts/embed_turbopuffer.py --dry-run --limit 3   # inspect embed texts, no API calls
+python3 scripts/embed_turbopuffer.py                       # embed all (~9,874 papers)
+python3 scripts/embed_turbopuffer.py --query "protein structure prediction"   # hybrid smoke test
+```
+
+Embeds `title + reconstructed abstract` with `text-embedding-3-small` (1536-dim, cosine).
+Each row's **`rank` attribute == the canonical citation-rank node index** (the script re-sorts
+the year-major JSONL by `cited_by_count` desc), so vector hits line up with `nodes.bin` /
+`details/`. The `text` attribute is indexed with `full_text_search` for BM25; query with
+`multi_query` + `rerank_by=("RRF",)` for hybrid.
+
 ## CDN notes
 
 - Serve `.gz` with `Content-Encoding: gzip` (let the CDN add Brotli on the fly); `.bin` as
