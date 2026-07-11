@@ -1,0 +1,5 @@
+# Never commit real credentials
+.env
+
+# Pulled data
+data/
