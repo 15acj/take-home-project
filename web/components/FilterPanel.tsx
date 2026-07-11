@@ -70,9 +70,11 @@ export default function FilterPanel({ t }: { t: Theme }) {
               onClick={() => set({ leftOpen: false })}
               title="Collapse"
               className="hc"
-              style={{ width: 24, height: 24, borderRadius: 7, border: "none", background: "transparent", color: t.textDim, cursor: "pointer", fontSize: 16, lineHeight: 1, ["--hc" as string]: t.text }}
+              style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 24, height: 24, borderRadius: 7, border: "none", background: "transparent", color: t.textDim, cursor: "pointer", ["--hc" as string]: t.text }}
             >
-              ‹
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block" }}>
+                <polyline points="15 6 9 12 15 18" />
+              </svg>
             </button>
           </div>
 
@@ -295,7 +297,11 @@ export default function FilterPanel({ t }: { t: Theme }) {
           <span style={{ fontSize: 20 }}>⌕</span>
           <span style={{ fontSize: 13, letterSpacing: "0.01em", fontWeight: 700, fontFamily: "'Lato',sans-serif" }}>Filters</span>
           <span style={{ flex: 1 }} />
-          <span style={{ fontSize: 16, lineHeight: 1 }}>›</span>
+          <span style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 18, height: 18, flex: "0 0 auto", color: t.textDim }}>
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block" }}>
+              <polyline points="9 6 15 12 9 18" />
+            </svg>
+          </span>
         </button>
       )}
     </div>

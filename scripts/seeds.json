@@ -12,9 +12,11 @@
       "synthetic_id": "W_SEED_ATTENTION_2017",
       "title": "Attention Is All You Need", "year": 2017,
       "doi": "https://doi.org/10.5555/3295222.3295349",
-      "authors": ["Ashish Vaswani", "Noam Shazeer", "Niki Parmar", "Jakob Uszkoreit"],
+      "authors": ["Ashish Vaswani", "Noam Shazeer", "Niki Parmar", "Jakob Uszkoreit",
+                  "Llion Jones", "Aidan N. Gomez", "Lukasz Kaiser", "Illia Polosukhin"],
       "domain": "Physical Sciences", "field": "Computer Science",
-      "topic": "Artificial Intelligence", "references": [] },
+      "topic": "Artificial Intelligence", "references": [],
+      "abstract": "The dominant sequence transduction models are based on complex recurrent or convolutional neural networks that include an encoder and a decoder. The best performing models also connect the encoder and decoder through an attention mechanism. We propose a new simple network architecture, the Transformer, based solely on attention mechanisms, dispensing with recurrence and convolutions entirely. Experiments on two machine translation tasks show these models to be superior in quality while being more parallelizable and requiring significantly less time to train." },
 
     { "name": "BERT", "openalex_id": null, "true_citations": 110000,
       "synthetic_id": "W_SEED_BERT_2019",
@@ -23,15 +25,18 @@
       "authors": ["Jacob Devlin", "Ming-Wei Chang", "Kenton Lee", "Kristina Toutanova"],
       "domain": "Physical Sciences", "field": "Computer Science",
       "topic": "Natural Language Processing",
-      "references": ["W_SEED_ATTENTION_2017"] },
+      "references": ["W_SEED_ATTENTION_2017"],
+      "abstract": "We introduce a new language representation model called BERT, which stands for Bidirectional Encoder Representations from Transformers. Unlike recent language representation models, BERT is designed to pre-train deep bidirectional representations from unlabeled text by jointly conditioning on both left and right context in all layers. As a result, the pre-trained BERT model can be fine-tuned with just one additional output layer to create state-of-the-art models for a wide range of tasks, such as question answering and language inference, without substantial task-specific architecture modifications." },
 
     { "name": "RoBERTa", "openalex_id": null, "true_citations": 30000,
       "synthetic_id": "W_SEED_ROBERTA_2019",
       "title": "RoBERTa: A Robustly Optimized BERT Pretraining Approach",
       "year": 2019, "doi": "https://doi.org/10.48550/arXiv.1907.11692",
-      "authors": ["Yinhan Liu", "Myle Ott", "Naman Goyal", "Jingfei Du"],
+      "authors": ["Yinhan Liu", "Myle Ott", "Naman Goyal", "Jingfei Du", "Mandar Joshi",
+                  "Danqi Chen", "Omer Levy", "Mike Lewis", "Luke Zettlemoyer", "Veselin Stoyanov"],
       "domain": "Physical Sciences", "field": "Computer Science",
       "topic": "Natural Language Processing",
-      "references": ["W_SEED_BERT_2019", "W_SEED_ATTENTION_2017"] }
+      "references": ["W_SEED_BERT_2019", "W_SEED_ATTENTION_2017"],
+      "abstract": "Language model pretraining has led to significant performance gains but careful comparison between different approaches is challenging. We present a replication study of BERT pretraining that carefully measures the impact of many key hyperparameters and training data size. We find that BERT was significantly undertrained, and can match or exceed the performance of every model published after it. Our best model achieves state-of-the-art results on GLUE, RACE and SQuAD." }
   ]
 }

@@ -117,7 +117,22 @@ export class ForceGraph3D {
   toggleSelect(id){ if(this.selected.has(id)) this.selected.delete(id); else this.selected.add(id); }
   setHover(id){ this.hoverId=id; }
 
-  focusNode(id){ const i=this.idIndex.get(id); if(i===undefined)return; this.autoRotate=false; this._focusTarget=this.allNodes[i]; this.targetDist=360; }
+  focusNode(id){
+    const i=this.idIndex.get(id); if(i===undefined)return;
+    const n=this.allNodes[i];
+    this.autoRotate=false; this._focusTarget=n;
+    // Rotate the camera to bring the node to the FRONT-center (near side), not just
+    // pan its 2D projection. Pan-only centering leaves the node on the far side of the
+    // cloud, occluded behind nearer nodes — so it looks like the wrong node got focused.
+    // yaw/pitch aim the node at screen center on the near side; dist keeps it a fixed
+    // apparent depth (~340) regardless of how far the node sits from the origin.
+    const R=Math.hypot(n.x,n.z), Q=Math.hypot(R,n.y);
+    let ty=Math.atan2(-n.x,-n.z);
+    while(ty-this.yaw>Math.PI)ty-=2*Math.PI; while(ty-this.yaw<-Math.PI)ty+=2*Math.PI;
+    this.targetYaw=ty;
+    this.targetPitch=Math.max(-1.45,Math.min(1.45,Math.atan2(-n.y,R)));
+    this.targetDist=Q+340;
+  }
   resetView(){ this.autoRotate=true; this._focusTarget=null; this.targetDist=980; this.panX=0; this.panY=0; this.targetPitch=-0.32; }
 
   resize() {

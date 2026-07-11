@@ -98,6 +98,17 @@ def scale_counts(rec: dict, true_total: int) -> None:
     rec["cited_by_count"] = true_total
 
 
+def invert_abstract(text: str | None) -> dict | None:
+    """Plain abstract -> OpenAlex abstract_inverted_index (word -> [positions]), so a
+    synthetic seed's abstract flows through build_graph_data.reconstruct_abstract."""
+    if not text:
+        return None
+    inv: dict[str, list[int]] = {}
+    for pos, word in enumerate(text.split()):
+        inv.setdefault(word, []).append(pos)
+    return inv
+
+
 def build_synthetic(seed: dict, data_year: int) -> dict:
     sid = seed["synthetic_id"]
     total = seed["true_citations"]
@@ -126,7 +137,7 @@ def build_synthetic(seed: dict, data_year: int) -> dict:
         "content_urls": {},
         "referenced_works": [f"https://openalex.org/{r}" for r in seed.get("references", [])],
         "related_works": [],
-        "abstract_inverted_index": None,
+        "abstract_inverted_index": invert_abstract(seed.get("abstract")),
     }
 
 

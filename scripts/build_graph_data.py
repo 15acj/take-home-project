@@ -307,6 +307,7 @@ def main() -> int:
 
     # --- detail shards ---
     n_shards = (n + args.shard - 1) // args.shard
+    details_hasher = hashlib.sha256()  # content hash of all shards -> shard cache-bust token
     for s in range(n_shards):
         chunk = rows[s * args.shard:(s + 1) * args.shard]
         recs = []
@@ -334,7 +335,9 @@ def main() -> int:
                 "seed_count_source": r.get("seed_count_source"),
             })
         blob = json.dumps(recs, separators=(",", ":"), ensure_ascii=False).encode()
+        details_hasher.update(blob)
         write_gz(os.path.join(details_dir, f"shard-{s:03d}.json"), blob)
+    details_hash = details_hasher.hexdigest()[:8]
     print(f"  {n_shards} detail shards -> details/", file=sys.stderr)
 
     # --- citation scale domain (sqrt/log sizing + p95 clamp) ---
@@ -382,6 +385,7 @@ def main() -> int:
         "hashes": {
             "nodes.bin": sha8(nodes_bin), "nodes-text.json": sha8(nt),
             "search-kw.json": sha8(sk), "edges.bin": sha8(edges_bin),
+            "details": details_hash,
         },
     }
     with open(os.path.join(args.out, "manifest.json"), "w", encoding="utf-8") as f:

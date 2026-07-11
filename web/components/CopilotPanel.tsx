@@ -72,6 +72,18 @@ export default function CopilotPanel({
     background: on ? t.accent : "transparent", color: on ? t.onAccent : t.textDim,
   });
 
+  // Shared style for the four paper-detail action buttons (View Paper, PDF,
+  // Focus in Graph, Remove): equal width, icon on the right, same background.
+  const paperBtn: CSSProperties = {
+    flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+    padding: 10, borderRadius: 9, textDecoration: "none", cursor: "pointer",
+    fontFamily: "'Lato',sans-serif", fontSize: 12.5, fontWeight: 700, lineHeight: 1,
+    border: `1px solid ${t.border}`, background: t.chipBg, color: t.text,
+  };
+  // Icons: nudge up ~1px so they sit on the text's optical (cap-height) center
+  // rather than the em-box center, which reads a touch low.
+  const paperBtnIcon: CSSProperties = { display: "block", flex: "0 0 auto", transform: "translateY(0.5px)" };
+
   const onChatInput = (v: string) => {
     set({ chatInput: v });
     const el = inputRef.current;
@@ -98,9 +110,11 @@ export default function CopilotPanel({
               onClick={() => set({ rightOpen: false })}
               title="Collapse"
               className="hc"
-              style={{ width: 24, height: 24, borderRadius: 7, border: "none", background: "transparent", color: t.textDim, cursor: "pointer", fontSize: 16, lineHeight: 1, ["--hc" as string]: t.text }}
+              style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 24, height: 24, borderRadius: 7, border: "none", background: "transparent", color: t.textDim, cursor: "pointer", ["--hc" as string]: t.text }}
             >
-              ›
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block" }}>
+                <polyline points="9 6 15 12 9 18" />
+              </svg>
             </button>
             <div style={{ fontSize: 13, fontWeight: 700 }}>Copilot</div>
             <div style={{ flex: 1 }} />
@@ -172,7 +186,7 @@ export default function CopilotPanel({
                 </button>
               </>
             ) : (
-              <div style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.55, color: t.textDim, padding: "6px 0 4px" }}>
+              <div style={{ fontSize: 13, fontWeight: 400, lineHeight: 1.55, color: t.textDim, padding: "6px 0 4px" }}>
                 Click nodes in the graph to add papers here, then chat about them below.
               </div>
             )}
@@ -192,11 +206,11 @@ export default function CopilotPanel({
                         )}
                         <div style={user ? {
                           maxWidth: "88%", padding: "10px 13px", borderRadius: "14px 14px 4px 14px",
-                          background: t.accent, color: t.onAccent, fontSize: 14.5, lineHeight: 1.5, fontWeight: 400,
+                          background: t.accent, color: t.onAccent, fontSize: 13.5, lineHeight: 1.45, fontWeight: 400,
                         } : {
                           maxWidth: "94%", padding: "11px 14px", borderRadius: "4px 14px 14px 14px",
                           background: t.botBubble, border: `1px solid ${t.border}`, color: t.text,
-                          fontSize: 14.5, lineHeight: 1.62, fontWeight: 400,
+                          fontSize: 13.5, lineHeight: 1.55, fontWeight: 400,
                         }}>
                           {m.text}
                         </div>
@@ -319,23 +333,45 @@ export default function CopilotPanel({
                     DOI: {detail ? (detail.doi ? detail.doi.replace(/^https?:\/\/doi\.org\//, "") : "—") : "…"}
                   </div>
 
+                  {detail && (detail.landing_url || detail.pdf_url) && (
+                    <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+                      {detail.landing_url && (
+                        <a href={detail.landing_url} target="_blank" rel="noopener noreferrer" style={paperBtn}>
+                          View Paper
+                          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={paperBtnIcon}>
+                            <path d="M7 17 17 7M9 7h8v8" />
+                          </svg>
+                        </a>
+                      )}
+                      {detail.pdf_url && (
+                        <a href={detail.pdf_url} target="_blank" rel="noopener noreferrer" style={paperBtn}>
+                          PDF
+                          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={paperBtnIcon}>
+                            <path d="M12 3v11M7 10l5 4 5-4M4 20h16" />
+                          </svg>
+                        </a>
+                      )}
+                    </div>
+                  )}
+
                   <div style={{ display: "flex", gap: 8 }}>
-                    <button
-                      onClick={() => actions.focusNode(detailNode.id)}
-                      style={{ flex: 1, padding: 10, borderRadius: 9, cursor: "pointer", fontFamily: "'Lato',sans-serif", fontSize: 12.5, fontWeight: 700, border: `1px solid ${t.accent}`, background: t.accent, color: t.onAccent }}
-                    >
+                    <button onClick={() => actions.focusNode(detailNode.id)} style={paperBtn}>
                       Focus in Graph
+                      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={paperBtnIcon}>
+                        <circle cx="12" cy="12" r="6" />
+                        <path d="M12 1v3M12 20v3M1 12h3M20 12h3" />
+                      </svg>
                     </button>
-                    <button
-                      onClick={() => actions.removeSelected(detailNode.id)}
-                      style={{ flex: "0 0 auto", padding: "10px 14px", borderRadius: 9, cursor: "pointer", fontFamily: "'Lato',sans-serif", fontSize: 12.5, fontWeight: 700, border: `1px solid ${t.border}`, background: "transparent", color: t.textDim }}
-                    >
+                    <button onClick={() => actions.removeSelected(detailNode.id)} style={paperBtn}>
                       Remove
+                      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ ...paperBtnIcon, transform: "translateY(1.5px)" }}>
+                        <path d="M6 6l12 12M18 6L6 18" />
+                      </svg>
                     </button>
                   </div>
                 </>
               ) : (
-                <div style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.6, color: t.textDim, padding: "8px 0" }}>
+                <div style={{ fontSize: 13, fontWeight: 400, lineHeight: 1.6, color: t.textDim, padding: "8px 0" }}>
                   Select a paper in the graph — or tap one in the list above — to read its abstract and full details here.
                 </div>
               )}
@@ -361,7 +397,11 @@ export default function CopilotPanel({
               {s.selectedIds.length}
             </span>
           )}
-          <span style={{ fontSize: 16, lineHeight: 1 }}>‹</span>
+          <span style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 18, height: 18, flex: "0 0 auto", color: t.textDim }}>
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block" }}>
+              <polyline points="15 6 9 12 15 18" />
+            </svg>
+          </span>
         </button>
       )}
     </div>
