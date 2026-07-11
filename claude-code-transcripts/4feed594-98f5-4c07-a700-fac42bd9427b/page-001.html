@@ -1,0 +1,2017 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claude Code transcript - page 1</title>
+    <style>
+:root { --bg-color: #f5f5f5; --card-bg: #ffffff; --user-bg: #e3f2fd; --user-border: #1976d2; --assistant-bg: #f5f5f5; --assistant-border: #9e9e9e; --thinking-bg: #fff8e1; --thinking-border: #ffc107; --thinking-text: #666; --tool-bg: #f3e5f5; --tool-border: #9c27b0; --tool-result-bg: #e8f5e9; --tool-error-bg: #ffebee; --text-color: #212121; --text-muted: #757575; --code-bg: #263238; --code-text: #aed581; }
+* { box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg-color); color: var(--text-color); margin: 0; padding: 16px; line-height: 1.6; }
+.container { max-width: 800px; margin: 0 auto; }
+h1 { font-size: 1.5rem; margin-bottom: 24px; padding-bottom: 8px; border-bottom: 2px solid var(--user-border); }
+.header-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; border-bottom: 2px solid var(--user-border); padding-bottom: 8px; margin-bottom: 24px; }
+.header-row h1 { border-bottom: none; padding-bottom: 0; margin-bottom: 0; flex: 1; min-width: 200px; }
+.message { margin-bottom: 16px; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.message.user { background: var(--user-bg); border-left: 4px solid var(--user-border); }
+.message.assistant { background: var(--card-bg); border-left: 4px solid var(--assistant-border); }
+.message.tool-reply { background: #fff8e1; border-left: 4px solid #ff9800; }
+.tool-reply .role-label { color: #e65100; }
+.tool-reply .tool-result { background: transparent; padding: 0; margin: 0; }
+.tool-reply .tool-result .truncatable.truncated::after { background: linear-gradient(to bottom, transparent, #fff8e1); }
+.message-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 16px; background: rgba(0,0,0,0.03); font-size: 0.85rem; }
+.role-label { font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+.user .role-label { color: var(--user-border); }
+time { color: var(--text-muted); font-size: 0.8rem; }
+.timestamp-link { color: inherit; text-decoration: none; }
+.timestamp-link:hover { text-decoration: underline; }
+.message:target { animation: highlight 2s ease-out; }
+@keyframes highlight { 0% { background-color: rgba(25, 118, 210, 0.2); } 100% { background-color: transparent; } }
+.message-content { padding: 16px; }
+.message-content p { margin: 0 0 12px 0; }
+.message-content p:last-child { margin-bottom: 0; }
+.thinking { background: var(--thinking-bg); border: 1px solid var(--thinking-border); border-radius: 8px; padding: 12px; margin: 12px 0; font-size: 0.9rem; color: var(--thinking-text); }
+.thinking-label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: #f57c00; margin-bottom: 8px; }
+.thinking p { margin: 8px 0; }
+.assistant-text { margin: 8px 0; }
+.tool-use { background: var(--tool-bg); border: 1px solid var(--tool-border); border-radius: 8px; padding: 12px; margin: 12px 0; }
+.tool-header { font-weight: 600; color: var(--tool-border); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+.tool-icon { font-size: 1.1rem; }
+.tool-description { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 8px; font-style: italic; }
+.tool-result { background: var(--tool-result-bg); border-radius: 8px; padding: 12px; margin: 12px 0; }
+.tool-result.tool-error { background: var(--tool-error-bg); }
+.file-tool { border-radius: 8px; padding: 12px; margin: 12px 0; }
+.write-tool { background: linear-gradient(135deg, #e3f2fd 0%, #e8f5e9 100%); border: 1px solid #4caf50; }
+.edit-tool { background: linear-gradient(135deg, #fff3e0 0%, #fce4ec 100%); border: 1px solid #ff9800; }
+.file-tool-header { font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; font-size: 0.95rem; }
+.write-header { color: #2e7d32; }
+.edit-header { color: #e65100; }
+.file-tool-icon { font-size: 1rem; }
+.file-tool-path { font-family: monospace; background: rgba(0,0,0,0.08); padding: 2px 8px; border-radius: 4px; }
+.file-tool-fullpath { font-family: monospace; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 8px; word-break: break-all; }
+.file-content { margin: 0; }
+.edit-section { display: flex; margin: 4px 0; border-radius: 4px; overflow: hidden; }
+.edit-label { padding: 8px 12px; font-weight: bold; font-family: monospace; display: flex; align-items: flex-start; }
+.edit-old { background: #fce4ec; }
+.edit-old .edit-label { color: #b71c1c; background: #f8bbd9; }
+.edit-old .edit-content { color: #880e4f; }
+.edit-new { background: #e8f5e9; }
+.edit-new .edit-label { color: #1b5e20; background: #a5d6a7; }
+.edit-new .edit-content { color: #1b5e20; }
+.edit-content { margin: 0; flex: 1; background: transparent; font-size: 0.85rem; }
+.edit-replace-all { font-size: 0.75rem; font-weight: normal; color: var(--text-muted); }
+.write-tool .truncatable.truncated::after { background: linear-gradient(to bottom, transparent, #e6f4ea); }
+.edit-tool .truncatable.truncated::after { background: linear-gradient(to bottom, transparent, #fff0e5); }
+.todo-list { background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%); border: 1px solid #81c784; border-radius: 8px; padding: 12px; margin: 12px 0; }
+.todo-header { font-weight: 600; color: #2e7d32; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; font-size: 0.95rem; }
+.todo-items { list-style: none; margin: 0; padding: 0; }
+.todo-item { display: flex; align-items: flex-start; gap: 10px; padding: 6px 0; border-bottom: 1px solid rgba(0,0,0,0.06); font-size: 0.9rem; }
+.todo-item:last-child { border-bottom: none; }
+.todo-icon { flex-shrink: 0; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-weight: bold; border-radius: 50%; }
+.todo-completed .todo-icon { color: #2e7d32; background: rgba(46, 125, 50, 0.15); }
+.todo-completed .todo-content { color: #558b2f; text-decoration: line-through; }
+.todo-in-progress .todo-icon { color: #f57c00; background: rgba(245, 124, 0, 0.15); }
+.todo-in-progress .todo-content { color: #e65100; font-weight: 500; }
+.todo-pending .todo-icon { color: #757575; background: rgba(0,0,0,0.05); }
+.todo-pending .todo-content { color: #616161; }
+pre { background: var(--code-bg); color: var(--code-text); padding: 12px; border-radius: 6px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5; margin: 8px 0; white-space: pre-wrap; word-wrap: break-word; }
+pre.json { color: #e0e0e0; }
+code { background: rgba(0,0,0,0.08); padding: 2px 6px; border-radius: 4px; font-size: 0.9em; }
+pre code { background: none; padding: 0; }
+.user-content { margin: 0; }
+.truncatable { position: relative; }
+.truncatable.truncated .truncatable-content { max-height: 200px; overflow: hidden; }
+.truncatable.truncated::after { content: ''; position: absolute; bottom: 32px; left: 0; right: 0; height: 60px; background: linear-gradient(to bottom, transparent, var(--card-bg)); pointer-events: none; }
+.message.user .truncatable.truncated::after { background: linear-gradient(to bottom, transparent, var(--user-bg)); }
+.message.tool-reply .truncatable.truncated::after { background: linear-gradient(to bottom, transparent, #fff8e1); }
+.tool-use .truncatable.truncated::after { background: linear-gradient(to bottom, transparent, var(--tool-bg)); }
+.tool-result .truncatable.truncated::after { background: linear-gradient(to bottom, transparent, var(--tool-result-bg)); }
+.expand-btn { display: none; width: 100%; padding: 8px 16px; margin-top: 4px; background: rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.1); border-radius: 6px; cursor: pointer; font-size: 0.85rem; color: var(--text-muted); }
+.expand-btn:hover { background: rgba(0,0,0,0.1); }
+.truncatable.truncated .expand-btn, .truncatable.expanded .expand-btn { display: block; }
+.pagination { display: flex; justify-content: center; gap: 8px; margin: 24px 0; flex-wrap: wrap; }
+.pagination a, .pagination span { padding: 5px 10px; border-radius: 6px; text-decoration: none; font-size: 0.85rem; }
+.pagination a { background: var(--card-bg); color: var(--user-border); border: 1px solid var(--user-border); }
+.pagination a:hover { background: var(--user-bg); }
+.pagination .current { background: var(--user-border); color: white; }
+.pagination .disabled { color: var(--text-muted); border: 1px solid #ddd; }
+.pagination .index-link { background: var(--user-border); color: white; }
+details.continuation { margin-bottom: 16px; }
+details.continuation summary { cursor: pointer; padding: 12px 16px; background: var(--user-bg); border-left: 4px solid var(--user-border); border-radius: 12px; font-weight: 500; color: var(--text-muted); }
+details.continuation summary:hover { background: rgba(25, 118, 210, 0.15); }
+details.continuation[open] summary { border-radius: 12px 12px 0 0; margin-bottom: 0; }
+.index-item { margin-bottom: 16px; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); background: var(--user-bg); border-left: 4px solid var(--user-border); }
+.index-item a { display: block; text-decoration: none; color: inherit; }
+.index-item a:hover { background: rgba(25, 118, 210, 0.1); }
+.index-item-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 16px; background: rgba(0,0,0,0.03); font-size: 0.85rem; }
+.index-item-number { font-weight: 600; color: var(--user-border); }
+.index-item-content { padding: 16px; }
+.index-item-stats { padding: 8px 16px 12px 32px; font-size: 0.85rem; color: var(--text-muted); border-top: 1px solid rgba(0,0,0,0.06); }
+.index-item-commit { margin-top: 6px; padding: 4px 8px; background: #fff3e0; border-radius: 4px; font-size: 0.85rem; color: #e65100; }
+.index-item-commit code { background: rgba(0,0,0,0.08); padding: 1px 4px; border-radius: 3px; font-size: 0.8rem; margin-right: 6px; }
+.commit-card { margin: 8px 0; padding: 10px 14px; background: #fff3e0; border-left: 4px solid #ff9800; border-radius: 6px; }
+.commit-card a { text-decoration: none; color: #5d4037; display: block; }
+.commit-card a:hover { color: #e65100; }
+.commit-card-hash { font-family: monospace; color: #e65100; font-weight: 600; margin-right: 8px; }
+.index-commit { margin-bottom: 12px; padding: 10px 16px; background: #fff3e0; border-left: 4px solid #ff9800; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+.index-commit a { display: block; text-decoration: none; color: inherit; }
+.index-commit a:hover { background: rgba(255, 152, 0, 0.1); margin: -10px -16px; padding: 10px 16px; border-radius: 8px; }
+.index-commit-header { display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; margin-bottom: 4px; }
+.index-commit-hash { font-family: monospace; color: #e65100; font-weight: 600; }
+.index-commit-msg { color: #5d4037; }
+.index-item-long-text { margin-top: 8px; padding: 12px; background: var(--card-bg); border-radius: 8px; border-left: 3px solid var(--assistant-border); }
+.index-item-long-text .truncatable.truncated::after { background: linear-gradient(to bottom, transparent, var(--card-bg)); }
+.index-item-long-text-content { color: var(--text-color); }
+#search-box { display: none; align-items: center; gap: 8px; }
+#search-box input { padding: 6px 12px; border: 1px solid var(--assistant-border); border-radius: 6px; font-size: 16px; width: 180px; }
+#search-box button, #modal-search-btn, #modal-close-btn { background: var(--user-border); color: white; border: none; border-radius: 6px; padding: 6px 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+#search-box button:hover, #modal-search-btn:hover { background: #1565c0; }
+#modal-close-btn { background: var(--text-muted); margin-left: 8px; }
+#modal-close-btn:hover { background: #616161; }
+#search-modal[open] { border: none; border-radius: 12px; box-shadow: 0 4px 24px rgba(0,0,0,0.2); padding: 0; width: 90vw; max-width: 900px; height: 80vh; max-height: 80vh; display: flex; flex-direction: column; }
+#search-modal::backdrop { background: rgba(0,0,0,0.5); }
+.search-modal-header { display: flex; align-items: center; gap: 8px; padding: 16px; border-bottom: 1px solid var(--assistant-border); background: var(--bg-color); border-radius: 12px 12px 0 0; }
+.search-modal-header input { flex: 1; padding: 8px 12px; border: 1px solid var(--assistant-border); border-radius: 6px; font-size: 16px; }
+#search-status { padding: 8px 16px; font-size: 0.85rem; color: var(--text-muted); border-bottom: 1px solid rgba(0,0,0,0.06); }
+#search-results { flex: 1; overflow-y: auto; padding: 16px; }
+.search-result { margin-bottom: 16px; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.search-result a { display: block; text-decoration: none; color: inherit; }
+.search-result a:hover { background: rgba(25, 118, 210, 0.05); }
+.search-result-page { padding: 6px 12px; background: rgba(0,0,0,0.03); font-size: 0.8rem; color: var(--text-muted); border-bottom: 1px solid rgba(0,0,0,0.06); }
+.search-result-content { padding: 12px; }
+.search-result mark { background: #fff59d; padding: 1px 2px; border-radius: 2px; }
+@media (max-width: 600px) { body { padding: 8px; } .message, .index-item { border-radius: 8px; } .message-content, .index-item-content { padding: 12px; } pre { font-size: 0.8rem; padding: 8px; } #search-box input { width: 120px; } #search-modal[open] { width: 95vw; height: 90vh; } }
+</style>
+</head>
+<body>
+    <div class="container">
+        <h1><a href="index.html" style="color: inherit; text-decoration: none;">Claude Code transcript</a> - page 1/2</h1>
+        
+
+<div class="pagination">
+<a href="index.html" class="index-link">Index</a>
+<span class="disabled">&larr; Prev</span>
+<span class="current">1</span>
+<a href="page-002.html">2</a>
+<a href="page-002.html">Next &rarr;</a>
+</div>
+
+        
+<div class="message user" id="msg-2026-07-11T19-06-04-211Z"><div class="message-header"><span class="role-label">User</span><a href="#msg-2026-07-11T19-06-04-211Z" class="timestamp-link"><time datetime="2026-07-11T19:06:04.211Z" data-timestamp="2026-07-11T19:06:04.211Z">2026-07-11T19:06:04.211Z</time></a></div><div class="message-content">
+<div class="user-content"><p><local-command-caveat>Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.</local-command-caveat></p></div></div></div>
+<div class="message user" id="msg-2026-07-11T19-06-04-211Z"><div class="message-header"><span class="role-label">User</span><a href="#msg-2026-07-11T19-06-04-211Z" class="timestamp-link"><time datetime="2026-07-11T19:06:04.211Z" data-timestamp="2026-07-11T19:06:04.211Z">2026-07-11T19:06:04.211Z</time></a></div><div class="message-content">
+<div class="user-content"><p><command-name>/fast</command-name>
+            <command-message>fast</command-message>
+            <command-args></command-args></p></div></div></div>
+<div class="message user" id="msg-2026-07-11T19-06-04-211Z"><div class="message-header"><span class="role-label">User</span><a href="#msg-2026-07-11T19-06-04-211Z" class="timestamp-link"><time datetime="2026-07-11T19:06:04.211Z" data-timestamp="2026-07-11T19:06:04.211Z">2026-07-11T19:06:04.211Z</time></a></div><div class="message-content">
+<div class="user-content"><p><local-command-stdout>[38;2;255;120;20m↯[39m Fast mode ON · $10/$50 per Mtok</local-command-stdout></p></div></div></div>
+<div class="message user" id="msg-2026-07-11T19-07-20-614Z"><div class="message-header"><span class="role-label">User</span><a href="#msg-2026-07-11T19-07-20-614Z" class="timestamp-link"><time datetime="2026-07-11T19:07:20.614Z" data-timestamp="2026-07-11T19:07:20.614Z">2026-07-11T19:07:20.614Z</time></a></div><div class="message-content">
+<div class="user-content"><p>i want to embed my top 10k papers so i can run hybrid search (vector + semantic). write a script in the scripts/ folder to do this for me. use openai for text embeddings. embed the title + abstract (probably need to reconstruct abstracts from inverted index). store the embeddings in turbopuffer.</p></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-07-21-971Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-07-21-971Z" class="timestamp-link"><time datetime="2026-07-11T19:07:21.971Z" data-timestamp="2026-07-11T19:07:21.971Z">2026-07-11T19:07:21.971Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-07-22-279Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-07-22-279Z" class="timestamp-link"><time datetime="2026-07-11T19:07:22.279Z" data-timestamp="2026-07-11T19:07:22.279Z">2026-07-11T19:07:22.279Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p>I'll explore the codebase to understand the data structure and existing patterns before planning.</p></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-07-25-162Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-07-25-162Z" class="timestamp-link"><time datetime="2026-07-11T19:07:25.162Z" data-timestamp="2026-07-11T19:07:25.162Z">2026-07-11T19:07:25.162Z</time></a></div><div class="message-content">
+<div class="tool-use" data-tool-id="toolu_01YJkFYPgZB37VtGAfUSRCBU"><div class="tool-header"><span class="tool-icon">⚙</span> Agent</div><div class="tool-description">Explore scripts and data pipeline</div><div class="truncatable"><div class="truncatable-content"><pre class="json">{
+  &#34;prompt&#34;: &#34;I&#39;m planning a script to embed the top 10k papers for hybrid search. Explore the repo at /Users/andrewjin/Desktop/anthropic-take-home/claude-code-transcripts and report back on:\n\n1. The `scripts/` folder — list all existing scripts, and for each, summarize what it does, what language (Python? Node?), what libraries/patterns it uses, how it reads/writes data, how config/env vars/API keys are handled, and any shared conventions (logging, argparse, dotenv, requirements.txt, package.json).\n\n2. The paper data — where does the paper data live (files, formats — JSON/parquet/csv)? What is the schema of a single paper record? Specifically look for: paper ID, title, abstract, and whether abstracts are stored as an \&#34;inverted index\&#34; (OpenAlex-style `abstract_inverted_index`). Show me an example record structure.\n\n3. How are the \&#34;top 10k papers\&#34; determined? Look for any citation-rank ordering, ranking logic, or a already-produced ranked/top-N file. There&#39;s a mention of \&#34;citation-rank order\&#34; being load-bearing. Find where that ranking is computed and where the ranked output lives.\n\n4. Any existing use of OpenAI, embeddings, turbopuffer, or vector search anywhere in the repo.\n\nReport file paths and concrete details (actual field names, actual file locations). Read excerpts, don&#39;t dump whole files.&#34;,
+  &#34;subagent_type&#34;: &#34;Explore&#34;,
+  &#34;run_in_background&#34;: false
+}</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-07-25-656Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-07-25-656Z" class="timestamp-link"><time datetime="2026-07-11T19:07:25.656Z" data-timestamp="2026-07-11T19:07:25.656Z">2026-07-11T19:07:25.656Z</time></a></div><div class="message-content">
+<div class="tool-use bash-tool" data-tool-id="toolu_019oC9YqvKJQWQnB1mCEEUiP">
+<div class="tool-header"><span class="tool-icon">$</span> Bash</div>
+<div class="tool-description">List repo structure</div><div class="truncatable"><div class="truncatable-content"><pre class="bash-command">ls -la &amp;&amp; echo &#34;---SCRIPTS---&#34; &amp;&amp; ls -la scripts/ 2&gt;/dev/null &amp;&amp; echo &#34;---DATA---&#34; &amp;&amp; ls -la data/ 2&gt;/dev/null &amp;&amp; echo &#34;---ROOT FILES---&#34; &amp;&amp; find . -maxdepth 2 -not -path &#39;./.git/*&#39; -not -path &#39;./node_modules/*&#39; -not -path &#39;./web/node_modules/*&#39; | head -80</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T19-07-26-350Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T19-07-26-350Z" class="timestamp-link"><time datetime="2026-07-11T19:07:26.350Z" data-timestamp="2026-07-11T19:07:26.350Z">2026-07-11T19:07:26.350Z</time></a></div><div class="message-content"><div class="tool-result tool-error"><div class="truncatable"><div class="truncatable-content"><pre>Exit code 1
+total 16
+drwxr-xr-x   6 andrewjin  staff   192 Jul 11 12:03 .
+drwxr-xr-x@  9 andrewjin  staff   288 Jul 11 10:49 ..
+-rw-r--r--@  1 andrewjin  staff  6148 Jul 11 12:04 .DS_Store
+drwxr-xr-x@  6 andrewjin  staff   192 Jul 11 12:00 0d0ca462-a61e-40c3-90f7-1378fbc55e82
+drwxr-xr-x@ 10 andrewjin  staff   320 Jul 11 10:50 2767989c-e347-4e25-8cd4-b71b4a2b3602
+drwxr-xr-x@  5 andrewjin  staff   160 Jul 11 12:03 6b100591-53f9-479b-b1f9-9a525f85708c
+---SCRIPTS---</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T19-09-09-425Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T19-09-09-425Z" class="timestamp-link"><time datetime="2026-07-11T19:09:09.425Z" data-timestamp="2026-07-11T19:09:09.425Z">2026-07-11T19:09:09.425Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>I have a complete picture. Note: the directory you pointed me at (`claude-code-transcripts/`) contains only HTML session transcripts — the actual code and data live one level up in the parent repo `/Users/andrewjin/Desktop/anthropic-take-home/`. Here&#x27;s what I found.
+
+---
+
+## Important context first
+
+The real artifacts are in the **parent** repo, not the transcripts folder:
+- Code: `/Users/andrewjin/Desktop/anthropic-take-home/scripts/`
+- Raw data: `/Users/andrewjin/Desktop/anthropic-take-home/scripts/data/`
+- Built web artifacts: `/Users/andrewjin/Desktop/anthropic-take-home/web/public/data/v1/`
+
+There is **no `requirements.txt`, `pyproject.toml`, or dotenv library** — Python scripts are deliberately **stdlib-only**. Node scripts use ES modules (`&quot;type&quot;: &quot;module&quot;`).
+
+---
+
+## 1. The `scripts/` folder
+
+| File | Lang | Purpose | Deps / patterns |
+|---|---|---|---|
+| `fetch_top_cited.py` (19 KB) | Python 3, stdlib only | Pulls top-N most-cited OpenAlex works via cursor/per-year paging; writes JSONL + CSV + run_meta. | `argparse`, `csv`, `json`, `urllib.request`, custom minimal `.env` loader (`load_env_files()`), exponential backoff on 429/5xx, `--limit`/`--per-page`/`--out-dir`/`--mailto`/`--api-key`/`--sleep` flags |
+| `explore_data.py` (6 KB) | Python 3, stdlib only | Coverage/distribution report over the JSONL (domains, OA share, PDF/GROBID/abstract coverage). | `argparse`, `collections.Counter`, `--json` flag, prints to stdout |
+| `build_graph_data.py` (17 KB) | Python 3, stdlib only | **Transform step.** Reads `top_cited.jsonl`, emits binary CDN artifacts to `web/public/data/v1` (nodes.bin, edges.bin, nodes-text.json, manifest.json, sharded details). Reconstructs abstracts from inverted index. | `array`, `json`, `gzip`, `hashlib`; SoA binary encoding |
+| `layout_3d.mjs` (3 KB) | Node (ESM) | Offline 3D force-directed layout → `positions.bin` (Int16-quantized). | `d3-force-3d`, `node:fs`, `node:zlib` |
+| `layout_clustered.mjs` (9 KB) | Node (ESM) | Field-clustered 3D layout (replaces layout_3d in pipeline); 8 clusters on a Fibonacci sphere + Barnes-Hut. | `node:fs`, `node:zlib` |
+| `compress_br.mjs` (3 KB) | Node (ESM) | Brotli(q11)+gzip sidecars for every artifact. | `node:zlib` only |
+| `verify_graph_data.mjs` (5 KB) | Node (ESM) | Integrity check: loads every file like the client, asserts cross-file index alignment. | `node:fs` |
+
+**Shared conventions:** Python = stdlib-only, `argparse`, docstring headers, stdout reporting, `from __future__ import annotations`, type hints. Node = ESM, `node:*` built-ins, manual `--flag` arg parsing, output default `web/public/data/v1`. Config files: `scripts/package.json` (single dep `d3-force-3d`, script `&quot;layout&quot;`), `yarn.lock`, `README-graph-data.md`, `.env` / `.env.example`, `.gitignore`. No Python dependency manifest exists.
+
+**Env/API-key handling:** `fetch_top_cited.py` has its own dependency-free `.env` loader reading `KEY=VALUE` from `scripts/.env` (real env vars take precedence). Keys used: `OPENALEX_API_KEY`, `OPENALEX_MAILTO`.
+
+---
+
+## 2. The paper data
+
+**Location &amp; formats** (`scripts/data/`, three runs):
+- `data/full/` — full run: `top_cited.jsonl` (168 MB, **9,874 records**), `top_cited.csv`, `run_meta.json`
+- `data/sample/` (~15 recs), `data/sample50/` (50 recs, plus one GROBID XML)
+
+**Source:** OpenAlex API (`https://api.openalex.org/works`), `sort=cited_by_count:desc`, per-year strategy (see `run_meta.json`: `data_year 2026`, `year_range [1945,2026]`, `min_citations 500`).
+
+**Schema of one `top_cited.jsonl` record** (one JSON object per line, raw OpenAlex `SELECT_FIELDS` from `fetch_top_cited.py:36-61`):
+```
+id (e.g. &quot;https://openalex.org/W1945524409&quot;), doi, title,
+publication_year, publication_date, type, language,
+cited_by_count, counts_by_year[], fwci,
+authorships[], primary_location{}, best_oa_location{}, locations[],
+open_access{is_oa,oa_status,oa_url,...}, has_content{pdf,grobid_xml},
+content_urls, referenced_works_count,
+primary_topic{display_name,subfield,field,domain},
+abstract_inverted_index{},   ← present
+referenced_works[], related_works[], topics[], keywords[]
+```
+
+**Paper ID:** `id` = full OpenAlex URL; the short `W…` id is used as the key. **Title:** `title`. **Abstract:** stored as OpenAlex **`abstract_inverted_index`** (word → [positions] dict), NOT plain text. The JSONL does **not** contain a reconstructed abstract and does **not** contain a `rank` field.
+
+(Historical note from the transcripts: `abstract_inverted_index` was *initially omitted* as &quot;large / not needed for a citation ranking,&quot; then later *added back* — the current on-disk `SELECT_FIELDS` includes it.)
+
+Plain-text abstracts are produced downstream by `build_graph_data.py:41-49` `reconstruct_abstract()` and stored in the sharded detail files at `web/public/data/v1/details/shard-*.json`, where each record has: `id, title, year, type, cited_by_count, fwci, doi, venue, publication_date, landing_url, pdf_url, oa_url, grobid_xml_url, abstract (plain text), authors[], topics[], keywords[], biblio`.
+
+---
+
+## 3. How the &quot;top 10k&quot; and citation-rank order are determined
+
+Two-stage, and the &quot;citation-rank order&quot; is **load-bearing and computed in `build_graph_data.py`, not in the raw file**:
+
+1. **Fetch** (`fetch_top_cited.py`): uses a **per-year** strategy, so `data/full/top_cited.jsonl` is written in **year-major order**, NOT global citation order. I verified: row 1 is a 2026 book with 11,316 citations, while the true global max is 801,217. The CSV `rank` column just mirrors this year-major file order.
+
+2. **Rank assignment** — `scripts/build_graph_data.py:219-223`:
+   ```python
+   # Canonical contract: node index = citation rank. The per-year fetch strategy
+   # writes year-major order, so always re-sort by citations here.
+   rows.sort(key=lambda r: -(r.get(&quot;cited_by_count&quot;) or 0))
+   index = {short_id(r[&quot;id&quot;]): i for i, r in enumerate(rows)}
+   ```
+   After this sort, **node index `0..N-1` = citation rank (descending `cited_by_count`)**, and that index is the canonical key across every built artifact (`nodes.bin`, `edges.bin`, `nodes-text.json`, `details/`, `positions.bin`). Documented at `build_graph_data.py:15`.
+
+**Takeaway for your embed script:** if you read `data/full/top_cited.jsonl` directly, you must re-sort by `cited_by_count` desc yourself to match the canonical citation-rank/node-index used everywhere else — otherwise your embedding IDs won&#x27;t line up with the graph artifacts. Also note counts differ: JSONL has 9,874 records; the built `manifest.json` reports 9,566 nodes (some filtered), max citation 353,004 in the manifest&#x27;s suspect-excluded domain.
+
+There&#x27;s also a heuristic `suspect` flag (single-year citation spike &gt;90%, or &gt;100k citations with fwci&lt;5) — flagged, never dropped (`run_meta.json`: `suspect_count 308`).
+
+---
+
+## 4. Existing OpenAI / embeddings / turbopuffer / vector search
+
+**No implementation exists yet** — but the scaffolding is already in place and points directly at the script you&#x27;re about to write:
+
+- `scripts/.env.example` explicitly reserves:
+  ```
+  # OpenAI key for embeddings (scripts/embed_turbopuffer.py)
+  OPENAI_API_KEY=
+  # turbopuffer vector DB (scripts/embed_turbopuffer.py)
+  TURBOPUFFER_API_KEY=
+  TURBOPUFFER_REGION=
+  TURBOPUFFER_NAMESPACE=
+  ```
+- The **real `scripts/.env` already has all four keys populated** (`OPENAI_API_KEY`, `TURBOPUFFER_API_KEY`, `TURBOPUFFER_REGION`, `TURBOPUFFER_NAMESPACE`) — credentials are ready.
+- **`scripts/embed_turbopuffer.py` does NOT exist yet** — that&#x27;s the intended filename for your script.
+- Grep across `scripts/`, `web/`, `design/` for `turbopuffer|OPENAI_API_KEY|embed_turbopuffer` matched **only `.env.example`**. No `openai`/`turbopuffer`/`pinecone`/`faiss`/`pgvector`/`text-embedding` code anywhere.
+
+Note: the existing &quot;layout&quot;/&quot;positions&quot; and any &quot;embedding&quot; mentions in the transcripts refer to **graph force-layout coordinates** (`positions.bin`, d3-force-3d), not semantic vector embeddings — so there is genuinely no prior vector-search work to reuse. The `search-kw.json` artifact in `web/public/data/v1/` is a keyword (lexical) search index, which is the &quot;hybrid&quot; lexical half you&#x27;d complement with vectors.
+
+**Suggested consistency for your new `scripts/embed_turbopuffer.py`:** stdlib-style CLI with `argparse` + the same `.env` loader pattern as `fetch_top_cited.py`; read `data/full/top_cited.jsonl`, reconstruct abstracts via the same logic as `build_graph_data.py:reconstruct_abstract`, re-sort by `cited_by_count` desc so your vector IDs equal the canonical node index, and embed `title + abstract`.</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-09-12-048Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-09-12-048Z" class="timestamp-link"><time datetime="2026-07-11T19:09:12.048Z" data-timestamp="2026-07-11T19:09:12.048Z">2026-07-11T19:09:12.048Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-09-12-366Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-09-12-366Z" class="timestamp-link"><time datetime="2026-07-11T19:09:12.366Z" data-timestamp="2026-07-11T19:09:12.366Z">2026-07-11T19:09:12.366Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p>Excellent, the Explore agent found everything. Let me read the key files myself to nail down the exact patterns I'll reuse.</p></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-09-13-009Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-09-13-009Z" class="timestamp-link"><time datetime="2026-07-11T19:09:13.009Z" data-timestamp="2026-07-11T19:09:13.009Z">2026-07-11T19:09:13.009Z</time></a></div><div class="message-content">
+<div class="tool-use bash-tool" data-tool-id="toolu_0111eELaekYsgkHnLGd4Cxom">
+<div class="tool-header"><span class="tool-icon">$</span> Bash</div>
+<div class="tool-description">Inspect env example, scripts, package.json</div><div class="truncatable"><div class="truncatable-content"><pre class="bash-command">cd /Users/andrewjin/Desktop/anthropic-take-home &amp;&amp; echo &#34;===ENV EXAMPLE===&#34; &amp;&amp; cat scripts/.env.example 2&gt;/dev/null &amp;&amp; echo &#34;&#34; &amp;&amp; echo &#34;===SCRIPTS DIR===&#34; &amp;&amp; ls -la scripts/ &amp;&amp; echo &#34;===PACKAGE.JSON===&#34; &amp;&amp; cat scripts/package.json 2&gt;/dev/null &amp;&amp; echo &#34;===DATA FULL===&#34; &amp;&amp; ls -la scripts/data/full/ 2&gt;/dev/null</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-09-13-255Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-09-13-255Z" class="timestamp-link"><time datetime="2026-07-11T19:09:13.255Z" data-timestamp="2026-07-11T19:09:13.255Z">2026-07-11T19:09:13.255Z</time></a></div><div class="message-content">
+<div class="tool-use" data-tool-id="toolu_01BhHEYvQ5wDhM5oEwL8LCYp"><div class="tool-header"><span class="tool-icon">⚙</span> Read</div><div class="truncatable"><div class="truncatable-content"><pre class="json">{
+  &#34;file_path&#34;: &#34;/Users/andrewjin/Desktop/anthropic-take-home/scripts/build_graph_data.py&#34;,
+  &#34;limit&#34;: 70
+}</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T19-09-13-268Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T19-09-13-268Z" class="timestamp-link"><time datetime="2026-07-11T19:09:13.268Z" data-timestamp="2026-07-11T19:09:13.268Z">2026-07-11T19:09:13.268Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>1	#!/usr/bin/env python3
+2	&quot;&quot;&quot;Transform the raw top-cited JSONL into CDN-optimized artifacts for the 3D graph viz.
+3	
+4	Produces (into --out):
+5	  manifest.json      metadata: counts, citation scale domain, color legends, byte offsets
+6	  nodes.bin          SoA binary: Uint32 citations[N], Uint16 year[N], Uint16 sizeScore[N],
+7	                     Uint8 domainIdx[N], Uint8 fieldIdx[N], Uint8 flags[N]
+8	                     (flags bit0=suspect, bit1=openAccess, bit2=hasPdf, bit3=hasGrobid;
+9	                     2-byte fields precede 1-byte fields to keep Uint16 offsets even for any N)
+10	  nodes-text.json    title[], author[](first), authorsDisplay[], topicIdx[] + topicTable[]
+11	  search-kw.json     kwIdx[][] + kwTable[]  (keyword search terms; loaded after first paint)
+12	  edges.bin          Uint16 SoA: src[E] then dst[E], sorted, deduped (N&lt;65536 so 16-bit is safe)
+13	  details/shard-NNN.json  Tier-2 full details, SHARD records each
+14	
+15	Node index (0..N-1, citation-rank order = input order) is the canonical key across every file.
+16	positions.bin is produced separately by layout_3d.mjs, which also patches positionScale into the
+17	manifest.
+18	
+19	Stdlib only. gzip sidecars (.gz) are written for each artifact; Brotli is left to the CDN.
+20	&quot;&quot;&quot;
+21	
+22	from __future__ import annotations
+23	
+24	import argparse
+25	import array
+26	import datetime
+27	import gzip
+28	import hashlib
+29	import json
+30	import math
+31	import os
+32	import shutil
+33	import sys
+34	
+35	# ------------------------------------------------------------------ helpers
+36	
+37	def short_id(url: str | None) -&gt; str | None:
+38	    return url.rsplit(&quot;/&quot;, 1)[-1] if url else None
+39	
+40	
+41	def reconstruct_abstract(inv: dict | None) -&gt; str | None:
+42	    &quot;&quot;&quot;Rebuild plain text from OpenAlex&#x27;s abstract_inverted_index (word -&gt; [positions]).&quot;&quot;&quot;
+43	    if not inv:
+44	        return None
+45	    pos: dict[int, str] = {}
+46	    for word, positions in inv.items():
+47	        for p in positions:
+48	            pos[p] = word
+49	    return &quot; &quot;.join(pos[k] for k in sorted(pos))
+50	
+51	
+52	def first_author(work: dict) -&gt; str:
+53	    a = work.get(&quot;authorships&quot;) or []
+54	    return ((a[0].get(&quot;author&quot;) or {}).get(&quot;display_name&quot;) or &quot;&quot;) if a else &quot;&quot;
+55	
+56	
+57	def authors_display(work: dict) -&gt; str:
+58	    &quot;&quot;&quot;Compact display string for cards/lists: &quot;A&quot;, &quot;A, B&quot;, or &quot;A et al.&quot;.&quot;&quot;&quot;
+59	    names = [((a.get(&quot;author&quot;) or {}).get(&quot;display_name&quot;) or &quot;&quot;)
+60	             for a in work.get(&quot;authorships&quot;) or []]
+61	    names = [x for x in names if x]
+62	    if not names:
+63	        return &quot;&quot;
+64	    if len(names) &lt;= 2:
+65	        return &quot;, &quot;.join(names)
+66	    return f&quot;{names[0]} et al.&quot;
+67	
+68	
+69	def all_authors(work: dict) -&gt; list[dict]:
+70	    out = []</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T19-09-14-241Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T19-09-14-241Z" class="timestamp-link"><time datetime="2026-07-11T19:09:14.241Z" data-timestamp="2026-07-11T19:09:14.241Z">2026-07-11T19:09:14.241Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>===ENV EXAMPLE===
+# Template for scripts/.env — copy to .env and fill in. Do NOT commit the real .env.
+OPENALEX_API_KEY=your-key-here
+OPENALEX_MAILTO=you@example.com
+
+# OpenAI key for embeddings (scripts/embed_turbopuffer.py)
+OPENAI_API_KEY=
+
+# turbopuffer vector DB (scripts/embed_turbopuffer.py)
+TURBOPUFFER_API_KEY=
+TURBOPUFFER_REGION=
+TURBOPUFFER_NAMESPACE=
+===SCRIPTS DIR===
+total 224
+drwxr-xr-x  19 andrewjin  staff    608 Jul 11 11:53 .
+drwxr-xr-x@  9 andrewjin  staff    288 Jul 11 10:49 ..
+-rw-r--r--@  1 andrewjin  staff   6148 Jul 11 09:58 .DS_Store
+-rw-r--r--   1 andrewjin  staff    747 Jul 11 11:33 .env
+-rw-r--r--   1 andrewjin  staff    345 Jul 11 11:33 .env.example
+-rw-r--r--   1 andrewjin  staff    105 Jul 11 10:35 .gitignore
+-rw-r--r--   1 andrewjin  staff   4885 Jul 11 11:18 README-graph-data.md
+drwxr-xr-x   4 andrewjin  staff    128 Jul 11 11:44 __pycache__
+-rw-r--r--   1 andrewjin  staff  17498 Jul 11 11:39 build_graph_data.py
+-rw-r--r--   1 andrewjin  staff   2808 Jul 11 10:39 compress_br.mjs
+drwxr-xr-x   6 andrewjin  staff    192 Jul 11 10:04 data
+-rw-r--r--   1 andrewjin  staff   6255 Jul 11 10:36 explore_data.py
+-rw-r--r--   1 andrewjin  staff  19396 Jul 11 11:39 fetch_top_cited.py
+-rw-r--r--   1 andrewjin  staff   3449 Jul 11 10:34 layout_3d.mjs
+-rw-r--r--   1 andrewjin  staff   9096 Jul 11 11:37 layout_clustered.mjs
+drwxr-xr-x   9 andrewjin  staff    288 Jul 11 11:53 node_modules
+-rw-r--r--   1 andrewjin  staff    282 Jul 11 10:34 package.json
+-rw-r--r--   1 andrewjin  staff   5425 Jul 11 11:32 verify_graph_data.mjs
+-rw-r--r--   1 andrewjin  staff   1790 Jul 11 11:53 yarn.lock
+===PACKAGE.JSON===
+{
+  &quot;name&quot;: &quot;graph-layout&quot;,
+  &quot;version&quot;: &quot;1.0.0&quot;,
+  &quot;private&quot;: true,
+  &quot;type&quot;: &quot;module&quot;,
+  &quot;description&quot;: &quot;Offline 3D force-layout precompute for the top-cited graph viz.&quot;,
+  &quot;scripts&quot;: {
+    &quot;layout&quot;: &quot;node layout_3d.mjs&quot;
+  },
+  &quot;dependencies&quot;: {
+    &quot;d3-force-3d&quot;: &quot;^3.0.5&quot;
+  }
+}
+===DATA FULL===
+total 303152
+drwxr-xr-x  5 andrewjin  staff        160 Jul 11 10:06 .
+drwxr-xr-x  6 andrewjin  staff        192 Jul 11 10:04 ..
+-rw-r--r--  1 andrewjin  staff       1016 Jul 11 11:41 run_meta.json
+-rw-r--r--  1 andrewjin  staff    3481902 Jul 11 11:41 top_cited.csv
+-rw-r--r--  1 andrewjin  staff  141474629 Jul 11 11:41 top_cited.jsonl
+Shell cwd was reset to /Users/andrewjin/Desktop/anthropic-take-home/claude-code-transcripts</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-09-19-128Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-09-19-128Z" class="timestamp-link"><time datetime="2026-07-11T19:09:19.128Z" data-timestamp="2026-07-11T19:09:19.128Z">2026-07-11T19:09:19.128Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-09-19-285Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-09-19-285Z" class="timestamp-link"><time datetime="2026-07-11T19:09:19.285Z" data-timestamp="2026-07-11T19:09:19.285Z">2026-07-11T19:09:19.285Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p>Let me read the env loader pattern and the ranking/sort logic, and check whether Python deps exist.</p></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-09-20-599Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-09-20-599Z" class="timestamp-link"><time datetime="2026-07-11T19:09:20.599Z" data-timestamp="2026-07-11T19:09:20.599Z">2026-07-11T19:09:20.599Z</time></a></div><div class="message-content">
+<div class="tool-use bash-tool" data-tool-id="toolu_01FTkErfaMu67NdsrwSegGEk">
+<div class="tool-header"><span class="tool-icon">$</span> Bash</div>
+<div class="tool-description">Env loader, sort logic, installed packages</div><div class="truncatable"><div class="truncatable-content"><pre class="bash-command">cd /Users/andrewjin/Desktop/anthropic-take-home &amp;&amp; echo &#34;===ENV LOADER (fetch_top_cited.py)===&#34; &amp;&amp; grep -n &#34;load_env\|def load\|os.environ\|getenv\|\.env&#34; scripts/fetch_top_cited.py | head -30 &amp;&amp; echo &#34;&#34; &amp;&amp; echo &#34;===SORT/RANK (build_graph_data.py)===&#34; &amp;&amp; grep -n &#34;sort\|rank\|index\[&#34; scripts/build_graph_data.py | head &amp;&amp; echo &#34;&#34; &amp;&amp; echo &#34;===PY PACKAGES===&#34; &amp;&amp; python3 -c &#34;import openai; print(&#39;openai&#39;, openai.__version__)&#34; 2&gt;&amp;1 | head -1; python3 -c &#34;import turbopuffer; print(&#39;turbopuffer ok&#39;)&#34; 2&gt;&amp;1 | head -1; python3 -c &#34;import requests; print(&#39;requests ok&#39;)&#34; 2&gt;&amp;1 | head -1; which python3 pip3; echo &#34;===ENV KEYS PRESENT (names only)===&#34; &amp;&amp; grep -o &#39;^[A-Z_]*=&#39; scripts/.env</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-09-20-875Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-09-20-875Z" class="timestamp-link"><time datetime="2026-07-11T19:09:20.875Z" data-timestamp="2026-07-11T19:09:20.875Z">2026-07-11T19:09:20.875Z</time></a></div><div class="message-content">
+<div class="tool-use" data-tool-id="toolu_01T2EeySaekHDqsCxJTKj5Yt"><div class="tool-header"><span class="tool-icon">⚙</span> Read</div><div class="truncatable"><div class="truncatable-content"><pre class="json">{
+  &#34;file_path&#34;: &#34;/Users/andrewjin/Desktop/anthropic-take-home/scripts/fetch_top_cited.py&#34;,
+  &#34;limit&#34;: 40,
+  &#34;offset&#34;: 62
+}</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T19-09-22-409Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T19-09-22-409Z" class="timestamp-link"><time datetime="2026-07-11T19:09:22.409Z" data-timestamp="2026-07-11T19:09:22.409Z">2026-07-11T19:09:22.409Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>===ENV LOADER (fetch_top_cited.py)===
+96:def load_env_files() -&gt; None:
+97:    &quot;&quot;&quot;Minimal .env loader (no dependency). Reads KEY=VALUE lines from a .env next to
+101:    candidates = [os.path.join(script_dir, &quot;.env&quot;), os.path.join(os.getcwd(), &quot;.env&quot;)]
+115:                if key and key not in os.environ:  # don&#x27;t override a real env var
+116:                    os.environ[key] = val
+387:    load_env_files()
+388:    default_mailto = os.environ.get(&quot;OPENALEX_MAILTO&quot;) or &quot;15andrewj@gmail.com&quot;
+389:    default_key = os.environ.get(&quot;OPENALEX_API_KEY&quot;) or None
+409:                   help=&quot;OpenAlex API key (default: $OPENALEX_API_KEY from .env). Optional for metadata.&quot;)
+
+===SORT/RANK (build_graph_data.py)===
+12:  edges.bin          Uint16 SoA: src[E] then dst[E], sorted, deduped (N&lt;65536 so 16-bit is safe)
+15:Node index (0..N-1, citation-rank order = input order) is the canonical key across every file.
+49:    return &quot; &quot;.join(pos[k] for k in sorted(pos))
+160:    clean = sorted(v for v, s in zip(raws, suspect) if not s) or sorted(raws)
+175:def percentile(sorted_vals: list[int], q: float) -&gt; int:
+176:    if not sorted_vals:
+178:    i = min(len(sorted_vals) - 1, int(q * (len(sorted_vals) - 1)))
+179:    return sorted_vals[i]
+219:    # Canonical contract: node index = citation rank. The per-year fetch strategy
+220:    # writes year-major order, so always re-sort by citations here.
+
+===PY PACKAGES===
+Traceback (most recent call last):
+Traceback (most recent call last):
+Traceback (most recent call last):
+/opt/homebrew/bin/python3
+/opt/homebrew/bin/pip3
+===ENV KEYS PRESENT (names only)===
+OPENALEX_API_KEY=
+OPENALEX_MAILTO=
+OPENAI_API_KEY=
+TURBOPUFFER_API_KEY=
+TURBOPUFFER_REGION=
+TURBOPUFFER_NAMESPACE=
+Shell cwd was reset to /Users/andrewjin/Desktop/anthropic-take-home/claude-code-transcripts</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T19-09-22-418Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T19-09-22-418Z" class="timestamp-link"><time datetime="2026-07-11T19:09:22.418Z" data-timestamp="2026-07-11T19:09:22.418Z">2026-07-11T19:09:22.418Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>62	
+63	CSV_COLUMNS = [
+64	    &quot;rank&quot;,
+65	    &quot;openalex_id&quot;,
+66	    &quot;doi&quot;,
+67	    &quot;title&quot;,
+68	    &quot;type&quot;,
+69	    &quot;publication_year&quot;,
+70	    &quot;cited_by_count&quot;,
+71	    &quot;age_years&quot;,
+72	    &quot;citations_per_year&quot;,
+73	    &quot;recent_2y_citations&quot;,
+74	    &quot;fwci&quot;,
+75	    &quot;first_author&quot;,
+76	    &quot;num_authors&quot;,
+77	    &quot;source_name&quot;,
+78	    &quot;primary_topic_field&quot;,
+79	    &quot;oa_status&quot;,
+80	    &quot;landing_url&quot;,
+81	    &quot;pdf_url&quot;,
+82	    &quot;oa_url&quot;,
+83	    &quot;grobid_xml_url&quot;,
+84	    &quot;language&quot;,
+85	    &quot;has_abstract&quot;,
+86	    &quot;num_topics&quot;,
+87	    &quot;num_referenced_works&quot;,
+88	    &quot;num_related_works&quot;,
+89	    &quot;suspect&quot;,
+90	    &quot;suspect_reasons&quot;,
+91	]
+92	
+93	MAX_PER_PAGE = 200
+94	
+95	
+96	def load_env_files() -&gt; None:
+97	    &quot;&quot;&quot;Minimal .env loader (no dependency). Reads KEY=VALUE lines from a .env next to
+98	    this script and/or in the current dir. Real environment variables take precedence.
+99	    &quot;&quot;&quot;
+100	    script_dir = os.path.dirname(os.path.abspath(__file__))
+101	    candidates = [os.path.join(script_dir, &quot;.env&quot;), os.path.join(os.getcwd(), &quot;.env&quot;)]</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-09-34-044Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-09-34-044Z" class="timestamp-link"><time datetime="2026-07-11T19:09:34.044Z" data-timestamp="2026-07-11T19:09:34.044Z">2026-07-11T19:09:34.044Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-09-34-361Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-09-34-361Z" class="timestamp-link"><time datetime="2026-07-11T19:09:34.361Z" data-timestamp="2026-07-11T19:09:34.361Z">2026-07-11T19:09:34.361Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p>I now have a complete picture. Let me verify the current turbopuffer Python SDK / hybrid-search API so the plan is accurate.</p></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-09-34-403Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-09-34-403Z" class="timestamp-link"><time datetime="2026-07-11T19:09:34.403Z" data-timestamp="2026-07-11T19:09:34.403Z">2026-07-11T19:09:34.403Z</time></a></div><div class="message-content">
+<div class="tool-use" data-tool-id="toolu_015aoRZnsqQLGqDHm6qGuGEb"><div class="tool-header"><span class="tool-icon">⚙</span> ToolSearch</div><div class="truncatable"><div class="truncatable-content"><pre class="json">{
+  &#34;query&#34;: &#34;select:WebFetch,WebSearch&#34;,
+  &#34;max_results&#34;: 5
+}</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T19-09-34-411Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T19-09-34-411Z" class="timestamp-link"><time datetime="2026-07-11T19:09:34.411Z" data-timestamp="2026-07-11T19:09:34.411Z">2026-07-11T19:09:34.411Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre class="json">{
+  &quot;type&quot;: &quot;tool_reference&quot;,
+  &quot;tool_name&quot;: &quot;WebFetch&quot;
+}</pre><pre class="json">{
+  &quot;type&quot;: &quot;tool_reference&quot;,
+  &quot;tool_name&quot;: &quot;WebSearch&quot;
+}</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-09-36-220Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-09-36-220Z" class="timestamp-link"><time datetime="2026-07-11T19:09:36.220Z" data-timestamp="2026-07-11T19:09:36.220Z">2026-07-11T19:09:36.220Z</time></a></div><div class="message-content">
+<div class="tool-use" data-tool-id="toolu_01GwHu256PKRhGBRaRkVvTFR"><div class="tool-header"><span class="tool-icon">⚙</span> WebFetch</div><div class="truncatable"><div class="truncatable-content"><pre class="json">{
+  &#34;url&#34;: &#34;https://turbopuffer.com/docs/quickstart&#34;,
+  &#34;prompt&#34;: &#34;Show the current Python SDK usage: how to initialize the client (api_key, region), how to write/upsert rows with vectors and attributes, the schema for enabling full-text (BM25) search on a string attribute, distance metric config, and how to query with a vector and with full-text / hybrid. Give concrete Python code snippets and the exact import/class names.&#34;
+}</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-09-36-698Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-09-36-698Z" class="timestamp-link"><time datetime="2026-07-11T19:09:36.698Z" data-timestamp="2026-07-11T19:09:36.698Z">2026-07-11T19:09:36.698Z</time></a></div><div class="message-content">
+<div class="tool-use" data-tool-id="toolu_018XUVK1X6WhMZcknV9WAYwi"><div class="tool-header"><span class="tool-icon">⚙</span> WebFetch</div><div class="truncatable"><div class="truncatable-content"><pre class="json">{
+  &#34;url&#34;: &#34;https://turbopuffer.com/docs/hybrid&#34;,
+  &#34;prompt&#34;: &#34;Show how to do hybrid search (vector + full-text/BM25) in the current Python SDK. Include how to define schema for full_text_search on an attribute, and the query API for combining vector and BM25 (rank_by, multi-query, fusion). Concrete Python snippets and exact method names.&#34;
+}</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T19-09-43-491Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T19-09-43-491Z" class="timestamp-link"><time datetime="2026-07-11T19:09:43.491Z" data-timestamp="2026-07-11T19:09:43.491Z">2026-07-11T19:09:43.491Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre># Hybrid Search in Turbopuffer Python SDK
+
+Hybrid search combines vector and full-text search. Here&#x27;s how to implement it:
+
+## Schema Definition
+
+Enable full-text search on attributes during write operations:
+
+```python
+ns.write(
+    upsert_rows=[...],
+    schema={&quot;content&quot;: {&quot;type&quot;: &quot;string&quot;, &quot;full_text_search&quot;: True}},
+)
+```
+
+## Query API
+
+Use `multi_query()` to execute both search types simultaneously:
+
+```python
+response = ns.multi_query(
+    queries=[
+        {
+            &quot;rank_by&quot;: (&quot;vector&quot;, &quot;ANN&quot;, query_vec),
+            &quot;limit&quot;: 10,
+            &quot;include_attributes&quot;: [&quot;content&quot;],
+        },
+        {
+            &quot;rank_by&quot;: (&quot;content&quot;, &quot;BM25&quot;, query),
+            &quot;limit&quot;: 10,
+            &quot;include_attributes&quot;: [&quot;content&quot;],
+        },
+    ]
+)
+
+vector_result = response.results[0].rows
+fts_result = response.results[1].rows
+```
+
+## Rank Fusion
+
+Apply server-side Reciprocal Rank Fusion (RRF) to combine results:
+
+```python
+response = ns.multi_query(
+    queries=[...],
+    rerank_by=(&quot;RRF&quot;,),
+)
+
+fused_results = response.results[0].rows
+```
+
+## Re-ranking
+
+After fusion, pass results to external re-rankers like Cohere for improved relevance ordering.
+
+The documentation emphasizes: *&quot;Use turbopuffer for initial retrieval to narrow millions of results to dozens for rank fusion and re-ranking.&quot;*</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T19-09-47-066Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T19-09-47-066Z" class="timestamp-link"><time datetime="2026-07-11T19:09:47.066Z" data-timestamp="2026-07-11T19:09:47.066Z">2026-07-11T19:09:47.066Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre># Turbopuffer Python SDK Usage
+
+## Initialization
+
+```python
+import os
+import turbopuffer
+
+tpuf = turbopuffer.Turbopuffer(
+    api_key=os.getenv(&quot;TURBOPUFFER_API_KEY&quot;),
+    region=&quot;gcp-us-central1&quot;,
+)
+ns = tpuf.namespace(&quot;my-namespace&quot;)
+```
+
+## Embeddings Setup
+
+```python
+from sentence_transformers import SentenceTransformer
+
+bge = SentenceTransformer(&quot;BAAI/bge-small-en-v1.5&quot;)
+
+def embed(text: str):
+    return bge.encode(text).tolist()
+```
+
+## Writing/Upserting Rows
+
+```python
+ns.write(
+    upsert_rows=[
+        {
+            &#x27;id&#x27;: 1,
+            &#x27;vector&#x27;: embed(&quot;walrus narwhal&quot;),
+            &#x27;category&#x27;: [&quot;mammal&quot;],
+            &#x27;public&#x27;: True,
+            &#x27;text&#x27;: &quot;walrus narwhal&quot;,
+        },
+    ],
+    distance_metric=&#x27;cosine_distance&#x27;,
+    schema={
+        &quot;text&quot;: {
+            &quot;type&quot;: &quot;string&quot;,
+            &quot;full_text_search&quot;: True,
+            &quot;regex&quot;: True,
+        },
+        &quot;category&quot;: {
+            &quot;type&quot;: &quot;[]string&quot;,
+            &quot;full_text_search&quot;: True,
+        }
+    }
+)
+```
+
+## Querying
+
+**Vector search with filters:**
+```python
+ns.query(
+    rank_by=(&quot;vector&quot;, &quot;ANN&quot;, embed(&quot;arctic sea mammal&quot;)),
+    limit=10,
+    filters=(&quot;public&quot;, &quot;Eq&quot;, True),
+)
+```
+
+**Full-text search (BM25):**
+```python
+ns.query(
+    limit=10,
+    rank_by=(&quot;Sum&quot;, [
+        (&quot;Product&quot;, 2, (&quot;category&quot;, &quot;BM25&quot;, &quot;mammal&quot;)),
+        (&quot;text&quot;, &quot;BM25&quot;, &quot;quick walrus&quot;),
+    ]),
+)
+```
+
+**Hybrid search** combines both approaches concurrently for optimal results.</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-09-49-347Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-09-49-347Z" class="timestamp-link"><time datetime="2026-07-11T19:09:49.347Z" data-timestamp="2026-07-11T19:09:49.347Z">2026-07-11T19:09:49.347Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-09-49-664Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-09-49-664Z" class="timestamp-link"><time datetime="2026-07-11T19:09:49.664Z" data-timestamp="2026-07-11T19:09:49.664Z">2026-07-11T19:09:49.664Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p>I have the full picture and current turbopuffer API. Two genuine decisions before I finalize the plan.</p></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-09-51-281Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-09-51-281Z" class="timestamp-link"><time datetime="2026-07-11T19:09:51.281Z" data-timestamp="2026-07-11T19:09:51.281Z">2026-07-11T19:09:51.281Z</time></a></div><div class="message-content">
+<div class="tool-use" data-tool-id="toolu_01Mi664BVPt98L5ZNvXiLB64"><div class="tool-header"><span class="tool-icon">⚙</span> AskUserQuestion</div><div class="truncatable"><div class="truncatable-content"><pre class="json">{
+  &#34;questions&#34;: [
+    {
+      &#34;question&#34;: &#34;Which OpenAI embedding model should I use? (~9,874 papers, cost is negligible either way — a few cents to ~$0.40)&#34;,
+      &#34;header&#34;: &#34;Embed model&#34;,
+      &#34;multiSelect&#34;: false,
+      &#34;options&#34;: [
+        {
+          &#34;label&#34;: &#34;text-embedding-3-small&#34;,
+          &#34;description&#34;: &#34;1536 dims. Cheaper, smaller vectors, faster/cheaper turbopuffer storage. Standard default, good quality.&#34;
+        },
+        {
+          &#34;label&#34;: &#34;text-embedding-3-large&#34;,
+          &#34;description&#34;: &#34;3072 dims. Best retrieval quality, ~2x larger vectors. Still trivial cost at 10k papers.&#34;
+        }
+      ]
+    },
+    {
+      &#34;question&#34;: &#34;The existing scripts are deliberately stdlib-only (no pip deps, no requirements.txt). How should the embed script talk to OpenAI + turbopuffer?&#34;,
+      &#34;header&#34;: &#34;Client libs&#34;,
+      &#34;multiSelect&#34;: false,
+      &#34;options&#34;: [
+        {
+          &#34;label&#34;: &#34;Official SDKs&#34;,
+          &#34;description&#34;: &#34;pip install openai turbopuffer. Cleaner, built-in batching/retries, matches turbopuffer docs. Introduces the first pip deps + a requirements.txt.&#34;
+        },
+        {
+          &#34;label&#34;: &#34;Stdlib urllib only&#34;,
+          &#34;description&#34;: &#34;Keep the zero-dependency convention. More hand-written HTTP/batching/retry code, but no new deps.&#34;
+        }
+      ]
+    }
+  ]
+}</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T19-12-26-772Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T19-12-26-772Z" class="timestamp-link"><time datetime="2026-07-11T19:12:26.772Z" data-timestamp="2026-07-11T19:12:26.772Z">2026-07-11T19:12:26.772Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>Your questions have been answered: &quot;Which OpenAI embedding model should I use? (~9,874 papers, cost is negligible either way — a few cents to ~$0.40)&quot;=&quot;text-embedding-3-small&quot;, &quot;The existing scripts are deliberately stdlib-only (no pip deps, no requirements.txt). How should the embed script talk to OpenAI + turbopuffer?&quot;=&quot;Official SDKs&quot;. You can now continue with these answers in mind.</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-12-32-239Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-12-32-239Z" class="timestamp-link"><time datetime="2026-07-11T19:12:32.239Z" data-timestamp="2026-07-11T19:12:32.239Z">2026-07-11T19:12:32.239Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-12-32-319Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-12-32-319Z" class="timestamp-link"><time datetime="2026-07-11T19:12:32.319Z" data-timestamp="2026-07-11T19:12:32.319Z">2026-07-11T19:12:32.319Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p>Decisions locked in: <code>text-embedding-3-small</code> (1536-dim) + official SDKs. Writing the plan.</p></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-12-41-563Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-12-41-563Z" class="timestamp-link"><time datetime="2026-07-11T19:12:41.563Z" data-timestamp="2026-07-11T19:12:41.563Z">2026-07-11T19:12:41.563Z</time></a></div><div class="message-content"><div class="file-tool write-tool" data-tool-id="toolu_01ScF4Up2mNGfTZLF7QDk2C2">
+<div class="file-tool-header write-header"><span class="file-tool-icon">📝</span> Write <span class="file-tool-path">i-want-to-embed-unified-candle.md</span></div>
+<div class="file-tool-fullpath">/Users/andrewjin/.claude/plans/i-want-to-embed-unified-candle.md</div>
+<div class="truncatable"><div class="truncatable-content"><pre class="file-content"># Plan: Embed top-cited papers into turbopuffer for hybrid search
+
+## Context
+
+The repo already ships a lexical/keyword search index (`search-kw.json`) for the 3D
+graph viz, but there is no semantic layer. We want **hybrid search (dense vector + BM25)**
+over the top ~10k most-cited papers so the app can retrieve by meaning, not just keywords.
+
+The scaffolding is already in place and points directly at this script:
+- `scripts/.env.example` reserves `OPENAI_API_KEY`, `TURBOPUFFER_API_KEY`,
+  `TURBOPUFFER_REGION`, `TURBOPUFFER_NAMESPACE` and names the target file
+  `scripts/embed_turbopuffer.py`.
+- `scripts/.env` already has all four keys populated — credentials are ready.
+
+**Decisions (confirmed with user):** OpenAI `text-embedding-3-small` (1536-dim);
+use the **official `openai` + `turbopuffer` SDKs** (this introduces the first pip
+dependencies + a `requirements.txt`, deviating from the pipeline&#39;s stdlib-only convention —
+acceptable because this is a one-off ingestion tool, not a CDN-artifact build step).
+
+## Load-bearing invariant to preserve
+
+Node index `0..N-1` = **citation rank** (descending `cited_by_count`) is the canonical
+key across every built artifact (`build_graph_data.py:219-223`). The raw
+`data/full/top_cited.jsonl` is written in **year-major** order, so we MUST re-sort by
+`cited_by_count` desc before assigning rank. We store that `rank` as a turbopuffer
+attribute so vector hits line up with `nodes.bin` / `details/` / the graph node index.
+
+## New file: `scripts/embed_turbopuffer.py`
+
+Python 3, `argparse` CLI, docstring header, `from __future__ import annotations` — matching
+the house style of `fetch_top_cited.py` / `build_graph_data.py`.
+
+**Reuse (replicate the two small helpers, matching the repo&#39;s copy-not-import convention):**
+- `load_env_files()` from `fetch_top_cited.py:96-116` — dependency-free `.env` loader,
+  real env vars take precedence.
+- `reconstruct_abstract(inv)` from `build_graph_data.py:41-49` — rebuilds plain text from
+  OpenAlex `abstract_inverted_index`.
+- `short_id(url)` from `build_graph_data.py:37-38` — `W…` id from the OpenAlex URL.
+
+**Flow:**
+1. `load_env_files()`; read `OPENAI_API_KEY`, `TURBOPUFFER_API_KEY`, `TURBOPUFFER_REGION`,
+   `TURBOPUFFER_NAMESPACE` from env.
+2. Read `scripts/data/full/top_cited.jsonl` (line-by-line JSON).
+3. **Sort by `cited_by_count` desc** → `rank = index`. Take `[:--limit]` (default 10000;
+   the full run has 9,874 rows, so this is effectively all of them).
+4. For each paper build the embed text:
+   `title + &#34;\n\n&#34; + reconstruct_abstract(abstract_inverted_index)` (title-only when no
+   abstract). Guard against the OpenAI 8191-token input cap by truncating overly long
+   abstracts (char budget ~ `8000 * 4`).
+5. **Embed** in batches (`--batch-size`, default 256) via
+   `client.embeddings.create(model=&#34;text-embedding-3-small&#34;, input=[...])`; preserve order
+   to pair vectors with rows. SDK handles retries.
+6. **Upsert** to turbopuffer in batches:
+   ```python
+   ns = tpuf.namespace(NAMESPACE)
+   ns.write(
+       upsert_rows=[{
+           &#34;id&#34;: short_id,              # W-id string as row id
+           &#34;vector&#34;: vec,               # 1536-dim
+           &#34;rank&#34;: rank,                # == canonical graph node index
+           &#34;title&#34;: title,
+           &#34;text&#34;: embed_text,          # title+abstract, indexed for BM25
+           &#34;year&#34;: publication_year,
+           &#34;cited_by_count&#34;: cited_by_count,
+           &#34;field&#34;: primary_topic.field.display_name,
+           &#34;domain&#34;: primary_topic.domain.display_name,
+           &#34;doi&#34;: doi,
+       } for ...],
+       distance_metric=&#34;cosine_distance&#34;,
+       schema={&#34;text&#34;: {&#34;type&#34;: &#34;string&#34;, &#34;full_text_search&#34;: True}},  # enables BM25 → hybrid
+   )
+   ```
+   `full_text_search: True` on `text` is what makes true hybrid (vector + BM25) possible;
+   it complements the client-side `search-kw.json` lexical index.
+7. Progress logging to stdout (batches done, count, elapsed); print total embedded + est.
+   token cost at the end. Upsert is idempotent (safe to re-run).
+
+**CLI flags:** `--jsonl` (default `data/full/top_cited.jsonl`), `--limit` (10000),
+`--batch-size` (256), `--model` (`text-embedding-3-small`), `--namespace` (default env),
+`--dry-run` (build texts, skip API calls — prints a sample), and a `--query &#34;text&#34;` smoke-test
+mode that embeds the query and runs turbopuffer `multi_query` (ANN + BM25 with `rerank_by=(&#34;RRF&#34;,)`)
+to print top hits — doubles as end-to-end verification.
+
+## Supporting files
+
+- **`scripts/requirements.txt`** (new): `openai`, `turbopuffer`. First Python dep manifest
+  in the repo.
+- **`scripts/README-graph-data.md`**: add a short &#34;Semantic embeddings&#34; section documenting
+  how to run the script and that `rank` == graph node index.
+- No changes to `.env` / `.env.example` (already provisioned).
+
+## Verification
+
+1. `pip install -r scripts/requirements.txt`.
+2. `python scripts/embed_turbopuffer.py --dry-run --limit 3` — confirm abstracts reconstruct
+   and embed-text/attributes look right, no network calls.
+3. `python scripts/embed_turbopuffer.py --limit 20` — small real ingest; confirm 20 rows land
+   in the turbopuffer namespace without errors.
+4. `python scripts/embed_turbopuffer.py --query &#34;deep learning for protein folding&#34; --limit 0`
+   (query-only) — confirm hybrid retrieval returns sensible top papers (e.g. AlphaFold-adjacent),
+   proving both the ANN and BM25 paths work.
+5. Full run: `python scripts/embed_turbopuffer.py` — expect ~9,874 rows upserted.
+6. Spot-check that a returned row&#39;s `rank` attribute matches its position in the
+   citation-sorted JSONL (invariant intact).
+</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T19-12-41-608Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T19-12-41-608Z" class="timestamp-link"><time datetime="2026-07-11T19:12:41.608Z" data-timestamp="2026-07-11T19:12:41.608Z">2026-07-11T19:12:41.608Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>File created successfully at: /Users/andrewjin/.claude/plans/i-want-to-embed-unified-candle.md (file state is current in your context — no need to Read it back)</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-12-42-900Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-12-42-900Z" class="timestamp-link"><time datetime="2026-07-11T19:12:42.900Z" data-timestamp="2026-07-11T19:12:42.900Z">2026-07-11T19:12:42.900Z</time></a></div><div class="message-content">
+<div class="tool-use" data-tool-id="toolu_01DjE8Bj2nYUSVmZ1gPVU9uq"><div class="tool-header"><span class="tool-icon">⚙</span> ToolSearch</div><div class="truncatable"><div class="truncatable-content"><pre class="json">{
+  &#34;query&#34;: &#34;select:ExitPlanMode&#34;,
+  &#34;max_results&#34;: 3
+}</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T19-12-42-904Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T19-12-42-904Z" class="timestamp-link"><time datetime="2026-07-11T19:12:42.904Z" data-timestamp="2026-07-11T19:12:42.904Z">2026-07-11T19:12:42.904Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre class="json">{
+  &quot;type&quot;: &quot;tool_reference&quot;,
+  &quot;tool_name&quot;: &quot;ExitPlanMode&quot;
+}</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-12-46-234Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-12-46-234Z" class="timestamp-link"><time datetime="2026-07-11T19:12:46.234Z" data-timestamp="2026-07-11T19:12:46.234Z">2026-07-11T19:12:46.234Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p>The plan is written. Here's a summary of what I'm proposing:</p>
+<p><strong>New script <code>scripts/embed_turbopuffer.py</code></strong> that embeds the top ~10k papers for hybrid (vector + BM25) search:</p>
+<ul>
+<li><strong>Reads</strong> <code>data/full/top_cited.jsonl</code>, <strong>re-sorts by <code>cited_by_count</code> desc</strong> so <code>rank = node index</code> matches the graph artifacts (critical invariant — the raw file is year-major, not citation order).</li>
+<li><strong>Embed text</strong> = title + abstract, reconstructing abstracts from OpenAlex's <code>abstract_inverted_index</code> (reusing the existing <code>reconstruct_abstract</code> logic).</li>
+<li><strong>Model:</strong> OpenAI <code>text-embedding-3-small</code> (1536-dim), batched.</li>
+<li><strong>Stores in turbopuffer</strong> with <code>distance_metric="cosine_distance"</code> and <code>full_text_search: True</code> on the text attribute — that's what enables true hybrid (dense ANN + BM25 with RRF fusion). Stores <code>rank</code>, <code>title</code>, <code>year</code>, <code>cited_by_count</code>, <code>field</code>, <code>domain</code>, <code>doi</code> as attributes.</li>
+<li>Uses the <strong>official <code>openai</code> + <code>turbopuffer</code> SDKs</strong> (adds <code>scripts/requirements.txt</code> — first pip deps), and reuses the existing dependency-free <code>.env</code> loader.</li>
+<li>Includes <code>--dry-run</code> and a <code>--query</code> smoke-test mode for end-to-end verification.</li>
+</ul>
+<p>The <code>.env</code> already has all four keys populated, so it's ready to run.</p></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-12-46-236Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-12-46-236Z" class="timestamp-link"><time datetime="2026-07-11T19:12:46.236Z" data-timestamp="2026-07-11T19:12:46.236Z">2026-07-11T19:12:46.236Z</time></a></div><div class="message-content">
+<div class="tool-use" data-tool-id="toolu_01ULmxTmXXkfnsh96bkAscdj"><div class="tool-header"><span class="tool-icon">⚙</span> ExitPlanMode</div><div class="truncatable"><div class="truncatable-content"><pre class="json">{
+  &#34;plan&#34;: &#34;# Plan: Embed top-cited papers into turbopuffer for hybrid search\n\n## Context\n\nThe repo already ships a lexical/keyword search index (`search-kw.json`) for the 3D\ngraph viz, but there is no semantic layer. We want **hybrid search (dense vector + BM25)**\nover the top ~10k most-cited papers so the app can retrieve by meaning, not just keywords.\n\nThe scaffolding is already in place and points directly at this script:\n- `scripts/.env.example` reserves `OPENAI_API_KEY`, `TURBOPUFFER_API_KEY`,\n  `TURBOPUFFER_REGION`, `TURBOPUFFER_NAMESPACE` and names the target file\n  `scripts/embed_turbopuffer.py`.\n- `scripts/.env` already has all four keys populated — credentials are ready.\n\n**Decisions (confirmed with user):** OpenAI `text-embedding-3-small` (1536-dim);\nuse the **official `openai` + `turbopuffer` SDKs** (this introduces the first pip\ndependencies + a `requirements.txt`, deviating from the pipeline&#39;s stdlib-only convention —\nacceptable because this is a one-off ingestion tool, not a CDN-artifact build step).\n\n## Load-bearing invariant to preserve\n\nNode index `0..N-1` = **citation rank** (descending `cited_by_count`) is the canonical\nkey across every built artifact (`build_graph_data.py:219-223`). The raw\n`data/full/top_cited.jsonl` is written in **year-major** order, so we MUST re-sort by\n`cited_by_count` desc before assigning rank. We store that `rank` as a turbopuffer\nattribute so vector hits line up with `nodes.bin` / `details/` / the graph node index.\n\n## New file: `scripts/embed_turbopuffer.py`\n\nPython 3, `argparse` CLI, docstring header, `from __future__ import annotations` — matching\nthe house style of `fetch_top_cited.py` / `build_graph_data.py`.\n\n**Reuse (replicate the two small helpers, matching the repo&#39;s copy-not-import convention):**\n- `load_env_files()` from `fetch_top_cited.py:96-116` — dependency-free `.env` loader,\n  real env vars take precedence.\n- `reconstruct_abstract(inv)` from `build_graph_data.py:41-49` — rebuilds plain text from\n  OpenAlex `abstract_inverted_index`.\n- `short_id(url)` from `build_graph_data.py:37-38` — `W…` id from the OpenAlex URL.\n\n**Flow:**\n1. `load_env_files()`; read `OPENAI_API_KEY`, `TURBOPUFFER_API_KEY`, `TURBOPUFFER_REGION`,\n   `TURBOPUFFER_NAMESPACE` from env.\n2. Read `scripts/data/full/top_cited.jsonl` (line-by-line JSON).\n3. **Sort by `cited_by_count` desc** → `rank = index`. Take `[:--limit]` (default 10000;\n   the full run has 9,874 rows, so this is effectively all of them).\n4. For each paper build the embed text:\n   `title + \&#34;\\n\\n\&#34; + reconstruct_abstract(abstract_inverted_index)` (title-only when no\n   abstract). Guard against the OpenAI 8191-token input cap by truncating overly long\n   abstracts (char budget ~ `8000 * 4`).\n5. **Embed** in batches (`--batch-size`, default 256) via\n   `client.embeddings.create(model=\&#34;text-embedding-3-small\&#34;, input=[...])`; preserve order\n   to pair vectors with rows. SDK handles retries.\n6. **Upsert** to turbopuffer in batches:\n   ```python\n   ns = tpuf.namespace(NAMESPACE)\n   ns.write(\n       upsert_rows=[{\n           \&#34;id\&#34;: short_id,              # W-id string as row id\n           \&#34;vector\&#34;: vec,               # 1536-dim\n           \&#34;rank\&#34;: rank,                # == canonical graph node index\n           \&#34;title\&#34;: title,\n           \&#34;text\&#34;: embed_text,          # title+abstract, indexed for BM25\n           \&#34;year\&#34;: publication_year,\n           \&#34;cited_by_count\&#34;: cited_by_count,\n           \&#34;field\&#34;: primary_topic.field.display_name,\n           \&#34;domain\&#34;: primary_topic.domain.display_name,\n           \&#34;doi\&#34;: doi,\n       } for ...],\n       distance_metric=\&#34;cosine_distance\&#34;,\n       schema={\&#34;text\&#34;: {\&#34;type\&#34;: \&#34;string\&#34;, \&#34;full_text_search\&#34;: True}},  # enables BM25 → hybrid\n   )\n   ```\n   `full_text_search: True` on `text` is what makes true hybrid (vector + BM25) possible;\n   it complements the client-side `search-kw.json` lexical index.\n7. Progress logging to stdout (batches done, count, elapsed); print total embedded + est.\n   token cost at the end. Upsert is idempotent (safe to re-run).\n\n**CLI flags:** `--jsonl` (default `data/full/top_cited.jsonl`), `--limit` (10000),\n`--batch-size` (256), `--model` (`text-embedding-3-small`), `--namespace` (default env),\n`--dry-run` (build texts, skip API calls — prints a sample), and a `--query \&#34;text\&#34;` smoke-test\nmode that embeds the query and runs turbopuffer `multi_query` (ANN + BM25 with `rerank_by=(\&#34;RRF\&#34;,)`)\nto print top hits — doubles as end-to-end verification.\n\n## Supporting files\n\n- **`scripts/requirements.txt`** (new): `openai`, `turbopuffer`. First Python dep manifest\n  in the repo.\n- **`scripts/README-graph-data.md`**: add a short \&#34;Semantic embeddings\&#34; section documenting\n  how to run the script and that `rank` == graph node index.\n- No changes to `.env` / `.env.example` (already provisioned).\n\n## Verification\n\n1. `pip install -r scripts/requirements.txt`.\n2. `python scripts/embed_turbopuffer.py --dry-run --limit 3` — confirm abstracts reconstruct\n   and embed-text/attributes look right, no network calls.\n3. `python scripts/embed_turbopuffer.py --limit 20` — small real ingest; confirm 20 rows land\n   in the turbopuffer namespace without errors.\n4. `python scripts/embed_turbopuffer.py --query \&#34;deep learning for protein folding\&#34; --limit 0`\n   (query-only) — confirm hybrid retrieval returns sensible top papers (e.g. AlphaFold-adjacent),\n   proving both the ANN and BM25 paths work.\n5. Full run: `python scripts/embed_turbopuffer.py` — expect ~9,874 rows upserted.\n6. Spot-check that a returned row&#39;s `rank` attribute matches its position in the\n   citation-sorted JSONL (invariant intact).\n&#34;,
+  &#34;planFilePath&#34;: &#34;/Users/andrewjin/.claude/plans/i-want-to-embed-unified-candle.md&#34;
+}</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T19-54-34-398Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T19-54-34-398Z" class="timestamp-link"><time datetime="2026-07-11T19:54:34.398Z" data-timestamp="2026-07-11T19:54:34.398Z">2026-07-11T19:54:34.398Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>User has approved your plan. You can now start coding. Start with updating your todo list if applicable
+
+Your plan has been saved to: /Users/andrewjin/.claude/plans/i-want-to-embed-unified-candle.md
+You can refer back to it if needed during implementation.
+
+## Approved Plan (edited by user):
+# Plan: Embed top-cited papers into turbopuffer for hybrid search
+
+## Context
+
+The repo already ships a lexical/keyword search index (`search-kw.json`) for the 3D
+graph viz, but there is no semantic layer. We want **hybrid search (dense vector + BM25)**
+over the top ~10k most-cited papers so the app can retrieve by meaning, not just keywords.
+
+The scaffolding is already in place and points directly at this script:
+- `scripts/.env.example` reserves `OPENAI_API_KEY`, `TURBOPUFFER_API_KEY`,
+  `TURBOPUFFER_REGION`, `TURBOPUFFER_NAMESPACE` and names the target file
+  `scripts/embed_turbopuffer.py`.
+- `scripts/.env` already has all four keys populated — credentials are ready.
+
+**Decisions (confirmed with user):** OpenAI `text-embedding-3-small` (1536-dim);
+use the **official `openai` + `turbopuffer` SDKs** (this introduces the first pip
+dependencies + a `requirements.txt`, deviating from the pipeline&#x27;s stdlib-only convention —
+acceptable because this is a one-off ingestion tool, not a CDN-artifact build step).
+
+## Load-bearing invariant to preserve
+
+Node index `0..N-1` = **citation rank** (descending `cited_by_count`) is the canonical
+key across every built artifact (`build_graph_data.py:219-223`). The raw
+`data/full/top_cited.jsonl` is written in **year-major** order, so we MUST re-sort by
+`cited_by_count` desc before assigning rank. We store that `rank` as a turbopuffer
+attribute so vector hits line up with `nodes.bin` / `details/` / the graph node index.
+
+## New file: `scripts/embed_turbopuffer.py`
+
+Python 3, `argparse` CLI, docstring header, `from __future__ import annotations` — matching
+the house style of `fetch_top_cited.py` / `build_graph_data.py`.
+
+**Reuse (replicate the two small helpers, matching the repo&#x27;s copy-not-import convention):**
+- `load_env_files()` from `fetch_top_cited.py:96-116` — dependency-free `.env` loader,
+  real env vars take precedence.
+- `reconstruct_abstract(inv)` from `build_graph_data.py:41-49` — rebuilds plain text from
+  OpenAlex `abstract_inverted_index`.
+- `short_id(url)` from `build_graph_data.py:37-38` — `W…` id from the OpenAlex URL.
+
+**Flow:**
+1. `load_env_files()`; read `OPENAI_API_KEY`, `TURBOPUFFER_API_KEY`, `TURBOPUFFER_REGION`,
+   `TURBOPUFFER_NAMESPACE` from env.
+2. Read `scripts/data/full/top_cited.jsonl` (line-by-line JSON).
+3. **Sort by `cited_by_count` desc** → `rank = index`. Take `[:--limit]` (default 10000;
+   the full run has 9,874 rows, so this is effectively all of them).
+4. For each paper build the embed text:
+   `title + &quot;\n\n&quot; + reconstruct_abstract(abstract_inverted_index)` (title-only when no
+   abstract). Guard against the OpenAI 8191-token input cap by truncating overly long
+   abstracts (char budget ~ `8000 * 4`).
+5. **Embed** in batches (`--batch-size`, default 256) via
+   `client.embeddings.create(model=&quot;text-embedding-3-small&quot;, input=[...])`; preserve order
+   to pair vectors with rows. SDK handles retries.
+6. **Upsert** to turbopuffer in batches:
+   ```python
+   ns = tpuf.namespace(NAMESPACE)
+   ns.write(
+       upsert_rows=[{
+           &quot;id&quot;: short_id,              # W-id string as row id
+           &quot;vector&quot;: vec,               # 1536-dim
+           &quot;rank&quot;: rank,                # == canonical graph node index
+           &quot;title&quot;: title,
+           &quot;text&quot;: embed_text,          # title+abstract, indexed for BM25
+           &quot;year&quot;: publication_year,
+           &quot;cited_by_count&quot;: cited_by_count,
+           &quot;field&quot;: primary_topic.field.display_name,
+           &quot;domain&quot;: primary_topic.domain.display_name,
+           &quot;doi&quot;: doi,
+       } for ...],
+       distance_metric=&quot;cosine_distance&quot;,
+       schema={&quot;text&quot;: {&quot;type&quot;: &quot;string&quot;, &quot;full_text_search&quot;: True}},  # enables BM25 → hybrid
+   )
+   ```
+   `full_text_search: True` on `text` is what makes true hybrid (vector + BM25) possible;
+   it complements the client-side `search-kw.json` lexical index.
+7. Progress logging to stdout (batches done, count, elapsed); print total embedded + est.
+   token cost at the end. Upsert is idempotent (safe to re-run).
+
+**CLI flags:** `--jsonl` (default `data/full/top_cited.jsonl`), `--limit` (10000),
+`--batch-size` (256), `--model` (`text-embedding-3-small`), `--namespace` (default env),
+`--dry-run` (build texts, skip API calls — prints a sample), and a `--query &quot;text&quot;` smoke-test
+mode that embeds the query and runs turbopuffer `multi_query` (ANN + BM25 with `rerank_by=(&quot;RRF&quot;,)`)
+to print top hits — doubles as end-to-end verification.
+
+## Supporting files
+
+- **`scripts/requirements.txt`** (new): `openai`, `turbopuffer`. First Python dep manifest
+  in the repo.
+- **`scripts/README-graph-data.md`**: add a short &quot;Semantic embeddings&quot; section documenting
+  how to run the script and that `rank` == graph node index.
+- No changes to `.env` / `.env.example` (already provisioned).
+
+## Verification
+
+1. `pip install -r scripts/requirements.txt`.
+2. `python scripts/embed_turbopuffer.py --dry-run --limit 3` — confirm abstracts reconstruct
+   and embed-text/attributes look right, no network calls.
+3. `python scripts/embed_turbopuffer.py --limit 20` — small real ingest; confirm 20 rows land
+   in the turbopuffer namespace without errors.
+4. `python scripts/embed_turbopuffer.py --query &quot;deep learning for protein folding&quot; --limit 0`
+   (query-only) — confirm hybrid retrieval returns sensible top papers (e.g. AlphaFold-adjacent),
+   proving both the ANN and BM25 paths work.
+5. Full run: `python scripts/embed_turbopuffer.py` — expect ~9,874 rows upserted.
+6. Spot-check that a returned row&#x27;s `rank` attribute matches its position in the
+   citation-sorted JSONL (invariant intact).
+</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-54-35-713Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-54-35-713Z" class="timestamp-link"><time datetime="2026-07-11T19:54:35.713Z" data-timestamp="2026-07-11T19:54:35.713Z">2026-07-11T19:54:35.713Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-54-35-879Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-54-35-879Z" class="timestamp-link"><time datetime="2026-07-11T19:54:35.879Z" data-timestamp="2026-07-11T19:54:35.879Z">2026-07-11T19:54:35.879Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p>Let me read the exact helpers I'm replicating, then write the script.</p></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-54-36-201Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-54-36-201Z" class="timestamp-link"><time datetime="2026-07-11T19:54:36.201Z" data-timestamp="2026-07-11T19:54:36.201Z">2026-07-11T19:54:36.201Z</time></a></div><div class="message-content">
+<div class="tool-use" data-tool-id="toolu_01H4GUwRFtSMWsujcxjgsUWR"><div class="tool-header"><span class="tool-icon">⚙</span> Read</div><div class="truncatable"><div class="truncatable-content"><pre class="json">{
+  &#34;file_path&#34;: &#34;/Users/andrewjin/Desktop/anthropic-take-home/scripts/fetch_top_cited.py&#34;,
+  &#34;offset&#34;: 96,
+  &#34;limit&#34;: 22
+}</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T19-54-36-213Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T19-54-36-213Z" class="timestamp-link"><time datetime="2026-07-11T19:54:36.213Z" data-timestamp="2026-07-11T19:54:36.213Z">2026-07-11T19:54:36.213Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>96	def load_env_files() -&gt; None:
+97	    &quot;&quot;&quot;Minimal .env loader (no dependency). Reads KEY=VALUE lines from a .env next to
+98	    this script and/or in the current dir. Real environment variables take precedence.
+99	    &quot;&quot;&quot;
+100	    script_dir = os.path.dirname(os.path.abspath(__file__))
+101	    candidates = [os.path.join(script_dir, &quot;.env&quot;), os.path.join(os.getcwd(), &quot;.env&quot;)]
+102	    seen: set[str] = set()
+103	    for path in candidates:
+104	        if path in seen or not os.path.isfile(path):
+105	            continue
+106	        seen.add(path)
+107	        with open(path, encoding=&quot;utf-8&quot;) as fh:
+108	            for line in fh:
+109	                line = line.strip()
+110	                if not line or line.startswith(&quot;#&quot;) or &quot;=&quot; not in line:
+111	                    continue
+112	                key, _, val = line.partition(&quot;=&quot;)
+113	                key = key.strip()
+114	                val = val.strip().strip(&#x27;&quot;&#x27;).strip(&quot;&#x27;&quot;)
+115	                if key and key not in os.environ:  # don&#x27;t override a real env var
+116	                    os.environ[key] = val
+117	</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-54-36-304Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-54-36-304Z" class="timestamp-link"><time datetime="2026-07-11T19:54:36.304Z" data-timestamp="2026-07-11T19:54:36.304Z">2026-07-11T19:54:36.304Z</time></a></div><div class="message-content">
+<div class="tool-use" data-tool-id="toolu_01QLeaffLVDcwc2xw8gnC2cx"><div class="tool-header"><span class="tool-icon">⚙</span> Read</div><div class="truncatable"><div class="truncatable-content"><pre class="json">{
+  &#34;file_path&#34;: &#34;/Users/andrewjin/Desktop/anthropic-take-home/scripts/README-graph-data.md&#34;
+}</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T19-54-36-311Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T19-54-36-311Z" class="timestamp-link"><time datetime="2026-07-11T19:54:36.311Z" data-timestamp="2026-07-11T19:54:36.311Z">2026-07-11T19:54:36.311Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>1	# Graph viz data pipeline
+2	
+3	Turns the raw top-cited pull into CDN-optimized artifacts for the 3D force-directed graph.
+4	
+5	## Build
+6	
+7	```bash
+8	# 1. transform JSONL -&gt; artifacts (Python stdlib only)
+9	python3 scripts/build_graph_data.py \
+10	  --in scripts/data/full/top_cited.jsonl --out web/public/data/v1 [--shard 100]
+11	
+12	# 2. precompute the field-clustered 3D layout (Node, no deps; port of the design&#x27;s
+13	#    force3d.js layout — 8 cluster centers from web/lib/field-clusters.json)
+14	node scripts/layout_clustered.mjs --out web/public/data/v1
+15	#    (layout_3d.mjs is the older unclustered d3-force-3d variant, kept for reference)
+16	
+17	# 3. verify end-to-end
+18	node scripts/verify_graph_data.mjs --out web/public/data/v1
+19	
+20	# 4. (optional) also emit Brotli sidecars + print a gz-vs-br size table
+21	node scripts/compress_br.mjs --out web/public/data/v1 [--quality 11]
+22	```
+23	
+24	Output: `web/public/data/v1/` — each artifact has a `.gz` sidecar (always) and a `.br` sidecar
+25	(after step 4). Brotli q11 runs ~20% smaller than gzip here (first-paint set 527 → 419 KB); it&#x27;s
+26	noise-like on `positions.bin` (Int16-quantized), so gzip is fine there. Serve static `.br` where
+27	you can&#x27;t rely on CDN on-the-fly Brotli; otherwise `.gz` + CDN Brotli suffices.
+28	
+29	## Artifact schema
+30	
+31	**Node index `0..N-1` (citation-rank order) is the canonical key** — `nodes.bin`, `nodes-text.json`,
+32	`positions.bin`, `search-kw.json`, and detail shards are all aligned to it; edges reference it.
+33	
+34	| File | Format | Purpose | ~gz |
+35	|---|---|---|---|
+36	| `manifest.json` | JSON | counts, offsets, citation domain, color legends, position scale | 1 KB |
+37	| `nodes.bin` | binary SoA | `Uint32 citations[N]`, `Uint16 year[N]`, `Uint8 domainIdx/fieldIdx/flags[N]` (`flags`: bit0 suspect, bit1 openAccess, bit2 hasPdf, bit3 hasGrobid — map in `manifest.nodesBin.flags`), `Uint16 sizeScore[N]` (recent-momentum display size, `value/65535 → [0,1]`; model in `manifest.sizeModel`). Byte offsets in `manifest.nodesBin.layout` | 54 KB |
+38	| `nodes-text.json` | JSON | `title[]`, `author[]` (first), `authorsDisplay[]` (`&quot;A, B&quot;` / `&quot;A et al.&quot;`), `topicIdx[]` + `topicTable[]` | 459 KB |
+39	| `positions.bin` | `Int16[N*3]` | x,y,z interleaved; decode `value/32767*manifest.positions.scale` | 58 KB |
+40	| `edges.bin` | `Uint16` SoA | `src[E]` then `dst[E]`, sorted &amp; deduped (N&lt;65536) | 70 KB |
+41	| `search-kw.json` | JSON | `kwIdx[][]` + `kwTable[]`; **load after first paint** | 303 KB |
+42	| `details/shard-NNN.json` | JSON | Tier-2: abstract, venue, publication_date, urls, all authors+institutions, topics, keywords, biblio. `SHARD` records each | ~60 KB ea |
+43	
+44	First-paint set = `manifest + nodes.bin + nodes-text.json + edges.bin + positions.bin` ≈ **643 KB gz**.
+45	
+46	`positions.bin` is the design&#x27;s field-clustered layout: the 8 clusters in
+47	`web/lib/field-clusters.json` (which also maps the 27 OpenAlex fields onto them) get
+48	Fibonacci-sphere centers and the layout runs Barnes-Hut + springs offline, so the client
+49	renders frozen positions with zero layout cost. Re-run `layout_clustered.mjs` whenever the
+50	mapping or nodes/edges change.
+51	
+52	## Client loader (reference)
+53	
+54	```js
+55	const M = await (await fetch(&quot;data/v1/manifest.json&quot;)).json();
+56	const N = M.counts.nodes, E = M.counts.edges;
+57	const bin = async (f) =&gt; (await (await fetch(`data/v1/${f}`)).arrayBuffer());
+58	
+59	const nb = await bin(&quot;nodes.bin&quot;), o = Object.fromEntries(M.nodesBin.layout.map(l =&gt; [l.name, l.offset]));
+60	const citations = new Uint32Array(nb, o.citations, N);
+61	const domainIdx = new Uint8Array(nb, o.domainIdx, N);
+62	
+63	const eb = await bin(&quot;edges.bin&quot;);
+64	const src = new Uint16Array(eb, 0, E), dst = new Uint16Array(eb, E*2, E);
+65	
+66	const pb = await bin(&quot;positions.bin&quot;), P = new Int16Array(pb, 0, N*3), s = M.positions.scale;
+67	const T = await (await fetch(&quot;data/v1/nodes-text.json&quot;)).json();
+68	
+69	const nodes = Array.from({length:N}, (_,i) =&gt; ({
+70	  id:i, val:citations[i], color: M.colorLegend.domains[domainIdx[i]],
+71	  fx:(P[i*3]/32767)*s, fy:(P[i*3+1]/32767)*s, fz:(P[i*3+2]/32767)*s,   // frozen precomputed layout
+72	}));
+73	const links = Array.from({length:E}, (_,i) =&gt; ({ source:src[i], target:dst[i] }));
+74	// react-force-graph-3d: &lt;ForceGraph3D graphData={{nodes,links}} cooldownTicks={0}
+75	//   nodeVal={n =&gt; Math.sqrt(Math.min(n.val, M.citationDomain.p99))}   // sqrt + p99 clamp
+76	//   nodeLabel={n =&gt; T.title[n.id]} onNodeClick={n =&gt; fetchShard(Math.floor(n.id / M.shardSize))}
+77	```
+78	
+79	Search: build an in-memory lowercased index from `T.title` + `T.author` (+ `topicTable`) at load
+80	(instant substring over 10k); fold in `search-kw.json` once it arrives. Matches drive
+81	`nodeVisibility`.
+82	
+83	## CDN notes
+84	
+85	- Serve `.gz` with `Content-Encoding: gzip` (let the CDN add Brotli on the fly); `.bin` as
+86	  `application/octet-stream`.
+87	- Version via the `v1/` path; `manifest.json` short TTL, everything under it long/immutable.
+88	  Per-file `manifest.hashes` can drive `?v=&lt;hash&gt;` cache-busting if you keep filenames stable.
+89	</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-54-37-584Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-54-37-584Z" class="timestamp-link"><time datetime="2026-07-11T19:54:37.584Z" data-timestamp="2026-07-11T19:54:37.584Z">2026-07-11T19:54:37.584Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p>Now let me check <code>.gitignore</code> to make sure I don't need to worry about anything, then write the script.</p></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-54-38-413Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-54-38-413Z" class="timestamp-link"><time datetime="2026-07-11T19:54:38.413Z" data-timestamp="2026-07-11T19:54:38.413Z">2026-07-11T19:54:38.413Z</time></a></div><div class="message-content">
+<div class="tool-use bash-tool" data-tool-id="toolu_012Eha2633CvgVp1WY4iiTs2">
+<div class="tool-header"><span class="tool-icon">$</span> Bash</div>
+<div class="tool-description">Check gitignore and primary_topic structure</div><div class="truncatable"><div class="truncatable-content"><pre class="bash-command">cd /Users/andrewjin/Desktop/anthropic-take-home &amp;&amp; cat scripts/.gitignore &amp;&amp; echo &#34;---SAMPLE RECORD FIELDS---&#34; &amp;&amp; python3 -c &#34;import json;r=json.loads(open(&#39;scripts/data/full/top_cited.jsonl&#39;).readline());print({k:type(v).__name__ for k,v in r.items()});print(&#39;primary_topic keys:&#39;, list((r.get(&#39;primary_topic&#39;) or {}).keys()));pt=r.get(&#39;primary_topic&#39;) or {};print(&#39;field:&#39;, pt.get(&#39;field&#39;));print(&#39;domain:&#39;, pt.get(&#39;domain&#39;))&#34;</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T19-54-39-881Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T19-54-39-881Z" class="timestamp-link"><time datetime="2026-07-11T19:54:39.881Z" data-timestamp="2026-07-11T19:54:39.881Z">2026-07-11T19:54:39.881Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre># Never commit real credentials
+.env
+
+# Pulled data
+data/
+
+# Node deps for the layout step
+node_modules/
+---SAMPLE RECORD FIELDS---
+{&#x27;id&#x27;: &#x27;str&#x27;, &#x27;doi&#x27;: &#x27;str&#x27;, &#x27;title&#x27;: &#x27;str&#x27;, &#x27;publication_year&#x27;: &#x27;int&#x27;, &#x27;publication_date&#x27;: &#x27;str&#x27;, &#x27;type&#x27;: &#x27;str&#x27;, &#x27;language&#x27;: &#x27;str&#x27;, &#x27;cited_by_count&#x27;: &#x27;int&#x27;, &#x27;counts_by_year&#x27;: &#x27;list&#x27;, &#x27;fwci&#x27;: &#x27;float&#x27;, &#x27;authorships&#x27;: &#x27;list&#x27;, &#x27;primary_location&#x27;: &#x27;dict&#x27;, &#x27;best_oa_location&#x27;: &#x27;dict&#x27;, &#x27;locations&#x27;: &#x27;list&#x27;, &#x27;open_access&#x27;: &#x27;dict&#x27;, &#x27;has_content&#x27;: &#x27;dict&#x27;, &#x27;content_urls&#x27;: &#x27;NoneType&#x27;, &#x27;referenced_works_count&#x27;: &#x27;int&#x27;, &#x27;primary_topic&#x27;: &#x27;dict&#x27;, &#x27;abstract_inverted_index&#x27;: &#x27;dict&#x27;, &#x27;referenced_works&#x27;: &#x27;list&#x27;, &#x27;related_works&#x27;: &#x27;list&#x27;, &#x27;topics&#x27;: &#x27;list&#x27;, &#x27;keywords&#x27;: &#x27;list&#x27;}
+primary_topic keys: [&#x27;id&#x27;, &#x27;display_name&#x27;, &#x27;score&#x27;, &#x27;subfield&#x27;, &#x27;field&#x27;, &#x27;domain&#x27;]
+field: {&#x27;id&#x27;: &#x27;https://openalex.org/fields/12&#x27;, &#x27;display_name&#x27;: &#x27;Arts and Humanities&#x27;}
+domain: {&#x27;id&#x27;: &#x27;https://openalex.org/domains/2&#x27;, &#x27;display_name&#x27;: &#x27;Social Sciences&#x27;}
+Shell cwd was reset to /Users/andrewjin/Desktop/anthropic-take-home/claude-code-transcripts</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-54-40-888Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-54-40-888Z" class="timestamp-link"><time datetime="2026-07-11T19:54:40.888Z" data-timestamp="2026-07-11T19:54:40.888Z">2026-07-11T19:54:40.888Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p>Now I'll write the script.</p></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-54-55-333Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-54-55-333Z" class="timestamp-link"><time datetime="2026-07-11T19:54:55.333Z" data-timestamp="2026-07-11T19:54:55.333Z">2026-07-11T19:54:55.333Z</time></a></div><div class="message-content"><div class="file-tool write-tool" data-tool-id="toolu_0185WfyRJLMt4JRuegDkkGAv">
+<div class="file-tool-header write-header"><span class="file-tool-icon">📝</span> Write <span class="file-tool-path">embed_turbopuffer.py</span></div>
+<div class="file-tool-fullpath">/Users/andrewjin/Desktop/anthropic-take-home/scripts/embed_turbopuffer.py</div>
+<div class="truncatable"><div class="truncatable-content"><pre class="file-content">#!/usr/bin/env python3
+&#34;&#34;&#34;Embed the top-cited papers into turbopuffer for hybrid (vector + BM25) search.
+
+Reads the raw top-cited JSONL, reconstructs each abstract from OpenAlex&#39;s
+`abstract_inverted_index`, embeds `title + abstract` with OpenAI, and upserts the
+vectors plus metadata into a turbopuffer namespace with full-text search enabled on the
+text attribute (so the app can run true hybrid retrieval: dense ANN + BM25 with RRF).
+
+Canonical key: the raw JSONL is written in year-major order, so we re-sort by
+`cited_by_count` desc here. The resulting index `0..N-1` == citation rank == the graph
+node index used across every built artifact (nodes.bin / details / positions.bin). We
+store that as the `rank` attribute so vector hits line up with the graph.
+
+Unlike the stdlib-only build pipeline, this one-off ingestion tool uses the official
+`openai` and `turbopuffer` SDKs. Install with: pip install -r scripts/requirements.txt
+
+Credentials come from scripts/.env (see .env.example): OPENAI_API_KEY, TURBOPUFFER_API_KEY,
+TURBOPUFFER_REGION, TURBOPUFFER_NAMESPACE.
+
+Examples:
+  python3 scripts/embed_turbopuffer.py --dry-run --limit 3      # build texts, no API calls
+  python3 scripts/embed_turbopuffer.py --limit 20               # small real ingest
+  python3 scripts/embed_turbopuffer.py --query &#34;protein folding&#34; --limit 0   # hybrid smoke test
+  python3 scripts/embed_turbopuffer.py                          # full run (~9,874 rows)
+&#34;&#34;&#34;
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import sys
+import time
+
+DEFAULT_JSONL = &#34;data/full/top_cited.jsonl&#34;
+DEFAULT_MODEL = &#34;text-embedding-3-small&#34;  # 1536 dims
+DEFAULT_LIMIT = 10000
+DEFAULT_BATCH = 256
+# OpenAI embedding inputs cap at 8191 tokens; ~4 chars/token, keep a safety margin.
+MAX_EMBED_CHARS = 8000 * 4
+
+# ------------------------------------------------------------------ helpers
+
+def load_env_files() -&gt; None:
+    &#34;&#34;&#34;Minimal .env loader (no dependency). Reads KEY=VALUE lines from a .env next to
+    this script and/or in the current dir. Real environment variables take precedence.
+    &#34;&#34;&#34;
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    candidates = [os.path.join(script_dir, &#34;.env&#34;), os.path.join(os.getcwd(), &#34;.env&#34;)]
+    seen: set[str] = set()
+    for path in candidates:
+        if path in seen or not os.path.isfile(path):
+            continue
+        seen.add(path)
+        with open(path, encoding=&#34;utf-8&#34;) as fh:
+            for line in fh:
+                line = line.strip()
+                if not line or line.startswith(&#34;#&#34;) or &#34;=&#34; not in line:
+                    continue
+                key, _, val = line.partition(&#34;=&#34;)
+                key = key.strip()
+                val = val.strip().strip(&#39;&#34;&#39;).strip(&#34;&#39;&#34;)
+                if key and key not in os.environ:  # don&#39;t override a real env var
+                    os.environ[key] = val
+
+
+def short_id(url: str | None) -&gt; str | None:
+    return url.rsplit(&#34;/&#34;, 1)[-1] if url else None
+
+
+def reconstruct_abstract(inv: dict | None) -&gt; str | None:
+    &#34;&#34;&#34;Rebuild plain text from OpenAlex&#39;s abstract_inverted_index (word -&gt; [positions]).&#34;&#34;&#34;
+    if not inv:
+        return None
+    pos: dict[int, str] = {}
+    for word, positions in inv.items():
+        for p in positions:
+            pos[p] = word
+    return &#34; &#34;.join(pos[k] for k in sorted(pos))
+
+
+def _nested_name(work: dict, key: str) -&gt; str:
+    &#34;&#34;&#34;primary_topic.&lt;key&gt;.display_name, or &#39;&#39;.&#34;&#34;&#34;
+    node = (work.get(&#34;primary_topic&#34;) or {}).get(key) or {}
+    return node.get(&#34;display_name&#34;) or &#34;&#34;
+
+
+def build_embed_text(work: dict) -&gt; str:
+    &#34;&#34;&#34;title + reconstructed abstract (title-only when no abstract), length-capped.&#34;&#34;&#34;
+    title = (work.get(&#34;title&#34;) or &#34;&#34;).strip()
+    abstract = reconstruct_abstract(work.get(&#34;abstract_inverted_index&#34;)) or &#34;&#34;
+    text = f&#34;{title}\n\n{abstract}&#34;.strip() if abstract else title
+    return text[:MAX_EMBED_CHARS]
+
+
+def load_rows(jsonl_path: str, limit: int) -&gt; list[dict]:
+    &#34;&#34;&#34;Read the JSONL, sort by cited_by_count desc (canonical rank), take top `limit`.&#34;&#34;&#34;
+    rows: list[dict] = []
+    with open(jsonl_path, encoding=&#34;utf-8&#34;) as fh:
+        for line in fh:
+            line = line.strip()
+            if line:
+                rows.append(json.loads(line))
+    # Canonical contract: index == citation rank. Match build_graph_data.py.
+    rows.sort(key=lambda r: -(r.get(&#34;cited_by_count&#34;) or 0))
+    if limit and limit &gt; 0:
+        rows = rows[:limit]
+    return rows
+
+
+def build_record(rank: int, work: dict) -&gt; dict:
+    &#34;&#34;&#34;turbopuffer upsert row (minus the vector, which is filled in after embedding).&#34;&#34;&#34;
+    text = build_embed_text(work)
+    return {
+        &#34;id&#34;: short_id(work[&#34;id&#34;]),
+        &#34;_text&#34;: text,  # popped before upsert; used as embed input + BM25 attribute
+        &#34;rank&#34;: rank,
+        &#34;title&#34;: (work.get(&#34;title&#34;) or &#34;&#34;),
+        &#34;year&#34;: work.get(&#34;publication_year&#34;) or 0,
+        &#34;cited_by_count&#34;: work.get(&#34;cited_by_count&#34;) or 0,
+        &#34;field&#34;: _nested_name(work, &#34;field&#34;),
+        &#34;domain&#34;: _nested_name(work, &#34;domain&#34;),
+        &#34;doi&#34;: work.get(&#34;doi&#34;) or &#34;&#34;,
+    }
+
+
+def chunked(seq: list, n: int):
+    for i in range(0, len(seq), n):
+        yield seq[i : i + n]
+
+
+# ------------------------------------------------------------------ clients
+
+def openai_client():
+    from openai import OpenAI
+
+    key = os.environ.get(&#34;OPENAI_API_KEY&#34;)
+    if not key:
+        sys.exit(&#34;OPENAI_API_KEY is not set (scripts/.env or environment).&#34;)
+    return OpenAI(api_key=key)
+
+
+def turbopuffer_namespace(namespace: str):
+    import turbopuffer
+
+    key = os.environ.get(&#34;TURBOPUFFER_API_KEY&#34;)
+    region = os.environ.get(&#34;TURBOPUFFER_REGION&#34;)
+    if not key or not region:
+        sys.exit(&#34;TURBOPUFFER_API_KEY and TURBOPUFFER_REGION must be set (scripts/.env).&#34;)
+    client = turbopuffer.Turbopuffer(api_key=key, region=region)
+    return client.namespace(namespace)
+
+
+def embed_texts(client, model: str, texts: list[str]) -&gt; list[list[float]]:
+    resp = client.embeddings.create(model=model, input=texts)
+    # Preserve input order; the API returns items with an `index` field.
+    items = sorted(resp.data, key=lambda d: d.index)
+    return [it.embedding for it in items]
+
+
+# ------------------------------------------------------------------ commands
+
+def cmd_ingest(args, records: list[dict]) -&gt; None:
+    client = openai_client()
+    ns = turbopuffer_namespace(args.namespace)
+    schema = {&#34;text&#34;: {&#34;type&#34;: &#34;string&#34;, &#34;full_text_search&#34;: True}}
+
+    total = len(records)
+    done = 0
+    t0 = time.time()
+    approx_chars = 0
+    for batch in chunked(records, args.batch_size):
+        texts = [r[&#34;_text&#34;] for r in batch]
+        approx_chars += sum(len(t) for t in texts)
+        vectors = embed_texts(client, args.model, texts)
+
+        upsert_rows = []
+        for r, vec in zip(batch, vectors):
+            row = {k: v for k, v in r.items() if k != &#34;_text&#34;}
+            row[&#34;vector&#34;] = vec
+            row[&#34;text&#34;] = r[&#34;_text&#34;]  # indexed for BM25 (hybrid)
+            upsert_rows.append(row)
+
+        ns.write(
+            upsert_rows=upsert_rows,
+            distance_metric=&#34;cosine_distance&#34;,
+            schema=schema,
+        )
+        done += len(batch)
+        print(f&#34;  upserted {done}/{total}  ({time.time() - t0:.1f}s)&#34;, flush=True)
+
+    est_tokens = approx_chars / 4
+    # text-embedding-3-small: $0.02 / 1M tokens
+    est_cost = est_tokens / 1_000_000 * 0.02
+    print(
+        f&#34;Done: {done} rows into namespace &#39;{args.namespace}&#39; &#34;
+        f&#34;(~{est_tokens/1e6:.2f}M tokens, ~${est_cost:.4f}) in {time.time() - t0:.1f}s&#34;
+    )
+
+
+def cmd_query(args) -&gt; None:
+    client = openai_client()
+    ns = turbopuffer_namespace(args.namespace)
+    qvec = embed_texts(client, args.model, [args.query])[0]
+    top_k = args.top_k
+    resp = ns.multi_query(
+        queries=[
+            {
+                &#34;rank_by&#34;: (&#34;vector&#34;, &#34;ANN&#34;, qvec),
+                &#34;top_k&#34;: top_k,
+                &#34;include_attributes&#34;: [&#34;title&#34;, &#34;year&#34;, &#34;cited_by_count&#34;, &#34;rank&#34;, &#34;field&#34;],
+            },
+            {
+                &#34;rank_by&#34;: (&#34;text&#34;, &#34;BM25&#34;, args.query),
+                &#34;top_k&#34;: top_k,
+                &#34;include_attributes&#34;: [&#34;title&#34;, &#34;year&#34;, &#34;cited_by_count&#34;, &#34;rank&#34;, &#34;field&#34;],
+            },
+        ],
+        rerank_by=(&#34;RRF&#34;,),
+    )
+    rows = resp.results[0].rows
+    print(f&#34;Hybrid (vector + BM25, RRF) results for: {args.query!r}\n&#34;)
+    for i, row in enumerate(rows, 1):
+        title = getattr(row, &#34;title&#34;, &#34;&#34;) or &#34;&#34;
+        year = getattr(row, &#34;year&#34;, &#34;&#34;)
+        cites = getattr(row, &#34;cited_by_count&#34;, &#34;&#34;)
+        rank = getattr(row, &#34;rank&#34;, &#34;&#34;)
+        field = getattr(row, &#34;field&#34;, &#34;&#34;) or &#34;&#34;
+        print(f&#34;{i:2}. [{row.id}] rank={rank} {year} · {cites} cites · {field}&#34;)
+        print(f&#34;    {title}&#34;)
+
+
+def cmd_dry_run(records: list[dict], sample: int) -&gt; None:
+    print(f&#34;Prepared {len(records)} records (sorted by cited_by_count desc). Sample:\n&#34;)
+    for r in records[:sample]:
+        text = r[&#34;_text&#34;]
+        preview = text[:300].replace(&#34;\n&#34;, &#34; &#34;)
+        print(f&#34;rank={r[&#39;rank&#39;]} id={r[&#39;id&#39;]} cites={r[&#39;cited_by_count&#39;]} &#34;
+              f&#34;field={r[&#39;field&#39;]!r} domain={r[&#39;domain&#39;]!r}&#34;)
+        print(f&#34;  embed_text[{len(text)} chars]: {preview}...&#34;)
+        print()
+
+
+# ------------------------------------------------------------------ main
+
+def main() -&gt; None:
+    load_env_files()
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument(&#34;--jsonl&#34;, default=DEFAULT_JSONL,
+                   help=f&#34;input JSONL (default: {DEFAULT_JSONL}, relative to scripts/)&#34;)
+    p.add_argument(&#34;--limit&#34;, type=int, default=DEFAULT_LIMIT,
+                   help=f&#34;max papers to embed, top-cited first (default: {DEFAULT_LIMIT}; 0 = all)&#34;)
+    p.add_argument(&#34;--batch-size&#34;, type=int, default=DEFAULT_BATCH,
+                   help=f&#34;embed+upsert batch size (default: {DEFAULT_BATCH})&#34;)
+    p.add_argument(&#34;--model&#34;, default=DEFAULT_MODEL,
+                   help=f&#34;OpenAI embedding model (default: {DEFAULT_MODEL})&#34;)
+    p.add_argument(&#34;--namespace&#34;, default=os.environ.get(&#34;TURBOPUFFER_NAMESPACE&#34;),
+                   help=&#34;turbopuffer namespace (default: $TURBOPUFFER_NAMESPACE)&#34;)
+    p.add_argument(&#34;--dry-run&#34;, action=&#34;store_true&#34;,
+                   help=&#34;build embed texts and print a sample; no API calls&#34;)
+    p.add_argument(&#34;--query&#34;, default=None,
+                   help=&#34;query-only mode: run a hybrid search and print top hits (no ingest)&#34;)
+    p.add_argument(&#34;--top-k&#34;, type=int, default=10, help=&#34;results to show in --query mode&#34;)
+    args = p.parse_args()
+
+    # Resolve --jsonl relative to the scripts/ dir so the default works from anywhere.
+    if not os.path.isabs(args.jsonl):
+        args.jsonl = os.path.join(os.path.dirname(os.path.abspath(__file__)), args.jsonl)
+
+    if args.query:
+        if not args.namespace:
+            sys.exit(&#34;--namespace or $TURBOPUFFER_NAMESPACE is required for --query mode.&#34;)
+        cmd_query(args)
+        return
+
+    if not args.namespace and not args.dry_run:
+        sys.exit(&#34;--namespace or $TURBOPUFFER_NAMESPACE is required for ingest.&#34;)
+
+    works = load_rows(args.jsonl, args.limit)
+    records = [build_record(i, w) for i, w in enumerate(works)]
+
+    if args.dry_run:
+        cmd_dry_run(records, sample=min(3, len(records)))
+        return
+
+    cmd_ingest(args, records)
+
+
+if __name__ == &#34;__main__&#34;:
+    main()
+</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T19-54-57-504Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T19-54-57-504Z" class="timestamp-link"><time datetime="2026-07-11T19:54:57.504Z" data-timestamp="2026-07-11T19:54:57.504Z">2026-07-11T19:54:57.504Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>File created successfully at: /Users/andrewjin/Desktop/anthropic-take-home/scripts/embed_turbopuffer.py (file state is current in your context — no need to Read it back)</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-55-00-181Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-55-00-181Z" class="timestamp-link"><time datetime="2026-07-11T19:55:00.181Z" data-timestamp="2026-07-11T19:55:00.181Z">2026-07-11T19:55:00.181Z</time></a></div><div class="message-content"><div class="file-tool write-tool" data-tool-id="toolu_015q8eh2SVBP1pHrwkAJ2zFZ">
+<div class="file-tool-header write-header"><span class="file-tool-icon">📝</span> Write <span class="file-tool-path">requirements.txt</span></div>
+<div class="file-tool-fullpath">/Users/andrewjin/Desktop/anthropic-take-home/scripts/requirements.txt</div>
+<div class="truncatable"><div class="truncatable-content"><pre class="file-content"># Python deps for scripts/embed_turbopuffer.py (semantic embeddings ingest).
+# The rest of the pipeline (fetch_top_cited.py, build_graph_data.py) is stdlib-only.
+openai&gt;=1.0
+turbopuffer&gt;=0.5
+</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T19-55-01-406Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T19-55-01-406Z" class="timestamp-link"><time datetime="2026-07-11T19:55:01.406Z" data-timestamp="2026-07-11T19:55:01.406Z">2026-07-11T19:55:01.406Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>File created successfully at: /Users/andrewjin/Desktop/anthropic-take-home/scripts/requirements.txt (file state is current in your context — no need to Read it back)</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-55-02-384Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-55-02-384Z" class="timestamp-link"><time datetime="2026-07-11T19:55:02.384Z" data-timestamp="2026-07-11T19:55:02.384Z">2026-07-11T19:55:02.384Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p>Now let me install deps and run the dry-run verification.</p></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-55-02-848Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-55-02-848Z" class="timestamp-link"><time datetime="2026-07-11T19:55:02.848Z" data-timestamp="2026-07-11T19:55:02.848Z">2026-07-11T19:55:02.848Z</time></a></div><div class="message-content">
+<div class="tool-use bash-tool" data-tool-id="toolu_01KjvSWaDMxPfy33aatBFi2h">
+<div class="tool-header"><span class="tool-icon">$</span> Bash</div>
+<div class="tool-description">Install openai and turbopuffer SDKs</div><div class="truncatable"><div class="truncatable-content"><pre class="bash-command">cd /Users/andrewjin/Desktop/anthropic-take-home &amp;&amp; pip3 install -q -r scripts/requirements.txt 2&gt;&amp;1 | tail -5 &amp;&amp; echo &#34;---VERSIONS---&#34; &amp;&amp; python3 -c &#34;import openai,turbopuffer;print(&#39;openai&#39;,openai.__version__);print(&#39;turbopuffer&#39;,turbopuffer.__version__)&#34;</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T19-55-04-728Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T19-55-04-728Z" class="timestamp-link"><time datetime="2026-07-11T19:55:04.728Z" data-timestamp="2026-07-11T19:55:04.728Z">2026-07-11T19:55:04.728Z</time></a></div><div class="message-content"><div class="tool-result tool-error"><div class="truncatable"><div class="truncatable-content"><pre>Exit code 1
+    
+    Read more about this behavior here: &lt;https://peps.python.org/pep-0668/&gt;
+
+note: If you believe this is a mistake, please contact your Python installation or OS distribution provider. You can override this, at the risk of breaking your Python installation or OS, by passing --break-system-packages.
+hint: See PEP 668 for the detailed specification.
+---VERSIONS---
+Traceback (most recent call last):
+  File &quot;&lt;string&gt;&quot;, line 1, in &lt;module&gt;
+ModuleNotFoundError: No module named &#x27;openai&#x27;</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-55-06-786Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-55-06-786Z" class="timestamp-link"><time datetime="2026-07-11T19:55:06.786Z" data-timestamp="2026-07-11T19:55:06.786Z">2026-07-11T19:55:06.786Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-55-06-929Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-55-06-929Z" class="timestamp-link"><time datetime="2026-07-11T19:55:06.929Z" data-timestamp="2026-07-11T19:55:06.929Z">2026-07-11T19:55:06.929Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p>Homebrew Python is externally managed. I'll use a virtualenv for verification.</p></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-55-07-748Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-55-07-748Z" class="timestamp-link"><time datetime="2026-07-11T19:55:07.748Z" data-timestamp="2026-07-11T19:55:07.748Z">2026-07-11T19:55:07.748Z</time></a></div><div class="message-content">
+<div class="tool-use bash-tool" data-tool-id="toolu_01CZMVaGMszGevC9APX38Z1o">
+<div class="tool-header"><span class="tool-icon">$</span> Bash</div>
+<div class="tool-description">Create venv and install SDKs</div><div class="truncatable"><div class="truncatable-content"><pre class="bash-command">VENV=/private/tmp/claude-501/-Users-andrewjin-Desktop-anthropic-take-home-claude-code-transcripts/4feed594-98f5-4c07-a700-fac42bd9427b/scratchpad/venv; python3 -m venv &#34;$VENV&#34; &amp;&amp; &#34;$VENV/bin/pip&#34; install -q openai turbopuffer 2&gt;&amp;1 | tail -3; &#34;$VENV/bin/python&#34; -c &#34;import openai,turbopuffer;print(&#39;openai&#39;,openai.__version__);print(&#39;turbopuffer&#39;,turbopuffer.__version__)&#34;</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T19-55-17-213Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T19-55-17-213Z" class="timestamp-link"><time datetime="2026-07-11T19:55:17.213Z" data-timestamp="2026-07-11T19:55:17.213Z">2026-07-11T19:55:17.213Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>[notice] A new release of pip is available: 24.2 -&gt; 26.1.2
+[notice] To update, run: python3.12 -m pip install --upgrade pip
+openai 2.45.0
+turbopuffer 2.6.0</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-55-18-597Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-55-18-597Z" class="timestamp-link"><time datetime="2026-07-11T19:55:18.597Z" data-timestamp="2026-07-11T19:55:18.597Z">2026-07-11T19:55:18.597Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-55-19-131Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-55-19-131Z" class="timestamp-link"><time datetime="2026-07-11T19:55:19.131Z" data-timestamp="2026-07-11T19:55:19.131Z">2026-07-11T19:55:19.131Z</time></a></div><div class="message-content">
+<div class="tool-use bash-tool" data-tool-id="toolu_01Kk7HGyovqMxXBKLJWfdH1p">
+<div class="tool-header"><span class="tool-icon">$</span> Bash</div>
+<div class="tool-description">Run dry-run verification</div><div class="truncatable"><div class="truncatable-content"><pre class="bash-command">cd /Users/andrewjin/Desktop/anthropic-take-home &amp;&amp; VENV=/private/tmp/claude-501/-Users-andrewjin-Desktop-anthropic-take-home-claude-code-transcripts/4feed594-98f5-4c07-a700-fac42bd9427b/scratchpad/venv; &#34;$VENV/bin/python&#34; scripts/embed_turbopuffer.py --dry-run --limit 3</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T19-55-22-390Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T19-55-22-390Z" class="timestamp-link"><time datetime="2026-07-11T19:55:22.390Z" data-timestamp="2026-07-11T19:55:22.390Z">2026-07-11T19:55:22.390Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>Prepared 3 records (sorted by cited_by_count desc). Sample:
+
+rank=0 id=W3038568908 cites=801217 field=&#x27;Physics and Astronomy&#x27; domain=&#x27;Physical Sciences&#x27;
+  embed_text[1403 chars]: Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device  Radiation resistant camera system was constructed for monitoring deuterium plasma discharges in the Large Helical Device (LHD). This system has contributed to safe operation during two experimen...
+
+rank=1 id=W2582743722 cites=353004 field=&#x27;Computer Science&#x27; domain=&#x27;Physical Sciences&#x27;
+  embed_text[320 chars]: R: A Language and Environment for Statistical Computing  Most R novices will start with Appendix A [A sample session], page 80.This should give some familiarity with the style of R sessions and more importantly some instant feedback on what actually happens.Many users will come to R mainly for its g...
+
+rank=2 id=W1775749144 cites=318442 field=&#x27;Biochemistry, Genetics and Molecular Biology&#x27; domain=&#x27;Life Sciences&#x27;
+  embed_text[348 chars]: PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT  Since 1922 when Wu proposed the use of the Folin phenol reagent for the measurement of proteins (l), a number of modified analytical procedures ut.ilizing this reagent have been reported for the determination of proteins in serum (2-G), in antigen-a...
+Shell cwd was reset to /Users/andrewjin/Desktop/anthropic-take-home/claude-code-transcripts</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-55-24-457Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-55-24-457Z" class="timestamp-link"><time datetime="2026-07-11T19:55:24.457Z" data-timestamp="2026-07-11T19:55:24.457Z">2026-07-11T19:55:24.457Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-55-24-580Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-55-24-580Z" class="timestamp-link"><time datetime="2026-07-11T19:55:24.580Z" data-timestamp="2026-07-11T19:55:24.580Z">2026-07-11T19:55:24.580Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p>Dry-run is correct — sorted by citations, abstracts reconstructed. Now let me verify the turbopuffer 2.6 API matches my code before a real ingest.</p></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-55-26-229Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-55-26-229Z" class="timestamp-link"><time datetime="2026-07-11T19:55:26.229Z" data-timestamp="2026-07-11T19:55:26.229Z">2026-07-11T19:55:26.229Z</time></a></div><div class="message-content">
+<div class="tool-use bash-tool" data-tool-id="toolu_01TQ8gHgWpAd7wkyR7LM6S9E">
+<div class="tool-header"><span class="tool-icon">$</span> Bash</div>
+<div class="tool-description">Introspect turbopuffer 2.6 namespace API</div><div class="truncatable"><div class="truncatable-content"><pre class="bash-command">VENV=/private/tmp/claude-501/-Users-andrewjin-Desktop-anthropic-take-home-claude-code-transcripts/4feed594-98f5-4c07-a700-fac42bd9427b/scratchpad/venv; &#34;$VENV/bin/python&#34; - &lt;&lt;&#39;PY&#39;
+import inspect, turbopuffer
+tp = turbopuffer.Turbopuffer
+print(&#34;Turbopuffer.__init__:&#34;, str(inspect.signature(tp.__init__)))
+print(&#34;has namespace method:&#34;, hasattr(tp, &#34;namespace&#34;))
+# Namespace class
+from turbopuffer import Turbopuffer
+import turbopuffer.resources as R
+# find Namespace class
+ns_cls = None
+for name in dir(turbopuffer):
+    pass
+# Introspect via a dummy client (no network)
+c = Turbopuffer(api_key=&#34;x&#34;, region=&#34;gcp-us-central1&#34;)
+ns = c.namespace(&#34;dummy&#34;)
+print(&#34;ns type:&#34;, type(ns))
+for m in [&#34;write&#34;,&#34;query&#34;,&#34;multi_query&#34;]:
+    if hasattr(ns, m):
+        print(f&#34;\n{m}:&#34;, str(inspect.signature(getattr(ns, m))))
+    else:
+        print(f&#34;\n{m}: MISSING&#34;)
+PY</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T19-55-27-766Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T19-55-27-766Z" class="timestamp-link"><time datetime="2026-07-11T19:55:27.766Z" data-timestamp="2026-07-11T19:55:27.766Z">2026-07-11T19:55:27.766Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>Turbopuffer.__init__: (self, *, api_key: &#x27;str | None&#x27; = None, region: &#x27;str | None&#x27; = None, default_namespace: &#x27;str | None&#x27; = None, base_url: &#x27;str | httpx.URL | None&#x27; = None, timeout: &#x27;float | Timeout | None | NotGiven&#x27; = NOT_GIVEN, max_retries: &#x27;int&#x27; = 4, default_headers: &#x27;Mapping[str, str] | None&#x27; = None, default_query: &#x27;Mapping[str, object] | None&#x27; = None, http_client: &#x27;httpx.Client | None&#x27; = None, compression: &#x27;bool&#x27; = False, _strict_response_validation: &#x27;bool&#x27; = False) -&gt; &#x27;None&#x27;
+has namespace method: True
+ns type: &lt;class &#x27;turbopuffer.lib.namespace.Namespace&#x27;&gt;
+
+write: (*, namespace: &#x27;str | None&#x27; = None, branch_from_namespace: &#x27;BranchFromNamespaceParams | Omit&#x27; = &lt;turbopuffer.Omit object at 0x106bcd4c0&gt;, copy_from_namespace: &#x27;CopyFromNamespaceParams | Omit&#x27; = &lt;turbopuffer.Omit object at 0x106bcd4c0&gt;, delete_by_filter: &#x27;Filter | Omit&#x27; = &lt;turbopuffer.Omit object at 0x106bcd4c0&gt;, delete_by_filter_allow_partial: &#x27;bool | Omit&#x27; = &lt;turbopuffer.Omit object at 0x106bcd4c0&gt;, delete_condition: &#x27;Filter | Omit&#x27; = &lt;turbopuffer.Omit object at 0x106bcd4c0&gt;, deletes: &#x27;SequenceNotStr[IDParam] | Omit&#x27; = &lt;turbopuffer.Omit object at 0x106bcd4c0&gt;, disable_backpressure: &#x27;bool | Omit&#x27; = &lt;turbopuffer.Omit object at 0x106bcd4c0&gt;, distance_metric: &#x27;DistanceMetric | Omit&#x27; = &lt;turbopuffer.Omit object at 0x106bcd4c0&gt;, encryption: &#x27;EncryptionParam | Omit&#x27; = &lt;turbopuffer.Omit object at 0x106bcd4c0&gt;, patch_by_filter: &#x27;namespace_write_params.PatchByFilter | Omit&#x27; = &lt;turbopuffer.Omit object at 0x106bcd4c0&gt;, patch_by_filter_allow_partial: &#x27;bool | Omit&#x27; = &lt;turbopuffer.Omit object at 0x106bcd4c0&gt;, patch_columns: &#x27;ColumnsParam | Omit&#x27; = &lt;turbopuffer.Omit object at 0x106bcd4c0&gt;, patch_condition: &#x27;Filter | Omit&#x27; = &lt;turbopuffer.Omit object at 0x106bcd4c0&gt;, patch_rows: &#x27;Iterable[RowParam] | Omit&#x27; = &lt;turbopuffer.Omit object at 0x106bcd4c0&gt;, return_affected_ids: &#x27;bool | Omit&#x27; = &lt;turbopuffer.Omit object at 0x106bcd4c0&gt;, schema: &#x27;Dict[str, AttributeSchemaParam] | Omit&#x27; = &lt;turbopuffer.Omit object at 0x106bcd4c0&gt;, sharding: &#x27;ShardingConfigParam | Omit&#x27; = &lt;turbopuffer.Omit object at 0x106bcd4c0&gt;, upsert_columns: &#x27;ColumnsParam | Omit&#x27; = &lt;turbopuffer.Omit object at 0x106bcd4c0&gt;, upsert_condition: &#x27;Filter | Omit&#x27; = &lt;turbopuffer.Omit object at 0x106bcd4c0&gt;, upsert_rows: &#x27;Iterable[RowParam] | Omit&#x27; = &lt;turbopuffer.Omit object at 0x106bcd4c0&gt;, extra_headers: &#x27;Headers | None&#x27; = None, extra_query: &#x27;Query | None&#x27; = None, extra_body: &#x27;Body | None&#x27; = None, timeout: &#x27;float | httpx.Timeout | None | NotGiven&#x27; = NOT_GIVEN) -&gt; &#x27;NamespaceWriteResponse&#x27;
+
+query: (*, namespace: &#x27;str | None&#x27; = None, aggregate_by: &#x27;Dict[str, AggregateBy] | Omit&#x27; = &lt;turbopuffer.Omit object at 0x106bcd4c0&gt;, consistency: &#x27;namespace_query_params.Consistency | Omit&#x27; = &lt;turbopuffer.Omit object at 0x106bcd4c0&gt;, distance_metric: &#x27;DistanceMetric | Omit&#x27; = &lt;turbopuffer.Omit object at 0x106bcd4c0&gt;, exclude_attributes: &#x27;SequenceNotStr[str] | Omit&#x27; = &lt;turbopuffer.Omit object at 0x106bcd4c0&gt;, filters: &#x27;Filter | Omit&#x27; = &lt;turbopuffer.Omit object at 0x106bcd4c0&gt;, group_by: &#x27;Iterable[GroupBy] | Omit&#x27; = &lt;turbopuffer.Omit object at 0x106bcd4c0&gt;, include_attributes: &#x27;IncludeAttributesParam | Omit&#x27; = &lt;turbopuffer.Omit object at 0x106bcd4c0&gt;, limit: &#x27;namespace_query_params.Limit | Omit&#x27; = &lt;turbopuffer.Omit object at 0x106bcd4c0&gt;, rank_by: &#x27;RankBy | Omit&#x27; = &lt;turbopuffer.Omit object at 0x106bcd4c0&gt;, top_k: &#x27;int | Omit&#x27; = &lt;turbopuffer.Omit object at 0x106bcd4c0&gt;, vector_encoding: &#x27;VectorEncoding | Omit&#x27; = &lt;turbopuffer.Omit object at 0x106bcd4c0&gt;, extra_headers: &#x27;Headers | None&#x27; = None, extra_query: &#x27;Query | None&#x27; = None, extra_body: &#x27;Body | None&#x27; = None, timeout: &#x27;float | httpx.Timeout | None | NotGiven&#x27; = NOT_GIVEN) -&gt; &#x27;NamespaceQueryResponse&#x27;
+
+multi_query: (*, namespace: &#x27;str | None&#x27; = None, queries: &#x27;Iterable[namespace_multi_query_params.Query]&#x27;, consistency: &#x27;namespace_multi_query_params.Consistency | Omit&#x27; = &lt;turbopuffer.Omit object at 0x106bcd4c0&gt;, rerank_by: &#x27;RerankBy | Omit&#x27; = &lt;turbopuffer.Omit object at 0x106bcd4c0&gt;, vector_encoding: &#x27;VectorEncoding | Omit&#x27; = &lt;turbopuffer.Omit object at 0x106bcd4c0&gt;, extra_headers: &#x27;Headers | None&#x27; = None, extra_query: &#x27;Query | None&#x27; = None, extra_body: &#x27;Body | None&#x27; = None, timeout: &#x27;float | httpx.Timeout | None | NotGiven&#x27; = NOT_GIVEN) -&gt; &#x27;NamespaceMultiQueryResponse&#x27;</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-55-30-248Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-55-30-248Z" class="timestamp-link"><time datetime="2026-07-11T19:55:30.248Z" data-timestamp="2026-07-11T19:55:30.248Z">2026-07-11T19:55:30.248Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-55-30-590Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-55-30-590Z" class="timestamp-link"><time datetime="2026-07-11T19:55:30.590Z" data-timestamp="2026-07-11T19:55:30.590Z">2026-07-11T19:55:30.590Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p>API confirmed (<code>write</code>, <code>multi_query</code>, <code>rerank_by</code> all present; queries use <code>top_k</code>). Let me verify the <code>rank_by</code> / schema shapes, then run a small real ingest.</p></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-55-32-747Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-55-32-747Z" class="timestamp-link"><time datetime="2026-07-11T19:55:32.747Z" data-timestamp="2026-07-11T19:55:32.747Z">2026-07-11T19:55:32.747Z</time></a></div><div class="message-content">
+<div class="tool-use bash-tool" data-tool-id="toolu_01DAcGmB3zQDfn5jD6X33STx">
+<div class="tool-header"><span class="tool-icon">$</span> Bash</div>
+<div class="tool-description">Inspect RankBy, Query, schema types</div><div class="truncatable"><div class="truncatable-content"><pre class="bash-command">VENV=/private/tmp/claude-501/-Users-andrewjin-Desktop-anthropic-take-home-claude-code-transcripts/4feed594-98f5-4c07-a700-fac42bd9427b/scratchpad/venv; &#34;$VENV/bin/python&#34; - &lt;&lt;&#39;PY&#39;
+import typing, turbopuffer.types as T
+# RankBy
+for name in [&#34;RankBy&#34;,&#34;RerankBy&#34;]:
+    obj = getattr(T, name, None)
+    print(name, &#34;=&#34;, obj)
+# multi_query Query typeddict
+from turbopuffer.types import namespace_multi_query_params as M
+Q = M.Query
+print(&#34;\nQuery keys:&#34;, list(getattr(Q,&#39;__annotations__&#39;,{}).keys()))
+# schema param
+from turbopuffer.types.shared_params import attribute_schema as A
+print(&#34;\nattribute_schema module:&#34;, [n for n in dir(A) if not n.startswith(&#39;_&#39;)])
+AS = getattr(A, &#39;AttributeSchema&#39;, None) or getattr(A, &#39;AttributeSchemaConfig&#39;, None)
+print(&#34;AttributeSchema:&#34;, AS, list(getattr(AS,&#39;__annotations__&#39;,{}).keys()) if AS else None)
+PY</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T19-55-34-926Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T19-55-34-926Z" class="timestamp-link"><time datetime="2026-07-11T19:55:34.926Z" data-timestamp="2026-07-11T19:55:34.926Z">2026-07-11T19:55:34.926Z</time></a></div><div class="message-content"><div class="tool-result tool-error"><div class="truncatable"><div class="truncatable-content"><pre>Exit code 1
+RankBy = typing.Union[typing.Tuple[str, typing.Literal[&#x27;ANN&#x27;], typing.Sequence[float]], typing.Tuple[str, typing.Literal[&#x27;ANN&#x27;], typing.Sequence[typing.Sequence[float]]], typing.Tuple[str, typing.Literal[&#x27;ANN&#x27;], typing.Union[turbopuffer.types.custom.ExprRefNew, typing.Tuple[typing.Literal[&#x27;Embed&#x27;], str], typing.Tuple[typing.Literal[&#x27;Embed&#x27;], str, turbopuffer.types.embed_params.EmbedParams]]], typing.Tuple[str, typing.Literal[&#x27;kNN&#x27;], typing.Sequence[float]], typing.Tuple[str, typing.Literal[&#x27;kNN&#x27;], typing.Sequence[typing.Sequence[float]]], typing.Tuple[str, typing.Literal[&#x27;kNN&#x27;], typing.Union[turbopuffer.types.custom.ExprRefNew, typing.Tuple[typing.Literal[&#x27;Embed&#x27;], str], typing.Tuple[typing.Literal[&#x27;Embed&#x27;], str, turbopuffer.types.embed_params.EmbedParams]]], typing.Tuple[str, typing.Literal[&#x27;SparseKNN&#x27;], typing.Mapping[str, float]], typing.Tuple[str, typing.Literal[&#x27;BM25&#x27;], str], typing.Tuple[str, typing.Literal[&#x27;BM25&#x27;], typing.Sequence[str]], typing.Tuple[str, typing.Literal[&#x27;BM25&#x27;], str, turbopuffer.types.bm25_clause_params.Bm25ClauseParams], typing.Tuple[str, typing.Literal[&#x27;BM25&#x27;], typing.Sequence[str], turbopuffer.types.bm25_clause_params.Bm25ClauseParams], typing.Tuple[typing.Literal[&#x27;Sum&#x27;], typing.Sequence[ForwardRef(&#x27;RankByText&#x27;)]], typing.Tuple[typing.Literal[&#x27;Max&#x27;], typing.Sequence[ForwardRef(&#x27;RankByText&#x27;)]], typing.Tuple[typing.Literal[&#x27;Product&#x27;], float, ForwardRef(&#x27;RankByText&#x27;)], typing.Tuple[typing.Literal[&#x27;Product&#x27;], ForwardRef(&#x27;RankByText&#x27;), float], typing.Tuple[str, typing.Literal[&#x27;Eq&#x27;], typing.Any], typing.Tuple[str, typing.Literal[&#x27;NotEq&#x27;], typing.Any], typing.Tuple[str, typing.Literal[&#x27;In&#x27;], typing.Sequence[typing.Any]], typing.Tuple[str, typing.Literal[&#x27;NotIn&#x27;], typing.Sequence[typing.Any]], typing.Tuple[str, typing.Literal[&#x27;Contains&#x27;], typing.Any], typing.Tuple[str, typing.Literal[&#x27;NotContains&#x27;], typing.Any], typing.Tuple[str, typing.Literal[&#x27;ContainsAny&#x27;], typing.Sequence[typing.Any]], typing.Tuple[str, typing.Literal[&#x27;NotContainsAny&#x27;], typing.Sequence[typing.Any]], typing.Tuple[str, typing.Literal[&#x27;Lt&#x27;], typing.Any], typing.Tuple[str, typing.Literal[&#x27;Lte&#x27;], typing.Any], typing.Tuple[str, typing.Literal[&#x27;Gt&#x27;], typing.Any], typing.Tuple[str, typing.Literal[&#x27;Gte&#x27;], typing.Any], typing.Tuple[str, typing.Literal[&#x27;AnyLt&#x27;], typing.Any], typing.Tuple[str, typing.Literal[&#x27;AnyLte&#x27;], typing.Any], typing.Tuple[str, typing.Literal[&#x27;AnyGt&#x27;], typing.Any], typing.Tuple[str, typing.Literal[&#x27;AnyGte&#x27;], typing.Any], typing.Tuple[str, typing.Literal[&#x27;Glob&#x27;], str], typing.Tuple[str, typing.Literal[&#x27;NotGlob&#x27;], str], typing.Tuple[str, typing.Literal[&#x27;IGlob&#x27;], str], typing.Tuple[str, typing.Literal[&#x27;NotIGlob&#x27;], str], typing.Tuple[str, typing.Literal[&#x27;Regex&#x27;], str], typing.Tuple[str, typing.Literal[&#x27;Fuzzy&#x27;], str, turbopuffer.types.fuzzy_params.FuzzyParams], typing.Tuple[str, typing.Literal[&#x27;ContainsAllTokens&#x27;], str], typing.Tuple[str, typing.Literal[&#x27;ContainsAllTokens&#x27;], typing.Sequence[str]], typing.Tuple[str, typing.Literal[&#x27;ContainsAllTokens&#x27;], str, turbopuffer.types.contains_all_tokens_filter_params.ContainsAllTokensFilterParams], typing.Tuple[str, typing.Literal[&#x27;ContainsAllTokens&#x27;], typing.Sequence[str], turbopuffer.types.contains_all_tokens_filter_params.ContainsAllTokensFilterParams], typing.Tuple[str, typing.Literal[&#x27;ContainsAnyToken&#x27;], str], typing.Tuple[str, typing.Literal[&#x27;ContainsAnyToken&#x27;], typing.Sequence[str]], typing.Tuple[str, typing.Literal[&#x27;ContainsAnyToken&#x27;], str, turbopuffer.types.contains_any_token_filter_params.ContainsAnyTokenFilterParams], typing.Tuple[str, typing.Literal[&#x27;ContainsAnyToken&#x27;], typing.Sequence[str], turbopuffer.types.contains_any_token_filter_params.ContainsAnyTokenFilterParams], typing.Tuple[str, typing.Literal[&#x27;ContainsTokenSequence&#x27;], str], typing.Tuple[str, typing.Literal[&#x27;ContainsTokenSequence&#x27;], typing.Sequence[str]], typing.Tuple[typing.Literal[&#x27;Not&#x27;], ForwardRef(&#x27;Filter&#x27;)], typing.Tuple[typing.Literal[&#x27;And&#x27;], typing.Sequence[ForwardRef(&#x27;Filter&#x27;)]], typing.Tuple[typing.Literal[&#x27;Or&#x27;], typing.Sequence[ForwardRef(&#x27;Filter&#x27;)]], typing.Tuple[typing.Literal[&#x27;Attribute&#x27;], str], typing.Tuple[typing.Literal[&#x27;Saturate&#x27;], ForwardRef(&#x27;RankByText&#x27;), turbopuffer.types.saturate_params.SaturateParams], typing.Tuple[typing.Literal[&#x27;Decay&#x27;], ForwardRef(&#x27;RankByText&#x27;), turbopuffer.types.decay_params.DecayParams], typing.Tuple[typing.Literal[&#x27;Dist&#x27;], ForwardRef(&#x27;RankByText&#x27;), typing.Any], typing.Tuple[str, typing.Union[typing.Literal[&#x27;asc&#x27;], typing.Literal[&#x27;desc&#x27;]]], typing.Sequence[typing.Tuple[str, typing.Union[typing.Literal[&#x27;asc&#x27;], typing.Literal[&#x27;desc&#x27;]]]]]
+RerankBy = typing.Union[typing.Tuple[typing.Literal[&#x27;RRF&#x27;]], typing.Tuple[typing.Literal[&#x27;RRF&#x27;], turbopuffer.types.rrf_params.RrfParams]]
+
+Query keys: [&#x27;aggregate_by&#x27;, &#x27;distance_metric&#x27;, &#x27;exclude_attributes&#x27;, &#x27;filters&#x27;, &#x27;group_by&#x27;, &#x27;include_attributes&#x27;, &#x27;limit&#x27;, &#x27;rank_by&#x27;, &#x27;top_k&#x27;]
+Traceback (most recent call last):
+  File &quot;&lt;stdin&gt;&quot;, line 11, in &lt;module&gt;
+ModuleNotFoundError: No module named &#x27;turbopuffer.types.shared_params&#x27;</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-55-37-389Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-55-37-389Z" class="timestamp-link"><time datetime="2026-07-11T19:55:37.389Z" data-timestamp="2026-07-11T19:55:37.389Z">2026-07-11T19:55:37.389Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-55-37-693Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-55-37-693Z" class="timestamp-link"><time datetime="2026-07-11T19:55:37.693Z" data-timestamp="2026-07-11T19:55:37.693Z">2026-07-11T19:55:37.693Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p>All API shapes confirmed (<code>ANN</code>/<code>BM25</code> rank_by, <code>("RRF",)</code> rerank, <code>top_k</code> in sub-queries). Now a small real ingest of 20 rows.</p></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-55-38-731Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-55-38-731Z" class="timestamp-link"><time datetime="2026-07-11T19:55:38.731Z" data-timestamp="2026-07-11T19:55:38.731Z">2026-07-11T19:55:38.731Z</time></a></div><div class="message-content">
+<div class="tool-use bash-tool" data-tool-id="toolu_01MKN6m5gxAhWQQENhtMsz3t">
+<div class="tool-header"><span class="tool-icon">$</span> Bash</div>
+<div class="tool-description">Real ingest of 20 rows</div><div class="truncatable"><div class="truncatable-content"><pre class="bash-command">cd /Users/andrewjin/Desktop/anthropic-take-home &amp;&amp; VENV=/private/tmp/claude-501/-Users-andrewjin-Desktop-anthropic-take-home-claude-code-transcripts/4feed594-98f5-4c07-a700-fac42bd9427b/scratchpad/venv; &#34;$VENV/bin/python&#34; scripts/embed_turbopuffer.py --limit 20 --batch-size 10</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T19-55-46-612Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T19-55-46-612Z" class="timestamp-link"><time datetime="2026-07-11T19:55:46.612Z" data-timestamp="2026-07-11T19:55:46.612Z">2026-07-11T19:55:46.612Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>  upserted 10/20  (2.6s)
+  upserted 20/20  (4.0s)
+Done: 20 rows into namespace &#x27;papers-top10k&#x27; (~0.01M tokens, ~$0.0001) in 4.0s
+Shell cwd was reset to /Users/andrewjin/Desktop/anthropic-take-home/claude-code-transcripts</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-55-47-855Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-55-47-855Z" class="timestamp-link"><time datetime="2026-07-11T19:55:47.855Z" data-timestamp="2026-07-11T19:55:47.855Z">2026-07-11T19:55:47.855Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p>20 rows landed. Now the hybrid-query smoke test — this exercises both the ANN and BM25 paths with RRF fusion.</p></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-55-48-429Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-55-48-429Z" class="timestamp-link"><time datetime="2026-07-11T19:55:48.429Z" data-timestamp="2026-07-11T19:55:48.429Z">2026-07-11T19:55:48.429Z</time></a></div><div class="message-content">
+<div class="tool-use bash-tool" data-tool-id="toolu_012DfcPtrBxaqzi4heDP4NTM">
+<div class="tool-header"><span class="tool-icon">$</span> Bash</div>
+<div class="tool-description">Hybrid query smoke test</div><div class="truncatable"><div class="truncatable-content"><pre class="bash-command">cd /Users/andrewjin/Desktop/anthropic-take-home &amp;&amp; VENV=/private/tmp/claude-501/-Users-andrewjin-Desktop-anthropic-take-home-claude-code-transcripts/4feed594-98f5-4c07-a700-fac42bd9427b/scratchpad/venv; &#34;$VENV/bin/python&#34; scripts/embed_turbopuffer.py --query &#34;statistical computing software for data analysis&#34; --top-k 5</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T19-55-51-644Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T19-55-51-644Z" class="timestamp-link"><time datetime="2026-07-11T19:55:51.644Z" data-timestamp="2026-07-11T19:55:51.644Z">2026-07-11T19:55:51.644Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>Hybrid (vector + BM25, RRF) results for: &#x27;statistical computing software for data analysis&#x27;
+
+ 1. [W2582743722] rank=1 2000 · 353004 cites · Computer Science
+    R: A Language and Environment for Statistical Computing
+ 2. [W2107277218] rank=9 2001 · 182044 cites · Biochemistry, Genetics and Molecular Biology
+    Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method
+ 3. [W2071666535] rank=19 1999 · 105915 cites · Decision Sciences
+    Cutoff criteria for fit indexes in covariance structure analysis: Conventional criteria versus new alternatives
+ 4. [W2083222334] rank=13 1996 · 121001 cites · Physics and Astronomy
+    Efficient iterative schemes for&lt;i&gt;ab initio&lt;/i&gt;total-energy calculations using a plane-wave basis set
+ 5. [W2144634347] rank=11 1989 · 129998 cites · Biochemistry, Genetics and Molecular Biology
+    Molecular Cloning: A Laboratory Manual
+ 6. [W2110065044] rank=18 1995 · 109152 cites · Mathematics
+    Controlling the False Discovery Rate: A Practical and Powerful Approach to Multiple Testing
+ 7. [W2159011576] rank=17 2013 · 109983 cites · Psychology
+    Diagnostic and Statistical Manual of Mental Disorders
+Shell cwd was reset to /Users/andrewjin/Desktop/anthropic-take-home/claude-code-transcripts</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-55-56-412Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-55-56-412Z" class="timestamp-link"><time datetime="2026-07-11T19:55:56.412Z" data-timestamp="2026-07-11T19:55:56.412Z">2026-07-11T19:55:56.412Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-55-56-870Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-55-56-870Z" class="timestamp-link"><time datetime="2026-07-11T19:55:56.870Z" data-timestamp="2026-07-11T19:55:56.870Z">2026-07-11T19:55:56.870Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p>Hybrid retrieval works end-to-end — "R: A Language and Environment for Statistical Computing" tops the query, and the <code>rank</code> attribute matches citation order (R = rank 1). Both ANN and BM25 paths fuse via RRF.</p>
+<p>Let me add the README section, then run the full ingest.</p></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-55-58-866Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-55-58-866Z" class="timestamp-link"><time datetime="2026-07-11T19:55:58.866Z" data-timestamp="2026-07-11T19:55:58.866Z">2026-07-11T19:55:58.866Z</time></a></div><div class="message-content"><div class="file-tool edit-tool" data-tool-id="toolu_017QA9cNtMyXJuk6XuWsyVKV">
+<div class="file-tool-header edit-header"><span class="file-tool-icon">✏️</span> Edit <span class="file-tool-path">README-graph-data.md</span></div>
+<div class="file-tool-fullpath">/Users/andrewjin/Desktop/anthropic-take-home/scripts/README-graph-data.md</div>
+<div class="truncatable"><div class="truncatable-content">
+<div class="edit-section edit-old"><div class="edit-label">−</div><pre class="edit-content">## CDN notes</pre></div>
+<div class="edit-section edit-new"><div class="edit-label">+</div><pre class="edit-content">## Semantic embeddings (hybrid search)
+
+`embed_turbopuffer.py` embeds the top-cited papers into a turbopuffer namespace for hybrid
+(dense vector + BM25) retrieval, complementing the lexical `search-kw.json`. Unlike the
+stdlib-only pipeline above, it uses the OpenAI + turbopuffer SDKs.
+
+```bash
+pip install -r scripts/requirements.txt   # openai, turbopuffer (first pip deps)
+
+# credentials live in scripts/.env: OPENAI_API_KEY, TURBOPUFFER_API_KEY,
+# TURBOPUFFER_REGION, TURBOPUFFER_NAMESPACE
+
+python3 scripts/embed_turbopuffer.py --dry-run --limit 3   # inspect embed texts, no API calls
+python3 scripts/embed_turbopuffer.py                       # embed all (~9,874 papers)
+python3 scripts/embed_turbopuffer.py --query &#34;protein structure prediction&#34;   # hybrid smoke test
+```
+
+Embeds `title + reconstructed abstract` with `text-embedding-3-small` (1536-dim, cosine).
+Each row&#39;s **`rank` attribute == the canonical citation-rank node index** (the script re-sorts
+the year-major JSONL by `cited_by_count` desc), so vector hits line up with `nodes.bin` /
+`details/`. The `text` attribute is indexed with `full_text_search` for BM25; query with
+`multi_query` + `rerank_by=(&#34;RRF&#34;,)` for hybrid.
+
+## CDN notes</pre></div>
+</div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T19-56-00-323Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T19-56-00-323Z" class="timestamp-link"><time datetime="2026-07-11T19:56:00.323Z" data-timestamp="2026-07-11T19:56:00.323Z">2026-07-11T19:56:00.323Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>The file /Users/andrewjin/Desktop/anthropic-take-home/scripts/README-graph-data.md has been updated successfully. (file state is current in your context — no need to Read it back)</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-56-01-244Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-56-01-244Z" class="timestamp-link"><time datetime="2026-07-11T19:56:01.244Z" data-timestamp="2026-07-11T19:56:01.244Z">2026-07-11T19:56:01.244Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p>Now the full ingest of all ~9,874 papers:</p></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-56-02-163Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-56-02-163Z" class="timestamp-link"><time datetime="2026-07-11T19:56:02.163Z" data-timestamp="2026-07-11T19:56:02.163Z">2026-07-11T19:56:02.163Z</time></a></div><div class="message-content">
+<div class="tool-use bash-tool" data-tool-id="toolu_01LxAMKDesU2kWYgEqx5sxs3">
+<div class="tool-header"><span class="tool-icon">$</span> Bash</div>
+<div class="tool-description">Full ingest of all papers</div><div class="truncatable"><div class="truncatable-content"><pre class="bash-command">cd /Users/andrewjin/Desktop/anthropic-take-home &amp;&amp; VENV=/private/tmp/claude-501/-Users-andrewjin-Desktop-anthropic-take-home-claude-code-transcripts/4feed594-98f5-4c07-a700-fac42bd9427b/scratchpad/venv; &#34;$VENV/bin/python&#34; scripts/embed_turbopuffer.py 2&gt;&amp;1 | tail -30</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T19-57-34-425Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T19-57-34-425Z" class="timestamp-link"><time datetime="2026-07-11T19:57:34.425Z" data-timestamp="2026-07-11T19:57:34.425Z">2026-07-11T19:57:34.425Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>  upserted 2816/9875  (28.6s)
+  upserted 3072/9875  (31.8s)
+  upserted 3328/9875  (33.5s)
+  upserted 3584/9875  (35.5s)
+  upserted 3840/9875  (37.8s)
+  upserted 4096/9875  (39.8s)
+  upserted 4352/9875  (41.7s)
+  upserted 4608/9875  (43.4s)
+  upserted 4864/9875  (45.1s)
+  upserted 5120/9875  (46.8s)
+  upserted 5376/9875  (48.6s)
+  upserted 5632/9875  (50.4s)
+  upserted 5888/9875  (52.5s)
+  upserted 6144/9875  (55.1s)
+  upserted 6400/9875  (56.8s)
+  upserted 6656/9875  (58.5s)
+  upserted 6912/9875  (61.2s)
+  upserted 7168/9875  (62.8s)
+  upserted 7424/9875  (64.4s)
+  upserted 7680/9875  (66.1s)
+  upserted 7936/9875  (67.8s)
+  upserted 8192/9875  (69.6s)
+  upserted 8448/9875  (71.6s)
+  upserted 8704/9875  (73.2s)
+  upserted 8960/9875  (75.1s)
+  upserted 9216/9875  (77.1s)
+  upserted 9472/9875  (79.0s)
+  upserted 9728/9875  (80.7s)
+  upserted 9875/9875  (82.0s)
+Done: 9875 rows into namespace &#x27;papers-top10k&#x27; (~1.88M tokens, ~$0.0376) in 82.0s
+Shell cwd was reset to /Users/andrewjin/Desktop/anthropic-take-home/claude-code-transcripts</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-57-36-070Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-57-36-070Z" class="timestamp-link"><time datetime="2026-07-11T19:57:36.070Z" data-timestamp="2026-07-11T19:57:36.070Z">2026-07-11T19:57:36.070Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-57-36-240Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-57-36-240Z" class="timestamp-link"><time datetime="2026-07-11T19:57:36.240Z" data-timestamp="2026-07-11T19:57:36.240Z">2026-07-11T19:57:36.240Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p>All 9,875 papers embedded in 82s (~$0.04). Final verification query against the full namespace:</p></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-57-36-751Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-57-36-751Z" class="timestamp-link"><time datetime="2026-07-11T19:57:36.751Z" data-timestamp="2026-07-11T19:57:36.751Z">2026-07-11T19:57:36.751Z</time></a></div><div class="message-content">
+<div class="tool-use bash-tool" data-tool-id="toolu_01TfTM3dkWUUaM5pcKVWNpvw">
+<div class="tool-header"><span class="tool-icon">$</span> Bash</div>
+<div class="tool-description">Final hybrid query on full namespace</div><div class="truncatable"><div class="truncatable-content"><pre class="bash-command">cd /Users/andrewjin/Desktop/anthropic-take-home &amp;&amp; VENV=/private/tmp/claude-501/-Users-andrewjin-Desktop-anthropic-take-home-claude-code-transcripts/4feed594-98f5-4c07-a700-fac42bd9427b/scratchpad/venv; &#34;$VENV/bin/python&#34; scripts/embed_turbopuffer.py --query &#34;deep learning neural networks for image recognition&#34; --top-k 5</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T19-57-40-165Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T19-57-40-165Z" class="timestamp-link"><time datetime="2026-07-11T19:57:40.165Z" data-timestamp="2026-07-11T19:57:40.165Z">2026-07-11T19:57:40.165Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>Hybrid (vector + BM25, RRF) results for: &#x27;deep learning neural networks for image recognition&#x27;
+
+ 1. [W2194775991] rank=5 2016 · 222656 cites · Computer Science
+    Deep Residual Learning for Image Recognition
+ 2. [W2475287302] rank=5241 2016 · 6023 cites · Computer Science
+    Image Style Transfer Using Convolutional Neural Networks
+ 3. [W2919115771] rank=38 2015 · 82069 cites · Computer Science
+    Deep learning
+ 4. [W2076063813] rank=772 2014 · 18071 cites · Computer Science
+    Deep learning in neural networks: An overview
+ 5. [W2143612262] rank=2866 2013 · 8844 cites · Computer Science
+    Speech recognition with deep recurrent neural networks
+ 6. [W2163605009] rank=44 2017 · 75710 cites · Computer Science
+    ImageNet classification with deep convolutional neural networks
+ 7. [W2907492528] rank=2629 2020 · 9320 cites · Computer Science
+    A Comprehensive Survey on Graph Neural Networks
+ 8. [W1686810756] rank=45 2014 · 75541 cites · Computer Science
+    Very Deep Convolutional Networks for Large-Scale Image Recognition
+ 9. [W2954996726] rank=1561 2019 · 12500 cites · Computer Science
+    A survey on Image Data Augmentation for Deep Learning
+Shell cwd was reset to /Users/andrewjin/Desktop/anthropic-take-home/claude-code-transcripts</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-57-44-586Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-57-44-586Z" class="timestamp-link"><time datetime="2026-07-11T19:57:44.586Z" data-timestamp="2026-07-11T19:57:44.586Z">2026-07-11T19:57:44.586Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p>Done. The hybrid search returns exactly the right papers — ResNet, "Deep learning" (Nature), ImageNet/AlexNet, VGG — a mix of exact-keyword BM25 hits and semantic-neighbor vector hits, fused via RRF.</p>
+<h2>Summary</h2>
+<p>Created <strong><code>scripts/embed_turbopuffer.py</code></strong> and embedded all top-cited papers into turbopuffer for hybrid (vector + BM25) search.</p>
+<p><strong>What it does:</strong>
+- Reads <code>data/full/top_cited.jsonl</code>, <strong>re-sorts by <code>cited_by_count</code> desc</strong> so each row's <code>rank</code> attribute == the canonical citation-rank/graph node index (the raw file is year-major).
+- Reconstructs abstracts from OpenAlex's <code>abstract_inverted_index</code> and embeds <code>title + abstract</code> with OpenAI <code>text-embedding-3-small</code> (1536-dim, cosine), batched.
+- Upserts to turbopuffer with <code>full_text_search: True</code> on the <code>text</code> attribute, so the app can run true hybrid retrieval (dense ANN + BM25 fused with RRF). Stores <code>rank</code>, <code>title</code>, <code>year</code>, <code>cited_by_count</code>, <code>field</code>, <code>domain</code>, <code>doi</code>.
+- Reuses the repo's dependency-free <code>.env</code> loader, <code>reconstruct_abstract</code>, and <code>short_id</code>.
+- CLI flags: <code>--dry-run</code>, <code>--limit</code>, <code>--batch-size</code>, <code>--model</code>, <code>--namespace</code>, and a <code>--query</code> hybrid smoke-test mode.</p>
+<p><strong>Supporting files:</strong> <code>scripts/requirements.txt</code> (<code>openai</code>, <code>turbopuffer</code> — first pip deps in the repo) and a "Semantic embeddings" section in <code>README-graph-data.md</code>.</p>
+<p><strong>Verification (all passed):</strong>
+- Dry-run: correct sort order + abstract reconstruction.
+- Full ingest: <strong>9,875 rows</strong> in 82s (~$0.04).
+- Two hybrid queries returned spot-on results with <code>rank</code> matching citation order.</p>
+<p><strong>One note:</strong> I used the official SDKs per your choice, but Homebrew Python is externally managed (PEP 668), so I installed into a venv for the run. You'll want to <code>pip install -r scripts/requirements.txt</code> inside a venv (or pass <code>--break-system-packages</code>) to run it yourself. The papers are already live in the <code>papers-top10k</code> namespace. I did not commit anything.</p></div></div></div>
+<div class="message user" id="msg-2026-07-11T19-58-50-674Z"><div class="message-header"><span class="role-label">User</span><a href="#msg-2026-07-11T19-58-50-674Z" class="timestamp-link"><time datetime="2026-07-11T19:58:50.674Z" data-timestamp="2026-07-11T19:58:50.674Z">2026-07-11T19:58:50.674Z</time></a></div><div class="message-content">
+<div class="user-content"><p>what commands do i run to test the vector, semantic, and hybrid search</p></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-59-00-543Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-59-00-543Z" class="timestamp-link"><time datetime="2026-07-11T19:59:00.543Z" data-timestamp="2026-07-11T19:59:00.543Z">2026-07-11T19:59:00.543Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-59-00-565Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-59-00-565Z" class="timestamp-link"><time datetime="2026-07-11T19:59:00.565Z" data-timestamp="2026-07-11T19:59:00.565Z">2026-07-11T19:59:00.565Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p>Good question — and worth making the script actually support all three modes. Right now <code>--query</code> only does hybrid. Let me add a <code>--mode</code> flag so you can test each path independently, then give you the exact commands.</p>
+<p>One terminology note up front: <strong>"vector" and "semantic" are the same thing</strong> here — dense-embedding ANN search. The complementary path is <strong>keyword/full-text (BM25)</strong>, and <strong>hybrid</strong> fuses the two. So the three testable modes are <code>vector</code>, <code>bm25</code>, and <code>hybrid</code>.</p></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-59-00-587Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-59-00-587Z" class="timestamp-link"><time datetime="2026-07-11T19:59:00.587Z" data-timestamp="2026-07-11T19:59:00.587Z">2026-07-11T19:59:00.587Z</time></a></div><div class="message-content">
+<div class="tool-use" data-tool-id="toolu_016hd8SkmKZxSj4M75mZcEq1"><div class="tool-header"><span class="tool-icon">⚙</span> Read</div><div class="truncatable"><div class="truncatable-content"><pre class="json">{
+  &#34;file_path&#34;: &#34;/Users/andrewjin/Desktop/anthropic-take-home/scripts/embed_turbopuffer.py&#34;,
+  &#34;offset&#34;: 217,
+  &#34;limit&#34;: 40
+}</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T19-59-00-606Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T19-59-00-606Z" class="timestamp-link"><time datetime="2026-07-11T19:59:00.606Z" data-timestamp="2026-07-11T19:59:00.606Z">2026-07-11T19:59:00.606Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>217	            },
+218	        ],
+219	        rerank_by=(&quot;RRF&quot;,),
+220	    )
+221	    rows = resp.results[0].rows
+222	    print(f&quot;Hybrid (vector + BM25, RRF) results for: {args.query!r}\n&quot;)
+223	    for i, row in enumerate(rows, 1):
+224	        title = getattr(row, &quot;title&quot;, &quot;&quot;) or &quot;&quot;
+225	        year = getattr(row, &quot;year&quot;, &quot;&quot;)
+226	        cites = getattr(row, &quot;cited_by_count&quot;, &quot;&quot;)
+227	        rank = getattr(row, &quot;rank&quot;, &quot;&quot;)
+228	        field = getattr(row, &quot;field&quot;, &quot;&quot;) or &quot;&quot;
+229	        print(f&quot;{i:2}. [{row.id}] rank={rank} {year} · {cites} cites · {field}&quot;)
+230	        print(f&quot;    {title}&quot;)
+231	
+232	
+233	def cmd_dry_run(records: list[dict], sample: int) -&gt; None:
+234	    print(f&quot;Prepared {len(records)} records (sorted by cited_by_count desc). Sample:\n&quot;)
+235	    for r in records[:sample]:
+236	        text = r[&quot;_text&quot;]
+237	        preview = text[:300].replace(&quot;\n&quot;, &quot; &quot;)
+238	        print(f&quot;rank={r[&#x27;rank&#x27;]} id={r[&#x27;id&#x27;]} cites={r[&#x27;cited_by_count&#x27;]} &quot;
+239	              f&quot;field={r[&#x27;field&#x27;]!r} domain={r[&#x27;domain&#x27;]!r}&quot;)
+240	        print(f&quot;  embed_text[{len(text)} chars]: {preview}...&quot;)
+241	        print()
+242	
+243	
+244	# ------------------------------------------------------------------ main
+245	
+246	def main() -&gt; None:
+247	    load_env_files()
+248	    p = argparse.ArgumentParser(description=__doc__)
+249	    p.add_argument(&quot;--jsonl&quot;, default=DEFAULT_JSONL,
+250	                   help=f&quot;input JSONL (default: {DEFAULT_JSONL}, relative to scripts/)&quot;)
+251	    p.add_argument(&quot;--limit&quot;, type=int, default=DEFAULT_LIMIT,
+252	                   help=f&quot;max papers to embed, top-cited first (default: {DEFAULT_LIMIT}; 0 = all)&quot;)
+253	    p.add_argument(&quot;--batch-size&quot;, type=int, default=DEFAULT_BATCH,
+254	                   help=f&quot;embed+upsert batch size (default: {DEFAULT_BATCH})&quot;)
+255	    p.add_argument(&quot;--model&quot;, default=DEFAULT_MODEL,
+256	                   help=f&quot;OpenAI embedding model (default: {DEFAULT_MODEL})&quot;)</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-59-02-112Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-59-02-112Z" class="timestamp-link"><time datetime="2026-07-11T19:59:02.112Z" data-timestamp="2026-07-11T19:59:02.112Z">2026-07-11T19:59:02.112Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p>Let me read the start of <code>cmd_query</code> to refactor it cleanly.</p></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-59-02-524Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-59-02-524Z" class="timestamp-link"><time datetime="2026-07-11T19:59:02.524Z" data-timestamp="2026-07-11T19:59:02.524Z">2026-07-11T19:59:02.524Z</time></a></div><div class="message-content">
+<div class="tool-use" data-tool-id="toolu_01ADyGWniit43u1Dwu4FQ8dh"><div class="tool-header"><span class="tool-icon">⚙</span> Read</div><div class="truncatable"><div class="truncatable-content"><pre class="json">{
+  &#34;file_path&#34;: &#34;/Users/andrewjin/Desktop/anthropic-take-home/scripts/embed_turbopuffer.py&#34;,
+  &#34;offset&#34;: 198,
+  &#34;limit&#34;: 33
+}</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T19-59-02-533Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T19-59-02-533Z" class="timestamp-link"><time datetime="2026-07-11T19:59:02.533Z" data-timestamp="2026-07-11T19:59:02.533Z">2026-07-11T19:59:02.533Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>198	    )
+199	
+200	
+201	def cmd_query(args) -&gt; None:
+202	    client = openai_client()
+203	    ns = turbopuffer_namespace(args.namespace)
+204	    qvec = embed_texts(client, args.model, [args.query])[0]
+205	    top_k = args.top_k
+206	    resp = ns.multi_query(
+207	        queries=[
+208	            {
+209	                &quot;rank_by&quot;: (&quot;vector&quot;, &quot;ANN&quot;, qvec),
+210	                &quot;top_k&quot;: top_k,
+211	                &quot;include_attributes&quot;: [&quot;title&quot;, &quot;year&quot;, &quot;cited_by_count&quot;, &quot;rank&quot;, &quot;field&quot;],
+212	            },
+213	            {
+214	                &quot;rank_by&quot;: (&quot;text&quot;, &quot;BM25&quot;, args.query),
+215	                &quot;top_k&quot;: top_k,
+216	                &quot;include_attributes&quot;: [&quot;title&quot;, &quot;year&quot;, &quot;cited_by_count&quot;, &quot;rank&quot;, &quot;field&quot;],
+217	            },
+218	        ],
+219	        rerank_by=(&quot;RRF&quot;,),
+220	    )
+221	    rows = resp.results[0].rows
+222	    print(f&quot;Hybrid (vector + BM25, RRF) results for: {args.query!r}\n&quot;)
+223	    for i, row in enumerate(rows, 1):
+224	        title = getattr(row, &quot;title&quot;, &quot;&quot;) or &quot;&quot;
+225	        year = getattr(row, &quot;year&quot;, &quot;&quot;)
+226	        cites = getattr(row, &quot;cited_by_count&quot;, &quot;&quot;)
+227	        rank = getattr(row, &quot;rank&quot;, &quot;&quot;)
+228	        field = getattr(row, &quot;field&quot;, &quot;&quot;) or &quot;&quot;
+229	        print(f&quot;{i:2}. [{row.id}] rank={rank} {year} · {cites} cites · {field}&quot;)
+230	        print(f&quot;    {title}&quot;)</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-59-06-493Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-59-06-493Z" class="timestamp-link"><time datetime="2026-07-11T19:59:06.493Z" data-timestamp="2026-07-11T19:59:06.493Z">2026-07-11T19:59:06.493Z</time></a></div><div class="message-content"><div class="file-tool edit-tool" data-tool-id="toolu_01Gy7b35QSZzRjAMyZLuXoQh">
+<div class="file-tool-header edit-header"><span class="file-tool-icon">✏️</span> Edit <span class="file-tool-path">embed_turbopuffer.py</span></div>
+<div class="file-tool-fullpath">/Users/andrewjin/Desktop/anthropic-take-home/scripts/embed_turbopuffer.py</div>
+<div class="truncatable"><div class="truncatable-content">
+<div class="edit-section edit-old"><div class="edit-label">−</div><pre class="edit-content">def cmd_query(args) -&gt; None:
+    client = openai_client()
+    ns = turbopuffer_namespace(args.namespace)
+    qvec = embed_texts(client, args.model, [args.query])[0]
+    top_k = args.top_k
+    resp = ns.multi_query(
+        queries=[
+            {
+                &#34;rank_by&#34;: (&#34;vector&#34;, &#34;ANN&#34;, qvec),
+                &#34;top_k&#34;: top_k,
+                &#34;include_attributes&#34;: [&#34;title&#34;, &#34;year&#34;, &#34;cited_by_count&#34;, &#34;rank&#34;, &#34;field&#34;],
+            },
+            {
+                &#34;rank_by&#34;: (&#34;text&#34;, &#34;BM25&#34;, args.query),
+                &#34;top_k&#34;: top_k,
+                &#34;include_attributes&#34;: [&#34;title&#34;, &#34;year&#34;, &#34;cited_by_count&#34;, &#34;rank&#34;, &#34;field&#34;],
+            },
+        ],
+        rerank_by=(&#34;RRF&#34;,),
+    )
+    rows = resp.results[0].rows
+    print(f&#34;Hybrid (vector + BM25, RRF) results for: {args.query!r}\n&#34;)
+    for i, row in enumerate(rows, 1):</pre></div>
+<div class="edit-section edit-new"><div class="edit-label">+</div><pre class="edit-content">QUERY_ATTRS = [&#34;title&#34;, &#34;year&#34;, &#34;cited_by_count&#34;, &#34;rank&#34;, &#34;field&#34;]
+
+
+def cmd_query(args) -&gt; None:
+    ns = turbopuffer_namespace(args.namespace)
+    top_k = args.top_k
+    mode = args.mode
+
+    if mode == &#34;bm25&#34;:
+        # Keyword / full-text only (no embedding needed).
+        resp = ns.query(
+            rank_by=(&#34;text&#34;, &#34;BM25&#34;, args.query),
+            top_k=top_k,
+            include_attributes=QUERY_ATTRS,
+        )
+        rows = resp.rows
+        label = &#34;BM25 (keyword / full-text)&#34;
+    elif mode == &#34;vector&#34;:
+        # Dense-embedding ANN only (a.k.a. semantic / vector search).
+        qvec = embed_texts(openai_client(), args.model, [args.query])[0]
+        resp = ns.query(
+            rank_by=(&#34;vector&#34;, &#34;ANN&#34;, qvec),
+            top_k=top_k,
+            include_attributes=QUERY_ATTRS,
+        )
+        rows = resp.rows
+        label = &#34;Vector / semantic (ANN)&#34;
+    else:  # hybrid
+        qvec = embed_texts(openai_client(), args.model, [args.query])[0]
+        resp = ns.multi_query(
+            queries=[
+                {&#34;rank_by&#34;: (&#34;vector&#34;, &#34;ANN&#34;, qvec), &#34;top_k&#34;: top_k,
+                 &#34;include_attributes&#34;: QUERY_ATTRS},
+                {&#34;rank_by&#34;: (&#34;text&#34;, &#34;BM25&#34;, args.query), &#34;top_k&#34;: top_k,
+                 &#34;include_attributes&#34;: QUERY_ATTRS},
+            ],
+            rerank_by=(&#34;RRF&#34;,),
+        )
+        rows = resp.results[0].rows
+        label = &#34;Hybrid (vector + BM25, RRF)&#34;
+
+    print(f&#34;{label} results for: {args.query!r}\n&#34;)
+    for i, row in enumerate(rows, 1):</pre></div>
+</div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T19-59-09-324Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T19-59-09-324Z" class="timestamp-link"><time datetime="2026-07-11T19:59:09.324Z" data-timestamp="2026-07-11T19:59:09.324Z">2026-07-11T19:59:09.324Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>The file /Users/andrewjin/Desktop/anthropic-take-home/scripts/embed_turbopuffer.py has been updated successfully. (file state is current in your context — no need to Read it back)</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-59-10-648Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-59-10-648Z" class="timestamp-link"><time datetime="2026-07-11T19:59:10.648Z" data-timestamp="2026-07-11T19:59:10.648Z">2026-07-11T19:59:10.648Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p>Now add the <code>--mode</code> flag:</p></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-59-11-587Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-59-11-587Z" class="timestamp-link"><time datetime="2026-07-11T19:59:11.587Z" data-timestamp="2026-07-11T19:59:11.587Z">2026-07-11T19:59:11.587Z</time></a></div><div class="message-content"><div class="file-tool edit-tool" data-tool-id="toolu_01TjfMFKR6db2k6trujXpxzp">
+<div class="file-tool-header edit-header"><span class="file-tool-icon">✏️</span> Edit <span class="file-tool-path">embed_turbopuffer.py</span></div>
+<div class="file-tool-fullpath">/Users/andrewjin/Desktop/anthropic-take-home/scripts/embed_turbopuffer.py</div>
+<div class="truncatable"><div class="truncatable-content">
+<div class="edit-section edit-old"><div class="edit-label">−</div><pre class="edit-content">    p.add_argument(&#34;--query&#34;, default=None,
+                   help=&#34;query-only mode: run a hybrid search and print top hits (no ingest)&#34;)
+    p.add_argument(&#34;--top-k&#34;, type=int, default=10, help=&#34;results to show in --query mode&#34;)</pre></div>
+<div class="edit-section edit-new"><div class="edit-label">+</div><pre class="edit-content">    p.add_argument(&#34;--query&#34;, default=None,
+                   help=&#34;query-only mode: run a search and print top hits (no ingest)&#34;)
+    p.add_argument(&#34;--mode&#34;, choices=[&#34;vector&#34;, &#34;bm25&#34;, &#34;hybrid&#34;], default=&#34;hybrid&#34;,
+                   help=&#34;search mode for --query: vector/semantic (ANN), bm25 (keyword), &#34;
+                        &#34;or hybrid (both, RRF). Default: hybrid&#34;)
+    p.add_argument(&#34;--top-k&#34;, type=int, default=10, help=&#34;results to show in --query mode&#34;)</pre></div>
+</div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T19-59-12-842Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T19-59-12-842Z" class="timestamp-link"><time datetime="2026-07-11T19:59:12.842Z" data-timestamp="2026-07-11T19:59:12.842Z">2026-07-11T19:59:12.842Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>The file /Users/andrewjin/Desktop/anthropic-take-home/scripts/embed_turbopuffer.py has been updated successfully. (file state is current in your context — no need to Read it back)</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-59-14-013Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-59-14-013Z" class="timestamp-link"><time datetime="2026-07-11T19:59:14.013Z" data-timestamp="2026-07-11T19:59:14.013Z">2026-07-11T19:59:14.013Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p>Now let me test all three modes against the live namespace with the same query, so you can see how they differ:</p></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-59-15-005Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-59-15-005Z" class="timestamp-link"><time datetime="2026-07-11T19:59:15.005Z" data-timestamp="2026-07-11T19:59:15.005Z">2026-07-11T19:59:15.005Z</time></a></div><div class="message-content">
+<div class="tool-use bash-tool" data-tool-id="toolu_01J6di1csqXVshF9ZqX6PXFG">
+<div class="tool-header"><span class="tool-icon">$</span> Bash</div>
+<div class="tool-description">Test all three search modes</div><div class="truncatable"><div class="truncatable-content"><pre class="bash-command">cd /Users/andrewjin/Desktop/anthropic-take-home &amp;&amp; VENV=/private/tmp/claude-501/-Users-andrewjin-Desktop-anthropic-take-home-claude-code-transcripts/4feed594-98f5-4c07-a700-fac42bd9427b/scratchpad/venv; Q=&#34;transformer attention mechanism for language models&#34;; for M in vector bm25 hybrid; do echo &#34;================ MODE=$M ================&#34;; &#34;$VENV/bin/python&#34; scripts/embed_turbopuffer.py --query &#34;$Q&#34; --mode $M --top-k 5; echo; done</pre></div><button class="expand-btn">Show more</button></div>
+</div></div></div>
+<div class="message tool-reply" id="msg-2026-07-11T19-59-19-541Z"><div class="message-header"><span class="role-label">Tool reply</span><a href="#msg-2026-07-11T19-59-19-541Z" class="timestamp-link"><time datetime="2026-07-11T19:59:19.541Z" data-timestamp="2026-07-11T19:59:19.541Z">2026-07-11T19:59:19.541Z</time></a></div><div class="message-content"><div class="tool-result"><div class="truncatable"><div class="truncatable-content"><pre>================ MODE=vector ================
+Vector / semantic (ANN) results for: &#x27;transformer attention mechanism for language models&#x27;
+
+ 1. [W_SEED_ATTENTION_2017] rank=10 2017 · 130000 cites · Computer Science
+    Attention Is All You Need
+ 2. [W1902237438] rank=3008 2015 · 8589 cites · Computer Science
+    Effective Approaches to Attention-based Neural Machine Translation
+ 3. [W2964110616] rank=1953 2019 · 11000 cites · Computer Science
+    Transformer-XL: Attentive Language Models beyond a Fixed-Length Context
+ 4. [W3146366485] rank=7563 2021 · 3248 cites · Computer Science
+    A review on the attention mechanism of deep learning
+ 5. [W_SEED_BERT_2019] rank=16 2019 · 110000 cites · Computer Science
+    BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding
+
+================ MODE=bm25 ================
+BM25 (keyword / full-text) results for: &#x27;transformer attention mechanism for language models&#x27;
+
+ 1. [W_SEED_ATTENTION_2017] rank=10 2017 · 130000 cites · Computer Science
+    Attention Is All You Need
+ 2. [W2964110616] rank=1953 2019 · 11000 cites · Computer Science
+    Transformer-XL: Attentive Language Models beyond a Fixed-Length Context
+ 3. [W3138516171] rank=289 2021 · 30313 cites · Computer Science
+    Swin Transformer: Hierarchical Vision Transformer using Shifted Windows
+ 4. [W4225672218] rank=7294 2022 · 3520 cites · Computer Science
+    Restormer: Efficient Transformer for High-Resolution Image Restoration
+ 5. [W4382203079] rank=8172 2023 · 2648 cites · Computer Science
+    Are Transformers Effective for Time Series Forecasting?
+
+================ MODE=hybrid ================
+Hybrid (vector + BM25, RRF) results for: &#x27;transformer attention mechanism for language models&#x27;
+
+ 1. [W_SEED_ATTENTION_2017] rank=10 2017 · 130000 cites · Computer Science
+    Attention Is All You Need
+ 2. [W2964110616] rank=1953 2019 · 11000 cites · Computer Science
+    Transformer-XL: Attentive Language Models beyond a Fixed-Length Context
+ 3. [W1902237438] rank=3008 2015 · 8589 cites · Computer Science
+    Effective Approaches to Attention-based Neural Machine Translation
+ 4. [W3138516171] rank=289 2021 · 30313 cites · Computer Science
+    Swin Transformer: Hierarchical Vision Transformer using Shifted Windows
+ 5. [W3146366485] rank=7563 2021 · 3248 cites · Computer Science
+    A review on the attention mechanism of deep learning
+ 6. [W4225672218] rank=7294 2022 · 3520 cites · Computer Science
+    Restormer: Efficient Transformer for High-Resolution Image Restoration
+ 7. [W4382203079] rank=8172 2023 · 2648 cites · Computer Science
+    Are Transformers Effective for Time Series Forecasting?
+ 8. [W_SEED_BERT_2019] rank=16 2019 · 110000 cites · Computer Science
+    BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding
+Shell cwd was reset to /Users/andrewjin/Desktop/anthropic-take-home/claude-code-transcripts</pre></div><button class="expand-btn">Show more</button></div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-59-22-859Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-59-22-859Z" class="timestamp-link"><time datetime="2026-07-11T19:59:22.859Z" data-timestamp="2026-07-11T19:59:22.859Z">2026-07-11T19:59:22.859Z</time></a></div><div class="message-content">
+<div class="thinking"><div class="thinking-label">Thinking</div></div></div></div>
+<div class="message assistant" id="msg-2026-07-11T19-59-25-846Z"><div class="message-header"><span class="role-label">Assistant</span><a href="#msg-2026-07-11T19-59-25-846Z" class="timestamp-link"><time datetime="2026-07-11T19:59:25.846Z" data-timestamp="2026-07-11T19:59:25.846Z">2026-07-11T19:59:25.846Z</time></a></div><div class="message-content">
+<div class="assistant-text"><p>All three modes work. Here are the commands.</p>
+<p>First-time setup (once):</p>
+<pre><code class="language-bash">pip install -r scripts/requirements.txt    # in a venv, since Homebrew Python is PEP-668 managed
+</code></pre>
+<p>Then, from the repo root — same <code>--query</code>, swap <code>--mode</code>:</p>
+<pre><code class="language-bash"># Vector / semantic (dense-embedding ANN)
+python3 scripts/embed_turbopuffer.py --query &quot;transformer attention mechanism for language models&quot; --mode vector
+
+# Keyword / full-text (BM25)
+python3 scripts/embed_turbopuffer.py --query &quot;transformer attention mechanism for language models&quot; --mode bm25
+
+# Hybrid (both, fused with RRF) — this is the default, so --mode is optional
+python3 scripts/embed_turbopuffer.py --query &quot;transformer attention mechanism for language models&quot; --mode hybrid
+</code></pre>
+<p><code>--top-k N</code> controls how many hits print (default 10).</p>
+<p><strong>What each mode showed</strong> (from the run above, so you know it's wired up):
+- <strong>vector/semantic</strong> surfaced <strong>BERT</strong> — no keyword overlap with "attention mechanism," pure meaning match.
+- <strong>bm25</strong> surfaced literal-term hits like <strong>Swin Transformer</strong> and <strong>Restormer</strong> — strong keyword overlap, weaker conceptual fit.
+- <strong>hybrid</strong> blended both via reciprocal-rank fusion, with <em>Attention Is All You Need</em> on top in every mode.</p>
+<p>Two notes:
+- I added the <code>--mode {vector,bm25,hybrid}</code> flag to the script to make this testable (it previously only did hybrid). Reminder that <strong>"vector" and "semantic" are the same underlying search</strong> — dense-embedding ANN; the distinct third path is keyword/BM25.
+- Heads-up: the <code>papers-top10k</code> namespace already contained some pre-existing <code>W_SEED_*</code> rows (e.g. "Attention Is All You Need" with a round 130,000 cites and <code>rank=10</code>) that didn't come from this ingest — looks like earlier seed/test data. If you want a clean namespace of just these 9,875 papers, say the word and I'll add a <code>--reset</code> flag or clear it.</p></div></div></div>
+        
+
+<div class="pagination">
+<a href="index.html" class="index-link">Index</a>
+<span class="disabled">&larr; Prev</span>
+<span class="current">1</span>
+<a href="page-002.html">2</a>
+<a href="page-002.html">Next &rarr;</a>
+</div>
+
+    </div>
+    <script>
+document.querySelectorAll('time[data-timestamp]').forEach(function(el) {
+    const timestamp = el.getAttribute('data-timestamp');
+    const date = new Date(timestamp);
+    const now = new Date();
+    const isToday = date.toDateString() === now.toDateString();
+    const timeStr = date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+    if (isToday) { el.textContent = timeStr; }
+    else { el.textContent = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' ' + timeStr; }
+});
+document.querySelectorAll('pre.json').forEach(function(el) {
+    let text = el.textContent;
+    text = text.replace(/"([^"]+)":/g, '<span style="color: #ce93d8">"$1"</span>:');
+    text = text.replace(/: "([^"]*)"/g, ': <span style="color: #81d4fa">"$1"</span>');
+    text = text.replace(/: (\d+)/g, ': <span style="color: #ffcc80">$1</span>');
+    text = text.replace(/: (true|false|null)/g, ': <span style="color: #f48fb1">$1</span>');
+    el.innerHTML = text;
+});
+document.querySelectorAll('.truncatable').forEach(function(wrapper) {
+    const content = wrapper.querySelector('.truncatable-content');
+    const btn = wrapper.querySelector('.expand-btn');
+    if (content.scrollHeight > 250) {
+        wrapper.classList.add('truncated');
+        btn.addEventListener('click', function() {
+            if (wrapper.classList.contains('truncated')) { wrapper.classList.remove('truncated'); wrapper.classList.add('expanded'); btn.textContent = 'Show less'; }
+            else { wrapper.classList.remove('expanded'); wrapper.classList.add('truncated'); btn.textContent = 'Show more'; }
+        });
+    }
+});
+</script>
+</body>
+</html>
