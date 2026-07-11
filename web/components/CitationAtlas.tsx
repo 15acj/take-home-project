@@ -5,9 +5,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ForceGraph3D } from "../lib/force3d";
 import { loadAtlas, loadSearchKeywords, fetchDetail, type AtlasData } from "../lib/loaders";
 import { computeFilter } from "../lib/filter";
-import { FIELDS } from "../lib/fieldClusters";
+import { FIELDS, CLUSTER_KEYS, type ClusterKey } from "../lib/fieldClusters";
+import { CONTENT_TYPE_KEYS, type ContentTypeKey } from "../lib/contentTypes";
 import { THEMES, engineTheme, type ThemeKey } from "../lib/themes";
-import { useAtlasStore, filterDefaults } from "../lib/store";
+import { useAtlasStore, filterDefaults, YEAR_MIN, YEAR_MAX, CITE_MAX, TOPN, type AtlasState } from "../lib/store";
 import StatsBar from "./StatsBar";
 import Legend from "./Legend";
 import ControlsHint from "./ControlsHint";
@@ -215,8 +216,23 @@ export default function CitationAtlas() {
       const engine = engineRef.current, data = dataRef.current;
       const ids = engine ? ([...engine.selected] as number[]) : [];
 
-      // Prior turns (before this one) become the chat history sent to the route.
-      const history = S.getState().messages;
+      // Prior turns (before this one) become the chat history sent to the route,
+      // and a snapshot of the current filters lets the copilot make incremental
+      // changes ("also include neuroscience") off a known base.
+      const st = S.getState();
+      const history = st.messages;
+      const filters = {
+        fields: CLUSTER_KEYS.filter((k) => st.activeFields[k]),
+        content_types: CONTENT_TYPE_KEYS.filter((k) => st.activeTypes[k]),
+        year_min: st.yearMin,
+        year_max: st.yearMax,
+        min_citations: st.minCites,
+        keyword: st.keywordApplied,
+        require_pdf: st.availPdf,
+        require_open_access: st.availOA,
+        require_full_text: st.availGrobid,
+        top_n: st.topN,
+      };
       S.setState({ messages: [...history, { role: "user", text: msg }], chatInput: "", typing: true });
       if (inputRef.current) {
         inputRef.current.style.height = "auto";
@@ -237,6 +253,61 @@ export default function CitationAtlas() {
       const nearBottom = () => {
         const el = scrollRef.current;
         return !el || el.scrollHeight - el.scrollTop - el.clientHeight < 60;
+      };
+
+      // Apply a filter action from the copilot. Writes the same store keys the
+      // FilterPanel writes, so the existing applyFilters effect recomputes the
+      // graph. Everything is clamped/validated — a bad value can't break state.
+      const applyFilterAction = (name: string, input: unknown) => {
+        if (name === "reset_filters") {
+          S.setState(filterDefaults());
+          return;
+        }
+        if (name !== "set_filters" || !input || typeof input !== "object") return;
+        const inp = input as Record<string, unknown>;
+        const patch: Partial<AtlasState> = {};
+
+        if (Array.isArray(inp.fields)) {
+          const on = new Set(inp.fields as string[]);
+          patch.activeFields = Object.fromEntries(
+            CLUSTER_KEYS.map((k) => [k, on.has(k)]),
+          ) as Record<ClusterKey, boolean>;
+        }
+        if (Array.isArray(inp.content_types)) {
+          const on = new Set(inp.content_types as string[]);
+          patch.activeTypes = Object.fromEntries(
+            CONTENT_TYPE_KEYS.map((k) => [k, on.has(k)]),
+          ) as Record<ContentTypeKey, boolean>;
+        }
+        const clampInt = (v: unknown, lo: number, hi: number): number | null => {
+          const n = typeof v === "number" ? v : Number(v);
+          return Number.isFinite(n) ? Math.max(lo, Math.min(hi, Math.round(n))) : null;
+        };
+        const cur = S.getState();
+        if ("year_min" in inp || "year_max" in inp) {
+          const lo = "year_min" in inp ? clampInt(inp.year_min, YEAR_MIN, YEAR_MAX) : null;
+          const hi = "year_max" in inp ? clampInt(inp.year_max, YEAR_MIN, YEAR_MAX) : null;
+          const a = lo ?? cur.yearMin;
+          const b = hi ?? cur.yearMax;
+          patch.yearMin = Math.min(a, b);
+          patch.yearMax = Math.max(a, b);
+        }
+        if ("min_citations" in inp) {
+          const c = clampInt(inp.min_citations, 0, CITE_MAX);
+          if (c != null) patch.minCites = c;
+        }
+        if (typeof inp.keyword === "string") {
+          patch.keyword = inp.keyword;
+          patch.keywordApplied = inp.keyword.trim();
+        }
+        if (typeof inp.require_pdf === "boolean") patch.availPdf = inp.require_pdf;
+        if (typeof inp.require_open_access === "boolean") patch.availOA = inp.require_open_access;
+        if (typeof inp.require_full_text === "boolean") patch.availGrobid = inp.require_full_text;
+        if ("top_n" in inp) {
+          const n = Number(inp.top_n);
+          if (TOPN.some((o) => o.v === n)) patch.topN = n;
+        }
+        if (Object.keys(patch).length) S.setState(patch);
       };
 
       (async () => {
@@ -270,20 +341,21 @@ export default function CitationAtlas() {
           const res = await fetch("/api/copilot", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ question: msg, papers, history }),
+            body: JSON.stringify({ question: msg, papers, history, filters }),
           });
           if (!res.ok || !res.body) throw new Error(`copilot ${res.status}`);
 
+          // Parse the NDJSON stream: {"t":"text","v":...} streams into the
+          // assistant bubble; {"t":"action",...} applies a filter change.
           const reader = res.body.getReader();
           const decoder = new TextDecoder();
+          let buf = "";
           let acc = "";
-          let started = false;
-          for (;;) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            const chunk = decoder.decode(value, { stream: true });
-            if (!chunk) continue;
-            acc += chunk;
+          let started = false;   // any assistant text shown yet
+          let didAction = false; // a filter action was applied this turn
+
+          const pushText = (delta: string) => {
+            acc += delta;
             const stick = nearBottom(); // capture before the DOM grows
             if (!started) {
               started = true;
@@ -292,9 +364,36 @@ export default function CitationAtlas() {
               replaceLast(acc);
             }
             if (stick) scrollChat();
+          };
+          const handleLine = (line: string) => {
+            const s = line.trim();
+            if (!s) return;
+            let obj: { t?: string; v?: unknown; name?: unknown; input?: unknown };
+            try { obj = JSON.parse(s); } catch { return; }
+            if (obj.t === "text" && typeof obj.v === "string") pushText(obj.v);
+            else if (obj.t === "action" && typeof obj.name === "string") {
+              didAction = true;
+              applyFilterAction(obj.name, obj.input);
+            }
+          };
+
+          for (;;) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buf += decoder.decode(value, { stream: true });
+            let nl: number;
+            while ((nl = buf.indexOf("\n")) >= 0) {
+              handleLine(buf.slice(0, nl));
+              buf = buf.slice(nl + 1);
+            }
           }
+          buf += decoder.decode();
+          if (buf.trim()) handleLine(buf);
+
           if (!started) {
-            appendAssistant("The copilot returned an empty response — try asking again.");
+            appendAssistant(didAction
+              ? "Done — updated the graph filters."
+              : "The copilot returned an empty response — try asking again.");
           }
         } catch {
           if (S.getState().typing) {

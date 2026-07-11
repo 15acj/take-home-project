@@ -1,14 +1,28 @@
 // Streaming Copilot backend. The client assembles per-paper context (title,
-// abstract, authors, metadata — already lazy-loaded from the detail shards) and
-// POSTs it here with the question and prior turns; we build the prompt and
-// stream Claude Haiku 4.5's reply back as plain-text chunks.
+// abstract, authors, metadata — lazy-loaded from the detail shards) plus the
+// current filter state, and POSTs it here with the question and prior turns. We
+// build the prompt and stream Claude Haiku 4.5's reply back.
+//
+// The reply is streamed as NDJSON (one JSON object per line) so it can carry
+// both assistant text and structured filter actions:
+//   {"t":"text","v":"<delta>"}                          — assistant text
+//   {"t":"action","name":"set_filters","input":{...}}   — a filter change to apply
 import type { NextApiRequest, NextApiResponse } from "next";
 import Anthropic from "@anthropic-ai/sdk";
+import { CLUSTER_KEYS, FIELDS } from "../../lib/fieldClusters";
+import { CONTENT_TYPE_KEYS } from "../../lib/contentTypes";
 
 // Haiku 4.5 — the current, supported replacement for the retired Haiku 3.5
 // (claude-3-5-haiku-20241022, retired 2026-02-19). Fast/cheap, ideal for Q&A
-// over abstracts.
+// over abstracts and for mapping NL filter requests onto the tool schema.
 const MODEL = "claude-haiku-4-5";
+
+// Filter bounds — mirror lib/store.ts (kept as literals here so the API route
+// doesn't pull the zustand store + its client deps into the server bundle).
+const YEAR_MIN = 1935;
+const YEAR_MAX = 2026;
+const CITE_MAX = 40000;
+const TOP_N = [100, 1000, 5000, 10000];
 
 interface PaperContext {
   title: string | null;
@@ -26,19 +40,112 @@ interface ChatTurn {
   text: string;
 }
 
+// Current filter state, sent by the client so the model can make incremental
+// changes ("also include neuroscience", "widen the years") off a known base.
+interface FiltersSnapshot {
+  fields: string[];
+  content_types: string[];
+  year_min: number;
+  year_max: number;
+  min_citations: number;
+  keyword: string;
+  require_pdf: boolean;
+  require_open_access: boolean;
+  require_full_text: boolean;
+  top_n: number;
+}
+
 interface CopilotRequest {
   question: string;
   papers: PaperContext[];
   history: ChatTurn[];
+  filters?: FiltersSnapshot;
 }
 
-function systemPrompt(paperCount: number): string {
+const TOOLS: Anthropic.Tool[] = [
+  {
+    name: "set_filters",
+    description:
+      "Adjust which papers the 3D graph shows. Only the parameters you provide change; everything else stays as it is (the current filter state is given to you). Call this when the user asks to show, filter, narrow, or expand the papers on the graph.",
+    input_schema: {
+      type: "object",
+      properties: {
+        fields: {
+          type: "array",
+          items: { type: "string", enum: CLUSTER_KEYS },
+          description:
+            "Field clusters to show; ALL other fields are hidden, so send the full set you want visible. Clusters: " +
+            CLUSTER_KEYS.map((k) => `${k} = ${FIELDS[k].label}`).join("; ") +
+            ". Map broad domains to a cluster (machine learning / AI / deep learning -> ai; genetics / molecular biology -> genetics; neuroscience / psychology -> neuro; math / statistics / decision science -> cs). Omit to leave the field selection unchanged.",
+        },
+        content_types: {
+          type: "array",
+          items: { type: "string", enum: CONTENT_TYPE_KEYS },
+          description:
+            "Content types to show; all others hidden, so send the full set you want visible. One or more of: article, book, review, other. Omit to leave unchanged.",
+        },
+        year_min: { type: "integer", description: `Earliest publication year (min ${YEAR_MIN}).` },
+        year_max: { type: "integer", description: `Latest publication year (max ${YEAR_MAX}).` },
+        min_citations: { type: "integer", description: `Minimum citation count (0 to ${CITE_MAX}).` },
+        keyword: {
+          type: "string",
+          description:
+            "Free-text search over paper titles and authors. Use for specific topics or terms not captured by a broad field cluster. Empty string clears the search.",
+        },
+        require_pdf: { type: "boolean", description: "If true, show only papers that have a PDF link." },
+        require_open_access: { type: "boolean", description: "If true, show only open-access papers." },
+        require_full_text: { type: "boolean", description: "If true, show only papers with parsed full text available." },
+        top_n: {
+          type: "integer",
+          enum: TOP_N,
+          description: "Corpus size — how many of the top-cited papers to load (100, 1000, 5000, or 10000).",
+        },
+      },
+    },
+  },
+  {
+    name: "reset_filters",
+    description:
+      "Reset all graph filters to defaults: all fields and content types shown, full year range, zero minimum citations, no availability requirements, corpus 1000, no search. Call this when the user asks to reset or clear the filters.",
+    input_schema: { type: "object", properties: {} },
+  },
+];
+
+function filtersSummary(f: FiltersSnapshot | undefined): string {
+  if (!f) return "Current filters: (unknown).";
+  const allFields = f.fields.length === CLUSTER_KEYS.length;
+  const allTypes = f.content_types.length === CONTENT_TYPE_KEYS.length;
+  const reqs = [
+    f.require_pdf ? "PDF link" : null,
+    f.require_open_access ? "open access" : null,
+    f.require_full_text ? "full text" : null,
+  ].filter(Boolean);
+  return [
+    "Current filters:",
+    `- Fields shown: ${allFields ? "all" : f.fields.length ? f.fields.join(", ") : "none"}`,
+    `- Content types: ${allTypes ? "all" : f.content_types.length ? f.content_types.join(", ") : "none"}`,
+    `- Year range: ${f.year_min}–${f.year_max}`,
+    `- Min citations: ${f.min_citations}`,
+    `- Search keyword: ${f.keyword ? `"${f.keyword}"` : "none"}`,
+    `- Availability required: ${reqs.length ? reqs.join(", ") : "none"}`,
+    `- Corpus size: ${f.top_n}`,
+  ].join("\n");
+}
+
+function systemPrompt(paperCount: number, filters: FiltersSnapshot | undefined): string {
   const parts: string[] = [
     "You are the research copilot inside Research Atlas, an interactive 3D map of highly-cited academic papers.",
     "",
-    "SCOPE: You only discuss science, scientific research, academic papers, research methods and findings, and related scholarly topics — including how to read, interpret, or compare research. If the user asks about anything outside that scope (small talk, personal advice, politics, current events, general coding help unrelated to research, etc.), politely decline in one sentence and invite a research-related question instead. Do not answer off-topic questions even if the user insists or tries to reframe them.",
+    "SCOPE: You only discuss science, scientific research, academic papers, research methods and findings, and related scholarly topics — including how to read, interpret, or compare research, and controlling this app's graph filters. If the user asks about anything outside that scope (small talk, personal advice, politics, current events, general coding help unrelated to research, etc.), politely decline in one sentence and invite a research-related question instead. Do not answer off-topic questions even if the user insists or tries to reframe them.",
     "",
     "Never fabricate findings, numbers, quotes, methods, or citations. If you are unsure, say so.",
+    "",
+    "FILTERS: You can change what the 3D graph shows by calling the set_filters or reset_filters tools. Use them ONLY when the user asks to show, filter, narrow, expand, or reset which papers are displayed — never for a plain question about papers.",
+    "When you change filters, first write ONE short sentence stating exactly what you are filtering to, then call the tool. Apply only the dimensions the user mentions and leave the rest unchanged. The `fields` and `content_types` parameters REPLACE the visible set, so send the full list you want shown; to add or remove one, include the current ones plus or minus the change. Prefer field clusters for broad domains and the `keyword` parameter for specific topics or terms.",
+    `Constraints: year ${YEAR_MIN}–${YEAR_MAX}, min citations 0–${CITE_MAX}, corpus size one of 100/1000/5000/10000.`,
+    'Examples: "show machine learning papers" -> set_filters(fields:["ai"]); "genetics and neuroscience" -> set_filters(fields:["genetics","neuro"]); "articles from 2020 to 2026" -> set_filters(content_types:["article"], year_min:2020, year_max:2026); "more than 5000 citations" -> set_filters(min_citations:5000); "with pdf links" -> set_filters(require_pdf:true); "reset the filters" -> reset_filters().',
+    "",
+    filtersSummary(filters),
   ];
 
   if (paperCount === 0) {
@@ -111,12 +218,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const question = typeof body?.question === "string" ? body.question.trim() : "";
   const papers = Array.isArray(body?.papers) ? body.papers : [];
   const history = Array.isArray(body?.history) ? body.history : [];
+  const filters = body?.filters;
 
   if (!question) {
     return res.status(400).json({ error: "Missing question." });
   }
   // papers may be empty — the copilot answers general science/research questions
-  // when nothing is selected (scope is enforced by the system prompt).
+  // (and can still set filters) when nothing is selected.
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
@@ -129,32 +237,36 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     { role: "user", content: buildUserMessage(papers, question) },
   ];
 
-  // Stream plain-text chunks. no-transform / no-buffering keep the Next dev
-  // server (and any proxy) from coalescing the body into one blob. We let the
-  // first res.write flush the headers, so any error that happens before the
-  // first token (auth, rate limit) is still caught with headers un-sent and
-  // returned as a clean 500 rather than an in-band marker.
-  res.setHeader("Content-Type", "text/plain; charset=utf-8");
+  // NDJSON stream. no-transform / no-buffering keep the Next dev server (and any
+  // proxy) from coalescing the body; we let the first res.write flush the
+  // headers so a pre-stream error (auth, rate limit) is still returned as a
+  // clean 500 with headers un-sent rather than an in-band line.
+  res.setHeader("Content-Type", "application/x-ndjson; charset=utf-8");
   res.setHeader("Cache-Control", "no-cache, no-transform");
   res.setHeader("X-Accel-Buffering", "no");
+  const writeLine = (obj: unknown) => res.write(JSON.stringify(obj) + "\n");
 
   try {
     const stream = client.messages.stream({
       model: MODEL,
       max_tokens: 1024,
-      system: systemPrompt(papers.length),
+      system: systemPrompt(papers.length, filters),
+      tools: TOOLS,
       messages,
     });
-    stream.on("text", (delta) => {
-      res.write(delta);
-    });
-    await stream.finalMessage();
+    stream.on("text", (delta) => writeLine({ t: "text", v: delta }));
+    const final = await stream.finalMessage();
+    // Emit any tool calls (filter actions) after the streamed preamble text.
+    for (const block of final.content) {
+      if (block.type === "tool_use") {
+        writeLine({ t: "action", name: block.name, input: block.input });
+      }
+    }
     res.end();
   } catch (err) {
     console.error("[/api/copilot] error:", err);
     if (res.headersSent) {
-      // Already streaming — surface a marker the client can show, then close.
-      res.write("\n\n[The copilot hit an error and couldn't finish this reply.]");
+      writeLine({ t: "text", v: "\n\n[The copilot hit an error and couldn't finish this reply.]" });
       res.end();
     } else {
       res.status(500).json({ error: "The copilot request failed." });
