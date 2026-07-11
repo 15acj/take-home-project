@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&amp;display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; background: #04060c; overflow: hidden; }
+    body { font-family: 'Lato', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    a { color: inherit; }
+    ::-webkit-scrollbar { width: 9px; height: 9px; }
+    ::-webkit-scrollbar-thumb { background: rgba(150,170,210,0.22); border-radius: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    input[type=range] { -webkit-appearance: none; appearance: none; height: 3px; border-radius: 3px; outline: none; cursor: pointer; }
+    input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 13px; height: 13px; border-radius: 50%; background: #fff; border: 1px solid rgba(0,0,0,0.18); box-shadow: 0 1px 2px rgba(0,0,0,0.28); }
+    input[type=text]::placeholder, textarea::placeholder { color: rgba(128,140,162,0.85); }
+    input:focus, textarea:focus { outline: none; }
+    @keyframes blink { 0%,80%,100%{opacity:0.25;} 40%{opacity:1;} }
+    @keyframes fadein { from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:none;} }
+  </style>
+</helmet>
+<div style="position:fixed; inset:0; display:flex; flex-direction:column; color:{{ t.text }}; font-family:'Lato',system-ui,sans-serif;">
+
+  <div style="position:relative; flex:1; min-height:0; overflow:hidden;">
+
+    <canvas ref="{{ canvasRef }}" style="position:absolute; inset:0; width:100%; height:100%; display:block; touch-action:none;"></canvas>
+
+    <div style="position:absolute; top:14px; left:50%; transform:translateX(-50%); z-index:22; display:flex; align-items:center; gap:14px; padding:8px 8px 8px 16px; border-radius:12px; background:{{ t.solidBg }}; border:1px solid {{ t.border }}; box-shadow:{{ t.barShadow }};">
+      <div style="display:flex; align-items:center; gap:16px; font-family:'Lato',sans-serif; font-size:12px; color:{{ t.textDim }};">
+        <div><span style="color:{{ t.text }}; font-weight:700;">{{ shownCountFmt }}</span> papers</div>
+        <div><span style="color:{{ t.text }}; font-weight:700;">{{ edgeCountFmt }}</span> citations</div>
+        <div><span style="color:{{ t.text }}; font-weight:700;">{{ selCountFmt }}</span> selected</div>
+      </div>
+      <div style="width:1px; height:20px; background:{{ t.border }};"></div>
+      <button onClick="{{ resetView }}" style="display:flex; align-items:center; gap:6px; padding:7px 12px; border-radius:8px; border:none; background:{{ t.chipBg }}; color:{{ t.textDim }}; font-family:'Lato',sans-serif; font-size:12px; font-weight:700; cursor:pointer;" style-hover="color:{{ t.text }};">Reset View</button>
+      <button onClick="{{ toggleMode }}" title="Toggle light / dark mode" style="display:flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:8px; border:none; background:{{ t.chipBg }}; color:{{ t.textDim }}; font-size:14px; line-height:1; cursor:pointer;" style-hover="color:{{ t.text }};">{{ modeIcon }}</button>
+    </div>
+
+    <div style="position:absolute; left:16px; bottom:14px; z-index:20; display:grid; grid-template-columns:repeat(4, max-content); gap:8px 16px; padding:10px 14px; border-radius:12px; background:{{ t.panelBg }}; border:1px solid {{ t.border }}; backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);">
+      <sc-for list="{{ legendList }}" as="lg" hint-placeholder-count="8">
+        <div style="display:flex; align-items:center; gap:7px; font-size:12px; font-weight:700; color:{{ t.textDim }};">
+          <span style="width:9px; height:9px; border-radius:50%; background:{{ lg.color }};"></span>{{ lg.label }}
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="position:absolute; bottom:14px; right:14px; width:{{ ctrlBarWidth }}; z-index:20; display:flex; justify-content:center; pointer-events:none;">
+      <div style="width:100%; display:flex; flex-wrap:nowrap; justify-content:space-between; gap:6px 10px; padding:9px 12px; border-radius:12px; background:{{ t.panelBg }}; border:1px solid {{ t.border }}; backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); box-shadow:{{ t.barShadow }}; box-sizing:border-box;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="padding:3px 8px; border-radius:6px; border:1px solid {{ t.border }}; background:{{ t.chipBg }}; font-size:10.5px; font-weight:700; color:{{ t.text }}; white-space:nowrap;">Drag</span>
+          <span style="font-size:11.5px; color:{{ t.textDim }};">Rotate</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="padding:3px 8px; border-radius:6px; border:1px solid {{ t.border }}; background:{{ t.chipBg }}; font-size:10.5px; font-weight:700; color:{{ t.text }}; white-space:nowrap;">Shift-drag</span>
+          <span style="font-size:11.5px; color:{{ t.textDim }};">Pan</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="padding:3px 8px; border-radius:6px; border:1px solid {{ t.border }}; background:{{ t.chipBg }}; font-size:10.5px; font-weight:700; color:{{ t.text }}; white-space:nowrap;">Scroll</span>
+          <span style="font-size:11.5px; color:{{ t.textDim }};">Zoom</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="padding:3px 8px; border-radius:6px; border:1px solid {{ t.border }}; background:{{ t.chipBg }}; font-size:10.5px; font-weight:700; color:{{ t.text }}; white-space:nowrap;">Click</span>
+          <span style="font-size:11.5px; color:{{ t.textDim }};">Select</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- floating detail card -->
+    <div ref="{{ cardRef }}" style="position:absolute; z-index:15; width:288px; pointer-events:auto; opacity:0; will-change:transform;">
+      <sc-if value="{{ cardNode }}" hint-placeholder-val="{{ true }}">
+        <div style="padding:14px 15px 15px; border-radius:14px; background:{{ t.cardBg }}; border:1px solid {{ t.border }}; box-shadow:{{ t.cardShadow }}; backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);">
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:9px;">
+            <span style="width:9px; height:9px; border-radius:50%; background:{{ cardColor }};"></span>
+            <span style="font-size:11.5px; letter-spacing:0.02em; color:{{ cardLabelColor }}; font-weight:900;">{{ cardFieldLabel }}</span>
+            <span style="flex:1;"></span>
+            <span style="font-size:11.5px; font-family:'Lato',sans-serif; color:{{ t.textFaint }};">#{{ cardRank }}</span>
+            <button onClick="{{ cardClose }}" title="Close" style="width:20px; height:20px; margin:-3px -3px -3px 2px; border:none; background:transparent; color:{{ t.textFaint }}; cursor:pointer; font-size:16px; line-height:1;" style-hover="color:{{ t.text }};">×</button>
+          </div>
+          <div style="font-size:15.5px; font-weight:700; line-height:1.34; margin-bottom:8px; text-wrap:pretty;">{{ cardTitle }}</div>
+          <div style="font-size:13px; color:{{ t.textDim }}; margin-bottom:12px;">{{ cardAuthors }} · {{ cardYear }}</div>
+          <div style="display:flex; align-items:baseline; gap:14px; margin-bottom:13px;">
+            <div><div style="font-size:19px; font-weight:600; font-family:'Lato',sans-serif; color:{{ t.text }};">{{ cardCitesFmt }}</div><div style="font-size:11px; color:{{ t.textFaint }}; letter-spacing:0.04em;">Citations</div></div>
+            <div><div style="font-size:19px; font-weight:600; font-family:'Lato',sans-serif; color:{{ t.text }};">{{ cardDegree }}</div><div style="font-size:11px; color:{{ t.textFaint }}; letter-spacing:0.04em;">Links</div></div>
+          </div>
+          <button onClick="{{ cardToggleSelect }}" style="{{ cardBtnStyle }}">{{ cardBtnLabel }}</button>
+        </div>
+      </sc-if>
+    </div>
+
+    <!-- LEFT PANEL -->
+    <div style="position:absolute; top:14px; left:14px; z-index:20; display:flex; flex-direction:column; width:{{ leftWidth }}; max-height:calc(100% - 124px); border-radius:16px; background:{{ t.panelBg }}; border:1px solid {{ t.border }}; backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); box-shadow:{{ t.panelShadow }}; overflow:hidden;">
+      <sc-if value="{{ leftOpen }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex; flex-direction:column; min-height:0;">
+          <div style="display:flex; align-items:center; gap:8px; padding:15px 16px 12px; flex:0 0 auto;">
+            <div style="font-size:12px; letter-spacing:0.02em; font-weight:700; color:{{ t.textDim }};">Filter &amp; Search</div>
+            <div style="flex:1;"></div>
+            <button onClick="{{ toggleLeft }}" title="Collapse" style="width:24px; height:24px; border-radius:7px; border:none; background:transparent; color:{{ t.textDim }}; cursor:pointer; font-size:16px; line-height:1;" style-hover="color:{{ t.text }};">‹</button>
+          </div>
+
+          <div style="flex:0 1 auto; min-height:0; overflow-y:auto; padding:0 12px 18px; margin-right:6px;">
+            <div style="position:relative; margin-bottom:20px;">
+              <input type="text" value="{{ keyword }}" onInput="{{ onKeyword }}" placeholder="Search titles, authors…" style="width:100%; padding:10px 12px 10px 34px; border-radius:10px; border:1px solid {{ t.border }}; background:{{ t.inputBg }}; color:{{ t.text }}; font-family:'Lato',sans-serif; font-size:14px;">
+              <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:{{ t.textFaint }}; font-size:18px;">⌕</span>
+            </div>
+
+            <div style="margin-bottom:22px;">
+              <div style="font-size:11.5px; letter-spacing:0.01em; font-weight:700; color:{{ t.textDim }}; margin-bottom:9px;">Corpus Size</div>
+              <div style="display:flex; gap:6px;">
+                <sc-for list="{{ topNList }}" as="opt" hint-placeholder-count="4">
+                  <button onClick="{{ opt.onClick }}" style="{{ opt.style }}">{{ opt.label }}</button>
+                </sc-for>
+              </div>
+              <div style="font-size:12.5px; font-weight:700; color:{{ t.textDim }}; margin-top:14px; font-family:'Lato',sans-serif;">{{ corpusNote }}</div>
+            </div>
+
+            <div style="margin-bottom:22px;">
+              <div style="display:flex; align-items:center; margin-bottom:10px;">
+                <span style="font-size:11.5px; letter-spacing:0.01em; font-weight:700; color:{{ t.textDim }};">Fields</span>
+                <span style="flex:1;"></span>
+                <button onClick="{{ toggleAllFields }}" style="font-size:11.5px; font-weight:700; color:{{ t.accent }}; background:none; border:none; cursor:pointer; font-family:'Lato',sans-serif;">{{ allFieldsLabel }}</button>
+              </div>
+              <div style="display:flex; flex-direction:column; gap:2px;">
+                <sc-for list="{{ fieldsList }}" as="f" hint-placeholder-count="8">
+                  <button onClick="{{ f.onClick }}" style="{{ f.rowStyle }}">
+                    <span style="width:7px; height:7px; border-radius:50%; flex:0 0 auto; background:{{ f.dot }};"></span>
+                    <span style="flex:1; text-align:left; font-size:13.5px; font-weight:700; color:{{ f.textColor }};">{{ f.label }}</span>
+                    <span style="font-size:12.5px; font-weight:700; font-family:'Lato',sans-serif; color:{{ t.textDim }};">{{ f.count }}</span>
+                  </button>
+                </sc-for>
+              </div>
+            </div>
+
+            <div style="margin-bottom:22px;">
+              <div style="display:flex; align-items:center; margin-bottom:11px;">
+                <span style="font-size:11.5px; letter-spacing:0.01em; font-weight:700; color:{{ t.textDim }};">Year</span>
+                <span style="flex:1;"></span>
+                <span style="font-size:11.5px; font-weight:700; font-family:'Lato',sans-serif; color:{{ t.text }};">{{ yearMin }} – {{ yearMax }}</span>
+              </div>
+              <div style="display:flex; align-items:flex-end; gap:2px; height:40px; margin-bottom:10px;">
+                <sc-for list="{{ yearHistList }}" as="b" hint-placeholder-count="30">
+                  <div style="{{ b.style }}"></div>
+                </sc-for>
+              </div>
+              <input type="range" min="1935" max="2024" value="{{ yearMin }}" onInput="{{ onYearMin }}" style="width:100%; margin-bottom:9px; background:{{ t.trackBg }};">
+              <input type="range" min="1935" max="2024" value="{{ yearMax }}" onInput="{{ onYearMax }}" style="width:100%; background:{{ t.trackBg }};">
+            </div>
+
+            <div style="margin-bottom:22px;">
+              <div style="font-size:11.5px; letter-spacing:0.01em; font-weight:700; color:{{ t.textDim }}; margin-bottom:9px;">Availability</div>
+              <div style="display:flex; flex-direction:column; gap:2px;">
+                <sc-for list="{{ availList }}" as="a" hint-placeholder-count="3">
+                  <button onClick="{{ a.onClick }}" style="{{ a.rowStyle }}">
+                    <span style="{{ a.boxStyle }}"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="{{ t.onAccent }}" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:{{ a.checkOpacity }}; display:block;"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
+                    <span style="flex:1; text-align:left; font-size:13.5px; font-weight:700; color:{{ a.textColor }};">{{ a.label }}</span>
+                    <span style="font-size:12.5px; font-weight:700; font-family:'Lato',sans-serif; color:{{ t.textDim }};">{{ a.count }}</span>
+                  </button>
+                </sc-for>
+              </div>
+            </div>
+
+            <div>
+              <div style="display:flex; align-items:center; margin-bottom:11px;">
+                <span style="font-size:11.5px; letter-spacing:0.01em; font-weight:700; color:{{ t.textDim }};">Min. Citations</span>
+                <span style="flex:1;"></span>
+                <span style="font-size:11.5px; font-weight:700; font-family:'Lato',sans-serif; color:{{ t.text }};">{{ minCitesFmt }}+</span>
+              </div>
+              <div style="display:flex; align-items:flex-end; gap:2px; height:40px; margin-bottom:10px;">
+                <sc-for list="{{ citeHistList }}" as="b" hint-placeholder-count="30">
+                  <div style="{{ b.style }}"></div>
+                </sc-for>
+              </div>
+              <input type="range" min="0" max="40000" step="500" value="{{ minCites }}" onInput="{{ onMinCites }}" style="width:100%; background:{{ t.trackBg }};">
+            </div>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ leftClosed }}" hint-placeholder-val="{{ false }}">
+        <button onClick="{{ toggleLeft }}" title="Expand filters" style="width:100%; display:flex; align-items:center; gap:9px; padding:13px 14px; background:none; border:none; color:{{ t.textDim }}; cursor:pointer; white-space:nowrap;" style-hover="color:{{ t.text }};">
+          <span style="font-size:20px;">⌕</span>
+          <span style="font-size:13px; letter-spacing:0.01em; font-weight:700; font-family:'Lato',sans-serif;">Filters</span>
+          <span style="flex:1;"></span>
+          <span style="font-size:14px; line-height:1;">›</span>
+        </button>
+      </sc-if>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div style="position:absolute; top:14px; right:14px; {{ rightAnchor }} z-index:20; display:flex; flex-direction:column; width:{{ rightWidth }}; border-radius:16px; background:{{ t.panelBg }}; border:1px solid {{ t.border }}; backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); box-shadow:{{ t.panelShadow }}; overflow:hidden;">
+      <sc-if value="{{ rightOpen }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex; flex-direction:column; height:100%;">
+          <div style="display:flex; align-items:center; gap:10px; padding:15px 16px 13px; flex:0 0 auto; border-bottom:1px solid {{ t.border }};">
+            <button onClick="{{ toggleRight }}" title="Collapse" style="width:24px; height:24px; border-radius:7px; border:none; background:transparent; color:{{ t.textDim }}; cursor:pointer; font-size:16px; line-height:1;" style-hover="color:{{ t.text }};">›</button>
+            <div style="font-size:13px; font-weight:700;">Copilot</div>
+            <div style="flex:1;"></div>
+            <div style="display:flex; gap:2px; padding:3px; border-radius:9px; background:{{ t.chipBg }}; border:1px solid {{ t.border }};">
+              <button onClick="{{ setTabChat }}" style="{{ tabChatStyle }}">Chat</button>
+              <button onClick="{{ setTabDetail }}" style="{{ tabDetailStyle }}">Paper</button>
+            </div>
+          </div>
+
+          <div style="flex:0 0 auto; padding:12px 16px; border-bottom:1px solid {{ t.border }};">
+            <div style="font-size:11.5px; letter-spacing:0.01em; font-weight:700; color:{{ t.textDim }}; margin-bottom:9px;">Selected Papers · {{ selCountFmt }}</div>
+            <sc-if value="{{ hasSelection }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex; flex-direction:column; gap:6px; max-height:118px; overflow-y:auto;">
+                <sc-for list="{{ selectedList }}" as="s" hint-placeholder-count="2">
+                  <div style="{{ s.wrapStyle }}">
+                    <span style="width:8px; height:8px; border-radius:50%; flex:0 0 auto; background:{{ s.color }};"></span>
+                    <span onClick="{{ s.onFocus }}" title="{{ s.title }}" style="flex:1; font-size:12.5px; font-weight:700; line-height:1.35; cursor:pointer; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ s.title }}</span>
+                    <button onClick="{{ s.onRemove }}" style="width:17px; height:17px; flex:0 0 auto; border-radius:5px; border:none; background:transparent; color:{{ t.textFaint }}; cursor:pointer; font-size:13px; line-height:1;" style-hover="color:{{ t.text }};">×</button>
+                  </div>
+                </sc-for>
+              </div>
+              <button onClick="{{ clearSelection }}" style="margin-top:8px; font-size:11.5px; color:{{ t.textFaint }}; background:none; border:none; cursor:pointer; font-family:'Lato',sans-serif;">Clear all</button>
+            </sc-if>
+            <sc-if value="{{ noSelection }}" hint-placeholder-val="{{ false }}">
+              <div style="font-size:13px; font-weight:700; line-height:1.55; color:{{ t.textDim }}; padding:6px 0 4px;">Click nodes in the graph to add papers here, then chat about them below.</div>
+            </sc-if>
+          </div>
+
+          <sc-if value="{{ chatTab }}" hint-placeholder-val="{{ true }}">
+          <div style="flex:1; min-height:0; display:flex; flex-direction:column;">
+          <div ref="{{ scrollRef }}" style="flex:1; min-height:0; overflow-y:auto; padding:16px;">
+            <div style="display:flex; flex-direction:column; gap:14px;">
+              <sc-for list="{{ messages }}" as="m" hint-placeholder-count="1">
+                <div style="{{ m.wrap }}">
+                  <sc-if value="{{ m.showLabel }}" hint-placeholder-val="{{ false }}">
+                    <div style="font-size:10.5px; letter-spacing:0.02em; font-weight:700; color:{{ t.textDim }}; margin-bottom:5px;">Copilot</div>
+                  </sc-if>
+                  <div style="{{ m.bubble }}">{{ m.text }}</div>
+                </div>
+              </sc-for>
+              <sc-if value="{{ typing }}" hint-placeholder-val="{{ false }}">
+                <div style="align-self:flex-start; display:flex; gap:4px; padding:11px 14px; border-radius:13px; background:{{ t.botBubble }}; border:1px solid {{ t.border }};">
+                  <span style="width:6px; height:6px; border-radius:50%; background:{{ t.textDim }}; animation:blink 1.2s infinite;"></span>
+                  <span style="width:6px; height:6px; border-radius:50%; background:{{ t.textDim }}; animation:blink 1.2s .2s infinite;"></span>
+                  <span style="width:6px; height:6px; border-radius:50%; background:{{ t.textDim }}; animation:blink 1.2s .4s infinite;"></span>
+                </div>
+              </sc-if>
+            </div>
+          </div>
+
+          <div style="flex:0 0 auto; padding:0 16px 8px;">
+            <sc-if value="{{ showPrompts }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px;">
+                <sc-for list="{{ promptList }}" as="p" hint-placeholder-count="3">
+                  <button onClick="{{ p.onClick }}" style="padding:6px 11px; border-radius:20px; border:1px solid {{ t.border }}; background:{{ t.chipBg }}; color:{{ t.textDim }}; font-size:11.5px; cursor:pointer; font-family:'Lato',sans-serif;" style-hover="color:{{ t.text }}; border-color:{{ t.accent }};">{{ p.label }}</button>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+
+          <div style="flex:0 0 auto; padding:0 16px 16px;">
+            <div style="display:flex; gap:8px; align-items:center; padding:8px 8px 8px 12px; border-radius:13px; border:1px solid {{ t.border }}; background:{{ t.inputBg }};">
+              <textarea ref="{{ inputRef }}" value="{{ chatInput }}" onInput="{{ onChatInput }}" onKeyDown="{{ onChatKey }}" rows="1" placeholder="Ask about the selected papers…" style="flex:1; resize:none; border:none; outline:none; background:transparent; color:{{ t.text }}; font-family:'Lato',sans-serif; font-size:14px; line-height:1.45; max-height:96px; padding:4px 0;"></textarea>
+              <button onClick="{{ sendChat }}" style="{{ sendStyle }}">↑</button>
+            </div>
+          </div>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ detailsTab }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1; min-height:0; overflow-y:auto; padding:16px 7px 20px 16px;">
+            <sc-if value="{{ hasDetail }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex; align-items:center; gap:8px; margin-bottom:11px;">
+                <span style="width:9px; height:9px; border-radius:50%; flex:0 0 auto; background:{{ detailColor }};"></span>
+                <span style="font-size:11.5px; letter-spacing:0.02em; font-weight:900; color:{{ detailLabelColor }};">{{ detailFieldLabel }}</span>
+                <span style="flex:1;"></span>
+                <span style="font-size:11.5px; font-family:'Lato',sans-serif; color:{{ t.textFaint }};">#{{ detailRank }}</span>
+              </div>
+              <div style="font-size:18px; font-weight:700; line-height:1.32; text-wrap:pretty; margin-bottom:9px;">{{ detailTitle }}</div>
+              <div style="font-size:13px; color:{{ t.textDim }}; margin-bottom:18px;">{{ detailAuthors }}</div>
+
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px 16px; margin-bottom:20px;">
+                <sc-for list="{{ detailMeta }}" as="mi" hint-placeholder-count="4">
+                  <div>
+                    <div style="font-size:10.5px; letter-spacing:0.02em; color:{{ t.textFaint }}; margin-bottom:4px;">{{ mi.label }}</div>
+                    <div style="font-size:14px; font-weight:700; color:{{ t.text }}; line-height:1.3;">{{ mi.value }}</div>
+                  </div>
+                </sc-for>
+              </div>
+
+              <div style="font-size:11.5px; letter-spacing:0.02em; font-weight:700; color:{{ t.textDim }}; margin-bottom:8px;">Abstract</div>
+              <div style="font-size:14px; line-height:1.66; color:{{ t.text }}; margin-bottom:16px; text-wrap:pretty;">{{ detailAbstract }}</div>
+
+              <div style="font-size:11.5px; color:{{ t.textFaint }}; margin-bottom:18px; word-break:break-all;">DOI: {{ detailDoi }}</div>
+
+              <div style="display:flex; gap:8px;">
+                <button onClick="{{ detailFocus }}" style="flex:1; padding:10px; border-radius:9px; cursor:pointer; font-family:'Lato',sans-serif; font-size:12.5px; font-weight:700; border:1px solid {{ t.accent }}; background:{{ t.accent }}; color:{{ t.onAccent }};">Focus in Graph</button>
+                <button onClick="{{ detailRemove }}" style="flex:0 0 auto; padding:10px 14px; border-radius:9px; cursor:pointer; font-family:'Lato',sans-serif; font-size:12.5px; font-weight:700; border:1px solid {{ t.border }}; background:transparent; color:{{ t.textDim }};">Remove</button>
+              </div>
+            </sc-if>
+            <sc-if value="{{ noDetail }}" hint-placeholder-val="{{ false }}">
+              <div style="font-size:13px; font-weight:700; line-height:1.6; color:{{ t.textDim }}; padding:8px 0;">Select a paper in the graph — or tap one in the list above — to read its abstract and full details here.</div>
+            </sc-if>
+          </div>
+          </sc-if>
+        </div>
+      </sc-if>
+      <sc-if value="{{ rightClosed }}" hint-placeholder-val="{{ false }}">
+        <button onClick="{{ toggleRight }}" title="Expand copilot" style="width:100%; display:flex; align-items:center; gap:9px; padding:13px 14px; background:none; border:none; color:{{ t.textDim }}; cursor:pointer; white-space:nowrap;" style-hover="color:{{ t.text }};">
+          <span style="font-size:15px;">✧</span>
+          <span style="font-size:13px; letter-spacing:0.01em; font-weight:700; font-family:'Lato',sans-serif;">Copilot</span>
+          <span style="flex:1;"></span>
+          <sc-if value="{{ hasSelection }}" hint-placeholder-val="{{ false }}">
+            <span style="font-size:11px; font-weight:700; font-family:'Lato',sans-serif; color:{{ t.accent }};">{{ selCountFmt }}</span>
+          </sc-if>
+          <span style="font-size:14px; line-height:1;">‹</span>
+        </button>
+      </sc-if>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;100%&quot;,&quot;height&quot;:&quot;100%&quot;}}">
+const THEMES = {
+  deepspace: {
+    accent:"#7fe0ff", text:"#f2f6fc", textDim:"#cbd8ec", textFaint:"#aab8d4",
+    border:"rgba(120,160,220,0.15)", panelBg:"#0b1220", barBg:"rgba(6,10,20,0.72)",
+    cardBg:"rgba(11,18,32,0.86)", inputBg:"rgba(255,255,255,0.04)", chipBg:"rgba(255,255,255,0.045)",
+    botBubble:"rgba(255,255,255,0.05)", trackBg:"rgba(120,160,220,0.2)",
+    bgInner:"#0a1224", bgOuter:"#02040a", edgeRGB:[90,130,190], edgeAlpha:0.18, labelColor:"rgba(232,238,248,0.92)",
+    swatch:"#57d6ff", onAccent:"#04060c", solidBg:"#0b1220",
+    panelShadow:"0 20px 50px rgba(0,0,0,0.35)", barShadow:"0 12px 34px rgba(0,0,0,0.32)", cardShadow:"0 18px 50px rgba(0,0,0,0.5)"
+  },
+  light: {
+    accent:"#0a6cff", text:"#141b2e", textDim:"#48546c", textFaint:"#8a94aa",
+    border:"rgba(30,50,90,0.13)", panelBg:"rgba(255,255,255,0.82)", barBg:"rgba(255,255,255,0.82)",
+    cardBg:"rgba(255,255,255,0.9)", inputBg:"rgba(30,50,90,0.045)", chipBg:"rgba(30,50,90,0.045)",
+    botBubble:"rgba(30,50,90,0.045)", trackBg:"rgba(30,50,90,0.16)",
+    bgInner:"#eef3fa", bgOuter:"#d6deec", edgeRGB:[110,130,170], edgeAlpha:0.28, labelColor:"rgba(20,27,46,0.9)",
+    swatch:"#0a6cff", onAccent:"#ffffff", solidBg:"#ffffff",
+    panelShadow:"0 10px 28px rgba(30,50,90,0.12)", barShadow:"0 6px 18px rgba(30,50,90,0.10)", cardShadow:"0 10px 28px rgba(30,50,90,0.15)"
+  },
+  nebula: {
+    accent:"#ea9bff", text:"#f7f1fb", textDim:"#e0d0ec", textFaint:"#c4b4d6",
+    border:"rgba(200,140,230,0.16)", panelBg:"#140b1e", barBg:"rgba(11,6,17,0.74)",
+    cardBg:"rgba(22,12,32,0.86)", inputBg:"rgba(255,255,255,0.04)", chipBg:"rgba(255,255,255,0.05)",
+    botBubble:"rgba(255,255,255,0.05)", trackBg:"rgba(200,140,230,0.22)",
+    bgInner:"#160a22", bgOuter:"#050208", edgeRGB:[150,90,180], edgeAlpha:0.18, labelColor:"rgba(243,236,248,0.92)",
+    swatch:"#e07dff", onAccent:"#04060c", solidBg:"#140b1e",
+    panelShadow:"0 20px 50px rgba(0,0,0,0.35)", barShadow:"0 12px 34px rgba(0,0,0,0.32)", cardShadow:"0 18px 50px rgba(0,0,0,0.5)"
+  },
+  observatory: {
+    accent:"#f5d47e", text:"#f8f2e6", textDim:"#e8dcc2", textFaint:"#ccbf9c",
+    border:"rgba(230,200,150,0.16)", panelBg:"#151009", barBg:"rgba(11,8,4,0.76)",
+    cardBg:"rgba(24,18,9,0.88)", inputBg:"rgba(255,255,255,0.035)", chipBg:"rgba(255,255,255,0.04)",
+    botBubble:"rgba(255,255,255,0.045)", trackBg:"rgba(230,200,150,0.22)",
+    bgInner:"#171207", bgOuter:"#060402", edgeRGB:[180,150,90], edgeAlpha:0.16, labelColor:"rgba(244,237,224,0.92)",
+    swatch:"#f0c860", onAccent:"#04060c", solidBg:"#151009",
+    panelShadow:"0 20px 50px rgba(0,0,0,0.35)", barShadow:"0 12px 34px rgba(0,0,0,0.32)", cardShadow:"0 18px 50px rgba(0,0,0,0.5)"
+  }
+};
+
+const TOPN = [ {v:100,label:"100"}, {v:1000,label:"1K"}, {v:10000,label:"10K"}, {v:100000,label:"100K"} ];
+const PROMPTS = [
+  "Summarize the selected papers",
+  "How are these connected?",
+  "Explain the key method",
+  "Why are these so highly cited?"
+];
+
+class Component extends DCLogic {
+  constructor(props){
+    super(props);
+    this.canvasRef = React.createRef();
+    this.cardRef = React.createRef();
+    this.scrollRef = React.createRef();
+    this.inputRef = React.createRef();
+    const active = {};
+    ["genetics","ai","physics","chemistry","medicine","neuro","cs","economics"].forEach(k=>active[k]=true);
+    this.state = {
+      themeKey:"deepspace", leftOpen:true, rightOpen:true,
+      keyword:"", topN:1000, yearMin:1935, yearMax:2024, minCites:0, activeFields:active,
+      availOA:false, availPdf:false, availGrobid:false,
+      copilotTab:"chat", detailId:null, selectedIds:[], cardNodeId:null, fieldCounts:{}, availCounts:{oa:0,pdf:0,grobid:0}, yearBins:[], citeBins:[], shownCount:0, edgeCount:0,
+      messages:[{ role:"assistant", text:"Hi — I'm your research copilot. Click glowing papers in the graph to select them, then ask me to summarize, compare, or explain their methods." }],
+      chatInput:"", typing:false, ready:false
+    };
+    this._card = null;
+  }
+
+  async componentDidMount(){
+    const [{ ForceGraph3D }, { buildGraph, FIELDS }] = await Promise.all([
+      import("./force3d.js"), import("./graph-data.js")
+    ]);
+    this.FIELDS = FIELDS;
+    this.full = buildGraph(2400);
+    this.nodeById = new Map(this.full.nodes.map(n=>[n.id,n]));
+    const th = THEMES[this.state.themeKey];
+    this.engine = new ForceGraph3D(this.canvasRef.current, {
+      theme:{ bgInner:th.bgInner, bgOuter:th.bgOuter, edgeRGB:th.edgeRGB, edgeAlpha:th.edgeAlpha, labelColor:th.labelColor, light:this.state.themeKey==="light" },
+      fields: FIELDS,
+      onSelect: (node)=>{ this._dismissedId=null; this.setState({ selectedIds:[...this.engine.selected], detailId:node.id }); },
+      onHover: ()=>{},
+      onHud: (hud)=> this._onHud(hud)
+    });
+    this.engine.setData(this.full.nodes, this.full.edges);
+    this._ro = new ResizeObserver(()=> this.engine && this.engine.resize());
+    this._ro.observe(this.canvasRef.current);
+    this.setState({ ready:true }, ()=> this.applyFilters());
+  }
+
+  componentWillUnmount(){ if(this.engine) this.engine.dispose(); if(this._ro) this._ro.disconnect(); if(this._kwT) clearTimeout(this._kwT); }
+
+  _onHud(hud){
+    const el = this.cardRef.current; if(!el) return;
+    const c = hud.card;
+    const hide = ()=>{ el.style.opacity="0"; if(this.state.cardNodeId!==null) this.setState({cardNodeId:null}); };
+    const show = (card)=>{
+      const rect = this.canvasRef.current.getBoundingClientRect();
+      const w = 288, margin = 16;
+      let x = card.x + 18, y = card.y - 20;
+      if (x + w > rect.width - margin) x = card.x - w - 18;
+      x = Math.max(margin, Math.min(rect.width - w - margin, x));
+      y = Math.max(margin, Math.min(rect.height - 210, y));
+      el.style.transform = `translate(${x}px, ${y}px)`;
+      el.style.opacity = "1";
+      if (card.id !== this.state.cardNodeId) this.setState({ cardNodeId: card.id });
+    };
+    if (!c){ hide(); return; }
+    if (c.hover){
+      // hovering a node: permanently dismiss any sticky (selection) card that isn't this one
+      if (this._stickyId != null && this._stickyId !== c.id) this._dismissedId = this._stickyId;
+      show(c);
+    } else {
+      // card driven by the last-selected node
+      if (c.id === this._dismissedId){ hide(); return; }
+      this._stickyId = c.id;
+      show(c);
+    }
+  }
+
+  applyFilters(){
+    if (!this.engine || !this.full) return;
+    const s = this.state;
+    const kw = s.keyword.trim().toLowerCase();
+    const top = this.full.nodes.slice(0, Math.min(s.topN, this.full.nodes.length));
+    // field counts ignore the field toggle but respect other filters
+    const counts = {};
+    Object.keys(s.activeFields).forEach(k=>counts[k]=0);
+    const NBINS = 30, binSpan = (2025-1935)/NBINS;
+    const yearBins = new Array(NBINS).fill(0);
+    const CITEMAX = 40000, citeSpan = CITEMAX/NBINS;
+    const citeBins = new Array(NBINS).fill(0);
+    const availCounts = { oa:0, pdf:0, grobid:0 };
+    const availMatch = (n)=> (!s.availOA || n.openAccess) && (!s.availPdf || n.hasPdf) && (!s.availGrobid || n.hasGrobid);
+    const kept = [];
+    for (const n of top){
+      const kwMatch = (kw==="" || n.title.toLowerCase().includes(kw) || n.authors.toLowerCase().includes(kw));
+      const am = availMatch(n);
+      const passNoYear = n.citations>=s.minCites && s.activeFields[n.field] && kwMatch && am;
+      if (passNoYear){
+        let bi=Math.floor((n.year-1935)/binSpan); bi=Math.max(0,Math.min(NBINS-1,bi));
+        yearBins[bi]++;
+      }
+      const passNoCite = n.year>=s.yearMin && n.year<=s.yearMax && s.activeFields[n.field] && kwMatch && am;
+      if (passNoCite){
+        let ci=Math.floor(n.citations/citeSpan); ci=Math.max(0,Math.min(NBINS-1,ci));
+        citeBins[ci]++;
+      }
+      const passNonField = n.year>=s.yearMin && n.year<=s.yearMax && n.citations>=s.minCites && kwMatch && am;
+      if (passNonField) counts[n.field] = (counts[n.field]||0)+1;
+      // availability counts respect every OTHER filter but not availability itself
+      const passNoAvail = n.year>=s.yearMin && n.year<=s.yearMax && n.citations>=s.minCites && s.activeFields[n.field] && kwMatch;
+      if (passNoAvail){ if(n.openAccess) availCounts.oa++; if(n.hasPdf) availCounts.pdf++; if(n.hasGrobid) availCounts.grobid++; }
+      if (passNonField && s.activeFields[n.field]) kept.push(n);
+    }
+    const keepIds = new Set(kept.map(n=>n.id));
+    let edgeCount = 0;
+    for (const e of this.full.edges) if (keepIds.has(e.source) && keepIds.has(e.target)) edgeCount++;
+    this.engine.setVisible(keepIds);
+    this.setState({ shownCount:kept.length, edgeCount, fieldCounts:counts, availCounts, yearBins, citeBins });
+  }
+
+  setTheme(key){
+    const th = THEMES[key];
+    if (this.engine) this.engine.setTheme({ bgInner:th.bgInner, bgOuter:th.bgOuter, edgeRGB:th.edgeRGB, edgeAlpha:th.edgeAlpha, labelColor:th.labelColor, light:key==="light" });
+    this.setState({ themeKey:key });
+  }
+
+  toggleMode(){ this.setTheme(this.state.themeKey==="light" ? "deepspace" : "light"); }
+  setTab(tab){ this.setState({copilotTab:tab}); }
+  setDetail(id){ this.setState({detailId:id}); }
+  toggleField(k){ const a={...this.state.activeFields}; a[k]=!a[k]; this.setState({activeFields:a}, ()=>this.applyFilters()); }
+  toggleAvail(k){ this.setState({[k]:!this.state[k]}, ()=>this.applyFilters()); }
+  toggleAllFields(){ const keys=Object.keys(this.state.activeFields); const allOn=keys.every(k=>this.state.activeFields[k]); const a={}; keys.forEach(k=>a[k]=!allOn); this.setState({activeFields:a}, ()=>this.applyFilters()); }
+  setTopN(v){ this.setState({topN:v}, ()=>this.applyFilters()); }
+  onKeyword(e){ const v=e.target.value; this.setState({keyword:v}); if(this._kwT) clearTimeout(this._kwT); this._kwT=setTimeout(()=>this.applyFilters(),240); }
+  onYearMin(e){ let v=+e.target.value; v=Math.min(v,this.state.yearMax); this.setState({yearMin:v}, ()=>this.applyFilters()); }
+  onYearMax(e){ let v=+e.target.value; v=Math.max(v,this.state.yearMin); this.setState({yearMax:v}, ()=>this.applyFilters()); }
+  onMinCites(e){ this.setState({minCites:+e.target.value}, ()=>this.applyFilters()); }
+
+  removeSelected(id){ this.engine.selected.delete(id); this.setState({selectedIds:[...this.engine.selected]}); }
+  clearSelection(){ this.engine.selected.clear(); this.setState({selectedIds:[]}); }
+  focusNode(id){ if(this.engine) this.engine.focusNode(id); }
+  resetView(){ if(this.engine) this.engine.resetView(); }
+  closeCard(){ this._dismissedId = this.state.cardNodeId; if(this.cardRef.current) this.cardRef.current.style.opacity="0"; if(this.state.cardNodeId!==null) this.setState({cardNodeId:null}); }
+
+  onChatInput(e){ this.setState({chatInput:e.target.value}); const el=this.inputRef.current; if(el){ el.style.height="auto"; el.style.height=Math.min(96,el.scrollHeight)+"px"; } }
+  onChatKey(e){ if(e.key==="Enter" && !e.shiftKey){ e.preventDefault(); this.sendChat(); } }
+
+  _scrollChat(){ requestAnimationFrame(()=>{ const el=this.scrollRef.current; if(el) el.scrollTop=el.scrollHeight; }); }
+
+  send(text){
+    const t=(text||"").trim(); if(!t) return;
+    const msgs=[...this.state.messages, {role:"user", text:t}];
+    this.setState({messages:msgs, chatInput:"", typing:true});
+    const el=this.inputRef.current; if(el) el.style.height="auto";
+    this._scrollChat();
+    setTimeout(()=>{
+      const reply=this._genReply(t);
+      this.setState({messages:[...this.state.messages, {role:"assistant", text:reply}], typing:false});
+      this._scrollChat();
+    }, 900 + Math.random()*700);
+  }
+  sendChat(){ this.send(this.state.chatInput); }
+
+  _genReply(q){
+    const sel=[...this.engine.selected].map(id=>this.nodeById.get(id)).filter(Boolean);
+    if (!sel.length) return "Select one or more papers in the graph first — click any glowing node. Then I can summarize them, compare their methods, or trace how they cite each other.";
+    const titles=sel.map(p=>`“${p.title}” (${p.authors}, ${p.year})`);
+    const ql=q.toLowerCase();
+    const fields=[...new Set(sel.map(p=>this.FIELDS[p.field].label))];
+    const totalCites=sel.reduce((a,p)=>a+p.citations,0);
+    if (sel.length===1){
+      const p=sel[0];
+      if (ql.includes("method")) return `The central contribution of ${titles[0]} is methodological: it introduced an approach in ${this.FIELDS[p.field].label.toLowerCase()} that later work adopted almost verbatim. With ${p.citations.toLocaleString()} citations it functions as a foundational reference — most of its downstream edges in the graph point back to it as a "method cite."`;
+      if (ql.includes("why") || ql.includes("cited")) return `${titles[0]} is cited ${p.citations.toLocaleString()} times because it became the canonical reference for its technique — the kind of paper you cite by reflex when you use the method. Its position near the dense core of the ${this.FIELDS[p.field].label.toLowerCase()} cluster reflects that gravitational pull.`;
+      return `${titles[0]} sits in ${this.FIELDS[p.field].label} with ${p.citations.toLocaleString()} citations. It anchors a tight neighborhood of follow-on work — select a few of its neighbors and I can explain how they build on it.`;
+    }
+    if (ql.includes("connect") || ql.includes("related") || ql.includes("relationship")){
+      return `You've selected ${sel.length} papers spanning ${fields.join(", ")}. In the citation graph they connect through shared methodological lineage: the more recent ones cite the earlier ones as foundational references. The visible edges between them trace that intellectual descent — highlighted in cluster color when you hover a node.`;
+    }
+    if (ql.includes("compare") || ql.includes("differ")){
+      return `Comparing your selection: ${titles.join("; ")}. They differ mainly in scope — earlier works establish general principles while later ones operationalize them. Collectively they account for roughly ${totalCites.toLocaleString()} citations, a signal of how load-bearing this thread is across ${fields.join(" and ")}.`;
+    }
+    return `Here's a synthesis of your ${sel.length} selected papers (${fields.join(", ")}): ${titles.slice(0,3).join("; ")}${sel.length>3?`, and ${sel.length-3} more`:""}. Together they form a coherent citation cluster — the seminal results seed the region and the surrounding nodes extend or apply them. Combined they hold about ${totalCites.toLocaleString()} citations. Ask me to compare their methods or trace how they cite one another.`;
+  }
+
+  renderVals(){
+    const s=this.state, t=THEMES[s.themeKey], F=this.FIELDS||{};
+    const fmt=(n)=> n>=1000 ? (n/1000).toFixed(n>=10000?0:1).replace(/\.0$/,"")+"K" : ""+n;
+    const light = s.themeKey==="light";
+    const darken = (rgb)=>`rgb(${Math.round(rgb[0]*0.5)},${Math.round(rgb[1]*0.5)},${Math.round(rgb[2]*0.5)})`;
+    const lastSel = s.selectedIds.length ? s.selectedIds[s.selectedIds.length-1] : null;
+    const activeDetailId = (s.detailId!=null && s.selectedIds.includes(s.detailId)) ? s.detailId : lastSel;
+
+    // theme swatches
+    const themeList = Object.keys(THEMES).map(key=>{
+      const on=key===s.themeKey; const c=THEMES[key];
+      return { label:key, onClick:()=>this.setTheme(key),
+        style:`width:20px; height:20px; border-radius:50%; cursor:pointer; background:${c.swatch}; border:2px solid ${on?"#fff":"transparent"}; box-shadow:${on?`0 0 10px ${c.swatch}`:"none"}; opacity:${on?1:0.55}; transition:all .15s;` };
+    });
+
+    // legend
+    const legendList = Object.keys(F).map(k=>({ label:F[k].label, color:`rgb(${F[k].rgb.join(",")})` }));
+
+    // topN
+    const topNList = TOPN.map(o=>{
+      const on=o.v===s.topN;
+      return { label:o.label, onClick:()=>this.setTopN(o.v),
+        style:`flex:1; padding:9px 4px; border-radius:9px; font-size:13px; font-weight:${on?700:400}; cursor:pointer; font-family:'Lato',sans-serif; border:1px solid ${on?t.accent:t.border}; background:${on?t.chipBg:"transparent"}; color:${on?t.text:t.textDim};` };
+    });
+    const loaded = Math.min(s.topN, 2400);
+    const corpusNote = s.topN>2400 ? `Showing top ${loaded.toLocaleString()} (representative sample)` : `Top ${loaded.toLocaleString()} by citation count`;
+
+    // fields
+    const fc=s.fieldCounts||{};
+    const fieldsList = Object.keys(F).map(k=>{
+      const on=s.activeFields[k]; const rgb=F[k].rgb; const col=`rgb(${rgb.join(",")})`;
+      return { key:k, label:F[k].label, count:(fc[k]||0).toLocaleString(),
+        onClick:()=>this.toggleField(k),
+        dot: on?col:"transparent",
+        dotShadow: on?`0 0 8px ${col}`:"none",
+        textColor: on?t.text:t.textFaint,
+        rowStyle:`display:flex; align-items:center; gap:9px; padding:6px 8px 6px 0; border-radius:8px; cursor:pointer; background:transparent; border:1px solid transparent; ${on?"":"opacity:0.55;"} border-color:${on?"transparent":"transparent"}; width:100%; font-family:'Lato',sans-serif; text-align:left; border:1px solid ${on?F[k].rgb&&"transparent":"transparent"};` };
+    });
+    const allOn=Object.keys(s.activeFields).every(k=>s.activeFields[k]);
+
+    // availability filters
+    const ac = s.availCounts || {oa:0,pdf:0,grobid:0};
+    const AVAIL = [
+      { key:"availOA",     label:"Open Access",     count:ac.oa },
+      { key:"availPdf",    label:"Has PDF Link",    count:ac.pdf },
+      { key:"availGrobid", label:"Has GROBID XML",  count:ac.grobid },
+    ];
+    const availList = AVAIL.map(a=>{
+      const on=!!s[a.key];
+      return { key:a.key, label:a.label, count:(a.count||0).toLocaleString(),
+        onClick:()=>this.toggleAvail(a.key),
+        check: on?"✓":"", checkOpacity: on?1:0,
+        textColor: on?t.text:t.textFaint,
+        boxStyle:`display:flex; align-items:center; justify-content:center; width:16px; height:16px; flex:0 0 auto; border-radius:5px; font-size:11px; font-weight:900; border:1px solid ${on?t.accent:t.border}; background:${on?t.accent:"transparent"}; color:${t.onAccent};`,
+        rowStyle:`display:flex; align-items:center; gap:9px; padding:6px 8px 6px 0; border-radius:8px; cursor:pointer; background:transparent; border:1px solid transparent; ${on?"":"opacity:0.6;"} width:100%; font-family:'Lato',sans-serif; text-align:left;` };
+    });
+
+    // year histogram
+    const bins = s.yearBins || [];
+    const NB = bins.length || 30;
+    const binSpan = (2025-1935)/NB;
+    const maxB = Math.max(1, ...bins);
+    const yearHistList = bins.map((cnt,i)=>{
+      const bc = 1935 + binSpan*(i+0.5);
+      const inRange = bc>=s.yearMin && bc<=s.yearMax;
+      const hpct = cnt>0 ? Math.max(7, Math.round((cnt/maxB)*100)) : 3;
+      return { style:`flex:1 1 0; min-width:0; height:${hpct}%; border-radius:2px 2px 0 0; background:${inRange? t.accent : t.trackBg}; opacity:${inRange?0.9:0.5};` };
+    });
+
+    // citations histogram (sqrt-scaled heights so the long tail is visible)
+    const cbins = s.citeBins || [];
+    const NCB = cbins.length || 30;
+    const cSpan = 40000/NCB;
+    const maxCB = Math.max(1, ...cbins.map(v=>Math.sqrt(v)));
+    const citeHistList = cbins.map((cnt,i)=>{
+      const bcv = cSpan*(i+0.5);
+      const inRange = bcv >= s.minCites;
+      const hpct = cnt>0 ? Math.max(7, Math.round((Math.sqrt(cnt)/maxCB)*100)) : 3;
+      return { style:`flex:1 1 0; min-width:0; height:${hpct}%; border-radius:2px 2px 0 0; background:${inRange? t.accent : t.trackBg}; opacity:${inRange?0.9:0.5};` };
+    });
+
+    // selection
+    const selectedList = s.selectedIds.map(id=>{ const n=this.nodeById&&this.nodeById.get(id); if(!n) return null;
+      const active = id===activeDetailId;
+      return { id, title:n.title, color:`rgb(${F[n.field].rgb.join(",")})`, active,
+        wrapStyle:`display:flex; align-items:center; gap:8px; padding:7px 9px; border-radius:9px; background:${t.chipBg}; border:1px solid ${active?t.accent:t.border};`,
+        onRemove:()=>this.removeSelected(id), onFocus:()=>{ this.focusNode(id); this.setDetail(id); } }; }).filter(Boolean);
+
+    // messages
+    const messages = s.messages.map((m,i)=>{
+      const user=m.role==="user";
+      return { text:m.text, showLabel:!user,
+        wrap:`display:flex; flex-direction:column; ${user?"align-items:flex-end;":"align-items:flex-start;"} animation:fadein .3s ease;`,
+        bubble: user
+          ? `max-width:88%; padding:10px 13px; border-radius:14px 14px 4px 14px; background:${t.accent}; color:${t.onAccent}; font-size:14.5px; line-height:1.5; font-weight:400;`
+          : `max-width:94%; padding:11px 14px; border-radius:4px 14px 14px 14px; background:${t.botBubble}; border:1px solid ${t.border}; color:${t.text}; font-size:14.5px; line-height:1.62; font-weight:400;` };
+    });
+
+    // card
+    const cardNode = s.cardNodeId!=null && this.nodeById ? this.nodeById.get(s.cardNodeId) : null;
+    let cardColor="#fff", cardLabelColor="#fff", cardFieldLabel="", cardTitle="", cardAuthors="", cardYear="", cardRank="", cardCitesFmt="", cardDegree=0, cardBtnLabel="", cardBtnStyle="", cardToggleSelect=()=>{};
+    if (cardNode){
+      cardColor=`rgb(${F[cardNode.field].rgb.join(",")})`;
+      cardLabelColor = light ? darken(F[cardNode.field].rgb) : cardColor;
+      cardFieldLabel=F[cardNode.field].label; cardTitle=cardNode.title; cardAuthors=cardNode.authors;
+      cardYear=cardNode.year; cardRank=cardNode.rank.toLocaleString(); cardCitesFmt=cardNode.citations.toLocaleString();
+      cardDegree = this.engine ? (this.engine.adj.get(cardNode.id)||[]).length : 0;
+      const sel=this.engine && this.engine.selected.has(cardNode.id);
+      cardBtnLabel = sel?"Remove from selection":"Add to selection";
+      cardBtnStyle=`width:100%; padding:9px; border-radius:9px; cursor:pointer; font-family:'Lato',sans-serif; font-size:12.5px; font-weight:500; border:1px solid ${sel?t.border:t.accent}; background:${sel?"transparent":t.accent}; color:${sel?t.textDim:t.onAccent};`;
+      cardToggleSelect=()=>{ this.engine.toggleSelect(cardNode.id); this.setState({selectedIds:[...this.engine.selected]}); };
+    }
+
+    const promptList = PROMPTS.map(p=>({ label:p, onClick:()=>this.send(p) }));
+    const canSend = s.chatInput.trim().length>0;
+
+    // paper detail view
+    const chatTab = s.copilotTab!=="details", detailsTab = s.copilotTab==="details";
+    const tabBtn = (on)=>`padding:5px 12px; border-radius:7px; border:none; cursor:pointer; font-family:'Lato',sans-serif; font-size:11.5px; font-weight:700; background:${on?t.accent:"transparent"}; color:${on?t.onAccent:t.textDim};`;
+    const detailNode = activeDetailId!=null && this.nodeById ? this.nodeById.get(activeDetailId) : null;
+    let detailColor="#fff", detailLabelColor="#fff", detailFieldLabel="", detailTitle="", detailAuthors="", detailRank="", detailAbstract="", detailDoi="", detailMeta=[], detailFocus=()=>{}, detailRemove=()=>{};
+    if (detailNode){
+      const rgb=F[detailNode.field].rgb;
+      detailColor=`rgb(${rgb.join(",")})`; detailLabelColor = light ? darken(rgb) : detailColor;
+      detailFieldLabel=F[detailNode.field].label; detailTitle=detailNode.title; detailAuthors=detailNode.authors;
+      detailRank=detailNode.rank.toLocaleString(); detailAbstract=detailNode.abstract; detailDoi=detailNode.doi;
+      const degree=this.engine?(this.engine.adj.get(detailNode.id)||[]).length:0;
+      detailMeta=[
+        {label:"Published", value:detailNode.pubDate},
+        {label:"Published In", value:detailNode.venue},
+        {label:"Citations", value:detailNode.citations.toLocaleString()},
+        {label:"Citation Links", value:""+degree},
+      ];
+      detailFocus=()=>this.focusNode(detailNode.id); detailRemove=()=>this.removeSelected(detailNode.id);
+    }
+
+    return {
+      t, themeList, legendList, topNList, fieldsList, corpusNote, yearHistList, citeHistList, availList,
+      leftOpen:s.leftOpen, leftClosed:!s.leftOpen, rightOpen:s.rightOpen, rightClosed:!s.rightOpen,
+      leftWidth: s.leftOpen?"296px":"120px", rightWidth: s.rightOpen?"400px":"128px", ctrlBarWidth:"400px",
+      rightAnchor: s.rightOpen ? "bottom:96px;" : "max-height:calc(100% - 28px);",
+      ctrlLeft: (s.leftOpen?324:148)+"px", ctrlRight: (s.rightOpen?440:156)+"px",
+      toggleLeft:()=>this.setState({leftOpen:!s.leftOpen}, ()=>this.engine&&this.engine.resize()),
+      toggleRight:()=>this.setState({rightOpen:!s.rightOpen}, ()=>this.engine&&this.engine.resize()),
+      toggleAllFields:()=>this.toggleAllFields(), allFieldsLabel: allOn?"None":"All",
+      keyword:s.keyword, onKeyword:(e)=>this.onKeyword(e),
+      yearMin:s.yearMin, yearMax:s.yearMax, onYearMin:(e)=>this.onYearMin(e), onYearMax:(e)=>this.onYearMax(e),
+      minCites:s.minCites, minCitesFmt:fmt(s.minCites), onMinCites:(e)=>this.onMinCites(e),
+      resetView:()=>this.resetView(), cardClose:()=>this.closeCard(),
+      canvasRef:this.canvasRef, cardRef:this.cardRef, scrollRef:this.scrollRef, inputRef:this.inputRef,
+      shownCountFmt:s.shownCount.toLocaleString(), edgeCountFmt:s.edgeCount.toLocaleString(), selCountFmt:s.selectedIds.length,
+      hasSelection:s.selectedIds.length>0, noSelection:s.selectedIds.length===0,
+      selectedList, clearSelection:()=>this.clearSelection(),
+      chatTab, detailsTab, setTabChat:()=>this.setTab("chat"), setTabDetail:()=>this.setTab("details"),
+      tabChatStyle:tabBtn(chatTab), tabDetailStyle:tabBtn(detailsTab),
+      hasDetail:!!detailNode, noDetail:!detailNode, detailColor, detailLabelColor, detailFieldLabel,
+      detailTitle, detailAuthors, detailRank, detailAbstract, detailDoi, detailMeta, detailFocus, detailRemove,
+      messages, typing:s.typing, showPrompts:s.selectedIds.length>0,
+      promptList, chatInput:s.chatInput, onChatInput:(e)=>this.onChatInput(e), onChatKey:(e)=>this.onChatKey(e), sendChat:()=>this.sendChat(),
+      sendStyle:`width:32px; height:32px; flex:0 0 auto; border-radius:9px; border:none; cursor:${canSend?"pointer":"default"}; font-size:15px; font-weight:700; background:${canSend?t.accent:t.chipBg}; color:${canSend?t.onAccent:t.textFaint}; transition:all .15s;`,
+      toggleMode:()=>this.toggleMode(), modeIcon: s.themeKey==="light" ? "☾" : "☀",
+      cardNode, cardColor, cardLabelColor, cardFieldLabel, cardTitle, cardAuthors, cardYear, cardRank, cardCitesFmt, cardDegree, cardBtnLabel, cardBtnStyle, cardToggleSelect
+    };
+  }
+}
+</script>
+</body>
+</html>
