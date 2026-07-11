@@ -9,6 +9,7 @@ import { FIELDS } from "../lib/fieldClusters";
 import { useAtlasStore } from "../lib/store";
 import { PROMPTS } from "../lib/chat";
 import { useDetail } from "../lib/useShard";
+import FullTextBadge from "./FullTextBadge";
 import type { AtlasActions } from "./CitationAtlas";
 
 const MONTHS = [
@@ -170,6 +171,7 @@ export default function CopilotPanel({
                         >
                           {n.title}
                         </span>
+                        {n.hasGrobid && <FullTextBadge t={t} variant="icon" />}
                         <button
                           onClick={() => actions.removeSelected(id)}
                           className="hc"
@@ -183,9 +185,9 @@ export default function CopilotPanel({
                 </div>
                 <button
                   onClick={() => actions.clearSelection()}
-                  style={{ marginTop: 8, fontSize: 11.5, color: t.textFaint, background: "none", border: "none", cursor: "pointer", fontFamily: "'Lato',sans-serif" }}
+                  style={{ marginTop: 8, fontSize: 11.5, fontWeight: 600, color: t.textFaint, background: "none", border: "none", cursor: "pointer", fontFamily: "'Lato',sans-serif" }}
                 >
-                  Clear all
+                  Clear All
                 </button>
               </>
             ) : (
@@ -335,6 +337,12 @@ export default function CopilotPanel({
                   <div style={{ fontSize: 11.5, color: t.textFaint, marginBottom: 18, wordBreak: "break-all" }}>
                     DOI: {detail ? (detail.doi ? detail.doi.replace(/^https?:\/\/doi\.org\//, "") : "—") : "…"}
                   </div>
+
+                  {detailNode.hasGrobid && (
+                    <div style={{ marginBottom: 12 }}>
+                      <FullTextBadge t={t} variant="chip" />
+                    </div>
+                  )}
 
                   {detail && (detail.landing_url || detail.pdf_url) && (
                     <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>

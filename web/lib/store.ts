@@ -4,6 +4,8 @@
 import { create } from "zustand";
 import type { ClusterKey } from "./fieldClusters";
 import { CLUSTER_KEYS } from "./fieldClusters";
+import type { ContentTypeKey } from "./contentTypes";
+import { CONTENT_TYPE_KEYS } from "./contentTypes";
 import type { ThemeKey } from "./themes";
 
 export interface ChatMessage {
@@ -49,6 +51,7 @@ export interface AtlasState {
   yearMax: number;
   minCites: number;
   activeFields: Record<ClusterKey, boolean>;
+  activeTypes: Record<ContentTypeKey, boolean>;
   availOA: boolean;
   availPdf: boolean;
   availGrobid: boolean;
@@ -57,6 +60,7 @@ export interface AtlasState {
   selectedIds: number[];
   cardNodeId: number | null;
   fieldCounts: Partial<Record<ClusterKey, number>>;
+  typeCounts: Partial<Record<ContentTypeKey, number>>;
   availCounts: AvailCounts;
   yearBins: number[];
   citeBins: number[];
@@ -72,12 +76,15 @@ export interface AtlasState {
 const allActive = () =>
   Object.fromEntries(CLUSTER_KEYS.map((k) => [k, true])) as Record<ClusterKey, boolean>;
 
+const allTypesActive = () =>
+  Object.fromEntries(CONTENT_TYPE_KEYS.map((k) => [k, true])) as Record<ContentTypeKey, boolean>;
+
 // Default filter/search state, shared by the store's initial values and the
 // "Reset View" action so both stay in sync.
 export const filterDefaults = (): Pick<
   AtlasState,
   | "keyword" | "keywordApplied" | "topN" | "yearMin" | "yearMax" | "minCites"
-  | "activeFields" | "availOA" | "availPdf" | "availGrobid"
+  | "activeFields" | "activeTypes" | "availOA" | "availPdf" | "availGrobid"
 > => ({
   keyword: "",
   keywordApplied: "",
@@ -86,6 +93,7 @@ export const filterDefaults = (): Pick<
   yearMax: YEAR_MAX,
   minCites: 0,
   activeFields: allActive(),
+  activeTypes: allTypesActive(),
   availOA: false,
   availPdf: false,
   availGrobid: false,
@@ -101,6 +109,7 @@ export const useAtlasStore = create<AtlasState>((set) => ({
   selectedIds: [],
   cardNodeId: null,
   fieldCounts: {},
+  typeCounts: {},
   availCounts: { oa: 0, pdf: 0, grobid: 0 },
   yearBins: [],
   citeBins: [],

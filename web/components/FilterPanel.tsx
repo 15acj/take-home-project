@@ -1,9 +1,10 @@
-// LEFT "Filter & Search" panel — 296px open / 120px collapsed.
+// LEFT "Filter & Search" panel — 320px open / 120px collapsed.
 // Search, Corpus Size, Fields, Year (dual sliders + histogram),
 // Availability, Min. Citations (slider + sqrt histogram).
 import { useRef, type CSSProperties } from "react";
 import type { Theme } from "../lib/themes";
 import { FIELDS, CLUSTER_KEYS, type ClusterKey } from "../lib/fieldClusters";
+import { CONTENT_TYPE_KEYS, CONTENT_TYPE_LABELS, type ContentTypeKey } from "../lib/contentTypes";
 import { useAtlasStore, TOPN, YEAR_MIN, YEAR_MAX, CITE_MAX, NBINS } from "../lib/store";
 
 const fmt = (n: number) =>
@@ -40,11 +41,27 @@ export default function FilterPanel({ t }: { t: Theme }) {
   const loaded = Math.min(s.topN, 10000);
   const corpusNote = `Top ${loaded.toLocaleString()} by citation count`;
 
+  const toggleType = (k: ContentTypeKey) =>
+    set({ activeTypes: { ...s.activeTypes, [k]: !s.activeTypes[k] } });
+  const toggleAllTypes = () => {
+    const on = CONTENT_TYPE_KEYS.every((k) => s.activeTypes[k]);
+    set({ activeTypes: Object.fromEntries(CONTENT_TYPE_KEYS.map((k) => [k, !on])) as Record<ContentTypeKey, boolean> });
+  };
+  const allTypesOn = CONTENT_TYPE_KEYS.every((k) => s.activeTypes[k]);
+  const TYPES: { key: ContentTypeKey; label: string; count: number }[] = CONTENT_TYPE_KEYS.map((k) => ({
+    key: k,
+    label: CONTENT_TYPE_LABELS[k],
+    count: s.typeCounts[k] || 0,
+  }));
+
   const AVAIL: { key: "availOA" | "availPdf" | "availGrobid"; label: string; count: number }[] = [
     { key: "availOA", label: "Open Access", count: s.availCounts.oa },
     { key: "availPdf", label: "Has PDF Link", count: s.availCounts.pdf },
-    { key: "availGrobid", label: "Has GROBID XML", count: s.availCounts.grobid },
+    { key: "availGrobid", label: "Full Text", count: s.availCounts.grobid },
   ];
+  const allAvailOn = AVAIL.every((a) => s[a.key]);
+  const toggleAllAvail = () =>
+    set(Object.fromEntries(AVAIL.map((a) => [a.key, !allAvailOn])) as Partial<typeof s>);
 
   const yearBins = s.yearBins.length ? s.yearBins : new Array(NBINS).fill(0);
   const yearSpan = (YEAR_MAX + 1 - YEAR_MIN) / yearBins.length;
@@ -57,7 +74,7 @@ export default function FilterPanel({ t }: { t: Theme }) {
   return (
     <div style={{
       position: "absolute", top: 14, left: 14, zIndex: 20, display: "flex", flexDirection: "column",
-      width: s.leftOpen ? 296 : 120, maxHeight: "calc(100% - 124px)", borderRadius: 16,
+      width: s.leftOpen ? 320 : 120, maxHeight: "calc(100% - 124px)", borderRadius: 16,
       background: t.panelBg, border: `1px solid ${t.border}`,
       backdropFilter: "blur(18px)", WebkitBackdropFilter: "blur(18px)", boxShadow: t.panelShadow, overflow: "hidden",
     }}>
@@ -146,7 +163,7 @@ export default function FilterPanel({ t }: { t: Theme }) {
                 <span style={{ flex: 1 }} />
                 <button
                   onClick={toggleAllFields}
-                  style={{ fontSize: 11.5, fontWeight: 700, color: t.accent, background: "none", border: "none", cursor: "pointer", fontFamily: "'Lato',sans-serif" }}
+                  style={{ fontSize: 11.5, fontWeight: 700, color: t.accent, background: "none", border: "none", cursor: "pointer", fontFamily: "'Lato',sans-serif", padding: 0 }}
                 >
                   {allOn ? "None" : "All"}
                 </button>
@@ -160,7 +177,7 @@ export default function FilterPanel({ t }: { t: Theme }) {
                       key={k}
                       onClick={() => toggleField(k)}
                       style={{
-                        display: "flex", alignItems: "center", gap: 9, padding: "2px 8px 2px 0",
+                        display: "flex", alignItems: "center", gap: 9, padding: "2px 0 2px 0",
                         borderRadius: 8, cursor: "pointer", background: "transparent",
                         border: "1px solid transparent", opacity: on ? 1 : 0.55,
                         width: "100%", fontFamily: "'Lato',sans-serif", textAlign: "left",
@@ -213,9 +230,67 @@ export default function FilterPanel({ t }: { t: Theme }) {
               />
             </div>
 
+            {/* content type */}
+            <div style={{ marginBottom: 22 }}>
+              <div style={{ display: "flex", alignItems: "center", marginBottom: 9 }}>
+                <span style={sectionLabel(t)}>Content Type</span>
+                <span style={{ flex: 1 }} />
+                <button
+                  onClick={toggleAllTypes}
+                  style={{ fontSize: 11.5, fontWeight: 700, color: t.accent, background: "none", border: "none", cursor: "pointer", fontFamily: "'Lato',sans-serif", padding: 0 }}
+                >
+                  {allTypesOn ? "None" : "All"}
+                </button>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                {TYPES.map((ct) => {
+                  const on = s.activeTypes[ct.key];
+                  return (
+                    <button
+                      key={ct.key}
+                      onClick={() => toggleType(ct.key)}
+                      style={{
+                        display: "flex", alignItems: "center", gap: 9, padding: "2px 0 2px 0",
+                        borderRadius: 8, cursor: "pointer", background: "transparent",
+                        border: "1px solid transparent", opacity: on ? 1 : 0.6,
+                        width: "100%", fontFamily: "'Lato',sans-serif", textAlign: "left",
+                      }}
+                    >
+                      <span style={{
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        width: 16, height: 16, flex: "0 0 auto", borderRadius: 5,
+                        fontSize: 11, fontWeight: 900,
+                        border: `1px solid ${on ? t.accent : t.border}`,
+                        background: on ? t.accent : "transparent", color: t.onAccent,
+                      }}>
+                        <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke={t.onAccent} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: on ? 1 : 0, display: "block" }}>
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      </span>
+                      <span style={{ flex: 1, textAlign: "left", fontSize: 13.5, fontWeight: 700, color: on ? t.text : t.textFaint }}>
+                        {ct.label}
+                      </span>
+                      <span style={{ fontSize: 12.5, fontWeight: 700, fontFamily: "'Lato',sans-serif", color: t.textDim }}>
+                        {(ct.count || 0).toLocaleString()}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* availability */}
             <div style={{ marginBottom: 22 }}>
-              <div style={{ ...sectionLabel(t), marginBottom: 9 }}>Availability</div>
+              <div style={{ display: "flex", alignItems: "center", marginBottom: 9 }}>
+                <span style={sectionLabel(t)}>Availability</span>
+                <span style={{ flex: 1 }} />
+                <button
+                  onClick={toggleAllAvail}
+                  style={{ fontSize: 11.5, fontWeight: 700, color: t.accent, background: "none", border: "none", cursor: "pointer", fontFamily: "'Lato',sans-serif", padding: 0 }}
+                >
+                  {allAvailOn ? "None" : "All"}
+                </button>
+              </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                 {AVAIL.map((a) => {
                   const on = s[a.key];
@@ -224,7 +299,7 @@ export default function FilterPanel({ t }: { t: Theme }) {
                       key={a.key}
                       onClick={() => set({ [a.key]: !on } as Partial<typeof s>)}
                       style={{
-                        display: "flex", alignItems: "center", gap: 9, padding: "2px 8px 2px 0",
+                        display: "flex", alignItems: "center", gap: 9, padding: "2px 0 2px 0",
                         borderRadius: 8, cursor: "pointer", background: "transparent",
                         border: "1px solid transparent", opacity: on ? 1 : 0.6,
                         width: "100%", fontFamily: "'Lato',sans-serif", textAlign: "left",

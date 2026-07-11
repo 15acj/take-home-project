@@ -265,10 +265,13 @@ def main() -> int:
     domains = [((r.get("primary_topic") or {}).get("domain") or {}).get("display_name") or "Unknown" for r in rows]
     fields = [((r.get("primary_topic") or {}).get("field") or {}).get("display_name") or "Unknown" for r in rows]
     topics = [(r.get("primary_topic") or {}).get("display_name") or "" for r in rows]
+    types = [r.get("type") or "unknown" for r in rows]
     domain_table, domain_idx = table(domains)
     field_table, field_idx = table(fields)
     topic_table, topic_idx = table(topics)
+    type_table, type_idx = table(types)
     assert len(domain_table) < 256 and len(field_table) < 256, "categorical index exceeds Uint8"
+    assert len(type_table) < 256, "type index exceeds Uint8"
 
     # --- nodes.bin: SoA numerics ---
     citations = array.array("I", (r.get("cited_by_count") or 0 for r in rows))
@@ -286,13 +289,18 @@ def main() -> int:
                  + le_bytes(dom) + le_bytes(fld) + le_bytes(flags))
     write_gz(os.path.join(args.out, "nodes.bin"), nodes_bin)
 
-    # --- nodes-text.json: title, first author, topic index ---
+    # --- nodes-text.json: title, first author, topic index, raw work type ---
+    # typeIdx/typeTable carry the raw OpenAlex work type per node; the client buckets
+    # them (article / book / review / other) for the Content Type filter, so re-bucketing
+    # never needs a data rebuild.
     nodes_text = {
         "title": [r.get("title") or "" for r in rows],
         "author": [first_author(r) for r in rows],
         "authorsDisplay": [authors_display(r) for r in rows],
         "topicIdx": topic_idx,
         "topicTable": topic_table,
+        "typeIdx": type_idx,
+        "typeTable": type_table,
     }
     nt = json.dumps(nodes_text, separators=(",", ":"), ensure_ascii=False).encode()
     write_gz(os.path.join(args.out, "nodes-text.json"), nt)

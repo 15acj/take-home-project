@@ -21,6 +21,7 @@ export interface AtlasActions {
   setTheme: (key: ThemeKey) => void;
   toggleMode: () => void;
   resetView: () => void;
+  zoom: (dir: number) => void;
   focusNode: (id: number) => void;
   toggleSelect: (id: number) => void;
   removeSelected: (id: number) => void;
@@ -50,6 +51,7 @@ export default function CitationAtlas() {
   const yearMax = useAtlasStore((s) => s.yearMax);
   const minCites = useAtlasStore((s) => s.minCites);
   const activeFields = useAtlasStore((s) => s.activeFields);
+  const activeTypes = useAtlasStore((s) => s.activeTypes);
   const availOA = useAtlasStore((s) => s.availOA);
   const availPdf = useAtlasStore((s) => s.availPdf);
   const availGrobid = useAtlasStore((s) => s.availGrobid);
@@ -144,7 +146,7 @@ export default function CitationAtlas() {
     const engine = engineRef.current, data = dataRef.current;
     if (!ready || !engine || !data) return;
     const res = computeFilter(
-      { keywordApplied, topN, yearMin, yearMax, minCites, activeFields, availOA, availPdf, availGrobid },
+      { keywordApplied, topN, yearMin, yearMax, minCites, activeFields, activeTypes, availOA, availPdf, availGrobid },
       data,
     );
     engine.setVisible(res.keepIds);
@@ -152,11 +154,12 @@ export default function CitationAtlas() {
       shownCount: res.shownCount,
       edgeCount: res.edgeCount,
       fieldCounts: res.fieldCounts,
+      typeCounts: res.typeCounts,
       availCounts: res.availCounts,
       yearBins: res.yearBins,
       citeBins: res.citeBins,
     });
-  }, [S, ready, keywordApplied, topN, yearMin, yearMax, minCites, activeFields, availOA, availPdf, availGrobid, kwVersion]);
+  }, [S, ready, keywordApplied, topN, yearMin, yearMax, minCites, activeFields, activeTypes, availOA, availPdf, availGrobid, kwVersion]);
 
   // ---- actions shared with the panels (the DC class methods) ----
   const scrollChat = useCallback(() => {
@@ -184,6 +187,7 @@ export default function CitationAtlas() {
       if (cardRef.current) cardRef.current.style.opacity = "0";
       S.setState({ ...filterDefaults(), selectedIds: [], detailId: null, cardNodeId: null });
     },
+    zoom: (dir) => engineRef.current?.zoom(dir),
     focusNode: (id) => engineRef.current?.focusNode(id),
     toggleSelect: (id) => {
       const engine = engineRef.current;
@@ -239,7 +243,7 @@ export default function CitationAtlas() {
 
         <StatsBar t={t} actions={actions} />
         <Legend t={t} />
-        <ControlsHint t={t} />
+        <ControlsHint t={t} actions={actions} />
 
         {/* floating detail card (positioned imperatively by onHud) */}
         <div ref={cardRef} style={{ position: "absolute", zIndex: 15, width: 288, pointerEvents: "auto", opacity: 0, willChange: "transform" }}>

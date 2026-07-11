@@ -134,6 +134,9 @@ export class ForceGraph3D {
     this.targetDist=Q+340;
   }
   resetView(){ this.autoRotate=true; this._focusTarget=null; this.targetDist=980; this.panX=0; this.panY=0; this.targetPitch=-0.32; }
+  // Manual zoom for the on-screen +/- buttons. dir>0 zooms in (closer), dir<0 zooms
+  // out; one press ~ a few wheel ticks. Same targetDist clamp as the wheel handler.
+  zoom(dir){ this.targetDist*=(1-Math.sign(dir)*0.18); this.targetDist=Math.max(180,Math.min(2600,this.targetDist)); }
 
   resize() {
     const rect=this.canvas.getBoundingClientRect();

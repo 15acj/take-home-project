@@ -6,6 +6,7 @@ import type { Theme } from "../lib/themes";
 import type { AtlasData } from "../lib/loaders";
 import { FIELDS } from "../lib/fieldClusters";
 import { useAtlasStore } from "../lib/store";
+import FullTextBadge from "./FullTextBadge";
 import type { AtlasActions } from "./CitationAtlas";
 
 const darken = (rgb: number[]) =>
@@ -43,6 +44,7 @@ export default function HoverCard({
           {FIELDS[node.field].label}
         </span>
         <span style={{ flex: 1 }} />
+        {node.hasGrobid && <FullTextBadge t={t} variant="icon" />}
         <span style={{ fontSize: 11.5, fontFamily: "'Lato',sans-serif", color: t.textFaint }}>
           #{node.rank.toLocaleString()}
         </span>
