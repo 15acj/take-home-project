@@ -24,6 +24,11 @@ export default function FilterPanel({ t }: { t: Theme }) {
     kwTimer.current = setTimeout(() => useAtlasStore.setState({ keywordApplied: v }), 240);
   };
 
+  const clearKeyword = () => {
+    if (kwTimer.current) clearTimeout(kwTimer.current);
+    set({ keyword: "", keywordApplied: "" });
+  };
+
   const toggleField = (k: ClusterKey) =>
     set({ activeFields: { ...s.activeFields, [k]: !s.activeFields[k] } });
   const toggleAllFields = () => {
@@ -71,7 +76,7 @@ export default function FilterPanel({ t }: { t: Theme }) {
             </button>
           </div>
 
-          <div style={{ flex: "0 1 auto", minHeight: 0, overflowY: "auto", padding: "0 12px 18px", marginRight: 6 }}>
+          <div style={{ flex: "0 1 auto", minHeight: 0, overflowY: "auto", padding: "0 12px 12px", marginRight: 6, marginTop: 6, marginBottom: 6 }}>
             {/* search */}
             <div style={{ position: "relative", marginBottom: 20 }}>
               <input
@@ -80,12 +85,28 @@ export default function FilterPanel({ t }: { t: Theme }) {
                 onChange={(e) => onKeyword(e.target.value)}
                 placeholder="Search titles, authors…"
                 style={{
-                  width: "100%", padding: "10px 12px 10px 34px", borderRadius: 10,
+                  width: "100%", padding: "10px 34px 10px 34px", borderRadius: 10,
                   border: `1px solid ${t.border}`, background: t.inputBg, color: t.text,
                   fontFamily: "'Lato',sans-serif", fontSize: 14,
                 }}
               />
-              <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: t.textFaint, fontSize: 18 }}>⌕</span>
+              <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: t.textFaint, fontSize: 21 }}>⌕</span>
+              {s.keyword && (
+                <button
+                  onClick={clearKeyword}
+                  title="Clear search"
+                  className="hc"
+                  style={{
+                    position: "absolute", right: 6, top: "50%", transform: "translateY(-50%)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    width: 22, height: 22, borderRadius: 6, border: "none", background: "transparent",
+                    color: t.textFaint, cursor: "pointer", fontSize: 11, lineHeight: 1,
+                    ["--hc" as string]: t.text,
+                  }}
+                >
+                  ✕
+                </button>
+              )}
             </div>
 
             {/* corpus size */}
@@ -137,7 +158,7 @@ export default function FilterPanel({ t }: { t: Theme }) {
                       key={k}
                       onClick={() => toggleField(k)}
                       style={{
-                        display: "flex", alignItems: "center", gap: 9, padding: "6px 8px 6px 0",
+                        display: "flex", alignItems: "center", gap: 9, padding: "2px 8px 2px 0",
                         borderRadius: 8, cursor: "pointer", background: "transparent",
                         border: "1px solid transparent", opacity: on ? 1 : 0.55,
                         width: "100%", fontFamily: "'Lato',sans-serif", textAlign: "left",
@@ -201,7 +222,7 @@ export default function FilterPanel({ t }: { t: Theme }) {
                       key={a.key}
                       onClick={() => set({ [a.key]: !on } as Partial<typeof s>)}
                       style={{
-                        display: "flex", alignItems: "center", gap: 9, padding: "6px 8px 6px 0",
+                        display: "flex", alignItems: "center", gap: 9, padding: "2px 8px 2px 0",
                         borderRadius: 8, cursor: "pointer", background: "transparent",
                         border: "1px solid transparent", opacity: on ? 1 : 0.6,
                         width: "100%", fontFamily: "'Lato',sans-serif", textAlign: "left",
@@ -274,7 +295,7 @@ export default function FilterPanel({ t }: { t: Theme }) {
           <span style={{ fontSize: 20 }}>⌕</span>
           <span style={{ fontSize: 13, letterSpacing: "0.01em", fontWeight: 700, fontFamily: "'Lato',sans-serif" }}>Filters</span>
           <span style={{ flex: 1 }} />
-          <span style={{ fontSize: 14, lineHeight: 1 }}>›</span>
+          <span style={{ fontSize: 16, lineHeight: 1 }}>›</span>
         </button>
       )}
     </div>

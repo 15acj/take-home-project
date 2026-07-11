@@ -167,7 +167,7 @@ export class ForceGraph3D {
 
   _loop() {
     this._raf=requestAnimationFrame(this._loop.bind(this));
-    if (this.autoRotate) this.targetYaw+=0.0006;
+    if (this.autoRotate) this.targetYaw+=0.00032;
     this.yaw+=(this.targetYaw-this.yaw)*0.1; this.pitch+=(this.targetPitch-this.pitch)*0.1; this.dist+=(this.targetDist-this.dist)*0.09;
     if (this._focusTarget){ const p=this._project(this._focusTarget); if(p){ this.panX+=(this.w/2-p.sx)*0.1; this.panY+=(this.h/2-p.sy)*0.1; } }
     this._render();
@@ -235,10 +235,13 @@ export class ForceGraph3D {
       const p=c.proj, n=c.node; const size=Math.max(1.3,n.r*p.scale);
       const txt=n.title.length>44?n.title.slice(0,42)+"…":n.title;
       const tx=p.sx+size+16, ty=p.sy;
-      const strong = n.id===this.hoverId||this.selected.has(n.id);
-      ctx.font = strong?"900 13.5px 'Lato', system-ui":"700 12.5px 'Lato', system-ui";
+      const isHover = n.id===this.hoverId;
+      const isSel = this.selected.has(n.id);
+      const strong = isHover||isSel;
+      const weight = isSel && !isHover ? 700 : (strong ? 900 : 700);
+      ctx.font = `${weight} ${isHover?13.5:12.5}px 'Lato', system-ui`;
       const wdt=ctx.measureText(txt).width;
-      ctx.fillStyle=light?"rgba(255,255,255,0.78)":"rgba(0,0,0,0.5)"; ctx.fillRect(tx-4,ty-9,wdt+8,18);
+      ctx.fillStyle=light?"rgba(255,255,255,0.78)":"rgba(0,0,0,0.5)"; ctx.beginPath(); ctx.roundRect(tx-4,ty-9,wdt+8,18,3); ctx.fill();
       ctx.fillStyle=strong?(light?"#0a1020":"#ffffff"):th.labelColor; ctx.fillText(txt,tx,ty);
     }
 

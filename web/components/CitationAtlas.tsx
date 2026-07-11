@@ -8,7 +8,7 @@ import { computeFilter } from "../lib/filter";
 import { genReply } from "../lib/chat";
 import { FIELDS } from "../lib/fieldClusters";
 import { THEMES, engineTheme, type ThemeKey } from "../lib/themes";
-import { useAtlasStore } from "../lib/store";
+import { useAtlasStore, filterDefaults } from "../lib/store";
 import StatsBar from "./StatsBar";
 import Legend from "./Legend";
 import ControlsHint from "./ControlsHint";
@@ -99,7 +99,13 @@ export default function CitationAtlas() {
       theme: engineTheme(S.getState().themeKey),
       fields: FIELDS,
       onSelect: (node: { id: number }) => {
+        // Selecting a node pins its card open immediately, so it stays up until
+        // the user hovers a different node or dismisses it — no longer dependent
+        // on an empty-space frame arriving to establish stickiness. Deselecting
+        // (toggling off) unpins.
+        const isSel = engine.selected.has(node.id);
         dismissedRef.current = null;
+        stickyRef.current = isSel ? node.id : null;
         S.setState({ selectedIds: [...engine.selected] as number[], detailId: node.id });
       },
       onHover: () => {},
@@ -169,7 +175,14 @@ export default function CitationAtlas() {
       engineRef.current?.setTheme(engineTheme(key));
       S.setState({ themeKey: key });
     },
-    resetView: () => engineRef.current?.resetView(),
+    resetView: () => {
+      engineRef.current?.resetView();
+      engineRef.current?.selected.clear();
+      stickyRef.current = null;
+      dismissedRef.current = null;
+      if (cardRef.current) cardRef.current.style.opacity = "0";
+      S.setState({ ...filterDefaults(), selectedIds: [], detailId: null, cardNodeId: null });
+    },
     focusNode: (id) => engineRef.current?.focusNode(id),
     toggleSelect: (id) => {
       const engine = engineRef.current;

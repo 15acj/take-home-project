@@ -1,16 +1,16 @@
 {
   "version": "v1",
   "counts": {
-    "nodes": 9566,
-    "edges": 24193,
+    "nodes": 9570,
+    "edges": 24175,
     "shards": 96
   },
   "shardSize": 100,
   "citationDomain": {
     "min": 532,
-    "p50": 6537,
-    "p95": 22705,
-    "p99": 52259,
+    "p50": 6539,
+    "p95": 22800,
+    "p99": 53851,
     "max": 353004,
     "excludesSuspect": true
   },
@@ -53,7 +53,7 @@
     ]
   },
   "nodesBin": {
-    "count": 9566,
+    "count": 9570,
     "layout": [
       {
         "name": "citations",
@@ -63,28 +63,28 @@
       {
         "name": "year",
         "type": "Uint16",
-        "offset": 38264
+        "offset": 38280
       },
       {
         "name": "sizeScore",
         "type": "Uint16",
-        "offset": 57396,
+        "offset": 57420,
         "decode": "value/65535 -> [0,1] display size"
       },
       {
         "name": "domainIdx",
         "type": "Uint8",
-        "offset": 76528
+        "offset": 76560
       },
       {
         "name": "fieldIdx",
         "type": "Uint8",
-        "offset": 86094
+        "offset": 86130
       },
       {
         "name": "flags",
         "type": "Uint8",
-        "offset": 95660
+        "offset": 95700
       }
     ],
     "flags": {
@@ -101,7 +101,7 @@
     "note": "size by recent citation momentum (robust to mis-dated years); raw citations retained for an all-time sizing toggle"
   },
   "edgesBin": {
-    "count": 24193,
+    "count": 24175,
     "type": "Uint16",
     "layout": "src[E] then dst[E]"
   },
@@ -122,10 +122,10 @@
     "detailsPattern": "details/shard-{shard:03d}.json"
   },
   "hashes": {
-    "nodes.bin": "696e443f",
-    "nodes-text.json": "a4e4eafa",
-    "search-kw.json": "c11931d0",
-    "edges.bin": "153e34bb",
-    "positions.bin": "c4dda4d6"
+    "nodes.bin": "5b869fd0",
+    "nodes-text.json": "71e0d035",
+    "search-kw.json": "10e693e3",
+    "edges.bin": "d5f2bbed",
+    "positions.bin": "c85e280b"
   }
 }

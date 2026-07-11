@@ -102,7 +102,10 @@ def flag_byte(work: dict) -> int:
 
 def is_suspect(work: dict) -> bool:
     """Same citation-anomaly heuristic as the fetch script: single-year spike, impact
-    mismatch, or citations predating the publication year (mis-dated old reprint)."""
+    mismatch, or citations predating the publication year (mis-dated old reprint).
+    Seeded canonical records (apply_seeds.py) are always trusted."""
+    if work.get("seeded"):
+        return False
     total = work.get("cited_by_count") or 0
     counts = work.get("counts_by_year") or []
     if total > 1000 and counts:
@@ -327,6 +330,8 @@ def main() -> int:
                 "topics": [t.get("display_name") for t in (r.get("topics") or [])],
                 "keywords": [k.get("display_name") for k in (r.get("keywords") or [])],
                 "biblio": r.get("biblio"),
+                "seeded": bool(r.get("seeded")),
+                "seed_count_source": r.get("seed_count_source"),
             })
         blob = json.dumps(recs, separators=(",", ":"), ensure_ascii=False).encode()
         write_gz(os.path.join(details_dir, f"shard-{s:03d}.json"), blob)

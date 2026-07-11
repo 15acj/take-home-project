@@ -1,0 +1,37 @@
+{
+  "_comment": "Canonical landmark papers that OpenAlex fragments or omits in this snapshot. apply_seeds.py merges these into the dataset with dedup. 'true_citations' overrides OpenAlex's fragmented count (count_source=manual). Records with an openalex_id pull real metadata/references from the API and scale counts_by_year up to the true total; records without one are hand-constructed (synthetic id, flagged seeded).",
+  "data_year": 2026,
+  "seeds": [
+    { "name": "GANs", "openalex_id": "W4298289240", "true_citations": 60000,
+      "replaces": ["W3096831136", "W4320013936", "W2099471712"] },
+    { "name": "YOLO", "openalex_id": "W1483870316", "true_citations": 40000 },
+    { "name": "GPT-3", "openalex_id": "W3030163527", "true_citations": 45000 },
+    { "name": "Transformer-XL", "openalex_id": "W2964110616", "true_citations": 11000 },
+
+    { "name": "Attention Is All You Need", "openalex_id": null, "true_citations": 130000,
+      "synthetic_id": "W_SEED_ATTENTION_2017",
+      "title": "Attention Is All You Need", "year": 2017,
+      "doi": "https://doi.org/10.5555/3295222.3295349",
+      "authors": ["Ashish Vaswani", "Noam Shazeer", "Niki Parmar", "Jakob Uszkoreit"],
+      "domain": "Physical Sciences", "field": "Computer Science",
+      "topic": "Artificial Intelligence", "references": [] },
+
+    { "name": "BERT", "openalex_id": null, "true_citations": 110000,
+      "synthetic_id": "W_SEED_BERT_2019",
+      "title": "BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding",
+      "year": 2019, "doi": "https://doi.org/10.18653/v1/N19-1423",
+      "authors": ["Jacob Devlin", "Ming-Wei Chang", "Kenton Lee", "Kristina Toutanova"],
+      "domain": "Physical Sciences", "field": "Computer Science",
+      "topic": "Natural Language Processing",
+      "references": ["W_SEED_ATTENTION_2017"] },
+
+    { "name": "RoBERTa", "openalex_id": null, "true_citations": 30000,
+      "synthetic_id": "W_SEED_ROBERTA_2019",
+      "title": "RoBERTa: A Robustly Optimized BERT Pretraining Approach",
+      "year": 2019, "doi": "https://doi.org/10.48550/arXiv.1907.11692",
+      "authors": ["Yinhan Liu", "Myle Ott", "Naman Goyal", "Jingfei Du"],
+      "domain": "Physical Sciences", "field": "Computer Science",
+      "topic": "Natural Language Processing",
+      "references": ["W_SEED_BERT_2019", "W_SEED_ATTENTION_2017"] }
+  ]
+}

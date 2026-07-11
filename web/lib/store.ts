@@ -72,10 +72,13 @@ export interface AtlasState {
 const allActive = () =>
   Object.fromEntries(CLUSTER_KEYS.map((k) => [k, true])) as Record<ClusterKey, boolean>;
 
-export const useAtlasStore = create<AtlasState>((set) => ({
-  themeKey: "deepspace",
-  leftOpen: true,
-  rightOpen: true,
+// Default filter/search state, shared by the store's initial values and the
+// "Reset View" action so both stay in sync.
+export const filterDefaults = (): Pick<
+  AtlasState,
+  | "keyword" | "keywordApplied" | "topN" | "yearMin" | "yearMax" | "minCites"
+  | "activeFields" | "availOA" | "availPdf" | "availGrobid"
+> => ({
   keyword: "",
   keywordApplied: "",
   topN: 1000,
@@ -86,6 +89,13 @@ export const useAtlasStore = create<AtlasState>((set) => ({
   availOA: false,
   availPdf: false,
   availGrobid: false,
+});
+
+export const useAtlasStore = create<AtlasState>((set) => ({
+  themeKey: "deepspace",
+  leftOpen: true,
+  rightOpen: true,
+  ...filterDefaults(),
   copilotTab: "chat",
   detailId: null,
   selectedIds: [],

@@ -1,6 +1,7 @@
 // RIGHT "Copilot" panel — 400px open / 128px collapsed. Chat/Paper tabs,
 // Selected Papers list, mocked chat (canned replies + typing indicator),
 // shard-backed Paper detail view.
+import { useEffect, useRef, useState } from "react";
 import type { CSSProperties, MutableRefObject, RefObject } from "react";
 import type { Theme } from "../lib/themes";
 import type { AtlasData } from "../lib/loaders";
@@ -40,6 +41,20 @@ export default function CopilotPanel({
   const set = s.set;
   const light = s.themeKey === "light";
   const nodes = dataRef.current?.nodes;
+
+  // Keep the newest selected paper in view: when the list grows past its
+  // max-height and starts scrolling, snap to the bottom so the just-added
+  // paper is visible. Only scrolls on additions, not removals.
+  const selListRef = useRef<HTMLDivElement>(null);
+  const prevSelCount = useRef(s.selectedIds.length);
+  const [selCollapsed, setSelCollapsed] = useState(false);
+  useEffect(() => {
+    const el = selListRef.current;
+    if (el && s.selectedIds.length > prevSelCount.current) {
+      el.scrollTop = el.scrollHeight;
+    }
+    prevSelCount.current = s.selectedIds.length;
+  }, [s.selectedIds.length]);
 
   const lastSel = s.selectedIds.length ? s.selectedIds[s.selectedIds.length - 1] : null;
   const activeDetailId =
@@ -97,12 +112,29 @@ export default function CopilotPanel({
 
           {/* selected papers */}
           <div style={{ flex: "0 0 auto", padding: "12px 16px", borderBottom: `1px solid ${t.border}` }}>
-            <div style={{ fontSize: 11.5, letterSpacing: "0.01em", fontWeight: 700, color: t.textDim, marginBottom: 9 }}>
-              Selected Papers · {s.selectedIds.length}
+            <div
+              onClick={() => setSelCollapsed((v) => !v)}
+              className="hc"
+              title={selCollapsed ? "Expand" : "Collapse"}
+              style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", marginBottom: selCollapsed ? 0 : 9, ["--hc" as string]: t.text }}
+            >
+              <div style={{ fontSize: 11.5, letterSpacing: "0.01em", fontWeight: 700, color: t.textDim }}>
+                Selected Papers · {s.selectedIds.length}
+              </div>
+              <span style={{ flex: 1 }} />
+              <span style={{
+                display: "flex", alignItems: "center", justifyContent: "center",
+                width: 18, height: 18, flex: "0 0 auto", color: t.textFaint,
+                transform: selCollapsed ? "rotate(-90deg)" : "none", transition: "transform .18s ease",
+              }}>
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block" }}>
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </span>
             </div>
-            {s.selectedIds.length > 0 ? (
+            {selCollapsed ? null : s.selectedIds.length > 0 ? (
               <>
-                <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: 118, overflowY: "auto" }}>
+                <div ref={selListRef} style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: 118, overflowY: "auto", marginRight: -10, paddingRight: 10, marginTop: 4, marginBottom: 4 }}>
                   {s.selectedIds.map((id) => {
                     const n = nodes?.[id];
                     if (!n) return null;
@@ -149,7 +181,7 @@ export default function CopilotPanel({
           {/* chat tab */}
           {chatTab && (
             <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
-              <div ref={scrollRef} style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: 16 }}>
+              <div ref={scrollRef} style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "10px 10px 10px 16px", marginRight: 6, marginTop: 6, marginBottom: 6 }}>
                 <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                   {s.messages.map((m, i) => {
                     const user = m.role === "user";
@@ -188,12 +220,12 @@ export default function CopilotPanel({
                       <button
                         key={p}
                         onClick={() => actions.send(p)}
-                        className="hc hbc"
+                        className="hc"
                         style={{
                           padding: "6px 11px", borderRadius: 20, border: `1px solid ${t.border}`,
                           background: t.chipBg, color: t.textDim, fontSize: 11.5, cursor: "pointer",
                           fontFamily: "'Lato',sans-serif",
-                          ["--hc" as string]: t.text, ["--hbc" as string]: t.accent,
+                          ["--hc" as string]: t.text,
                         }}
                       >
                         {p}
@@ -242,7 +274,7 @@ export default function CopilotPanel({
 
           {/* paper tab */}
           {detailsTab && (
-            <div style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "16px 7px 20px 16px" }}>
+            <div style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "10px 10px 14px 16px", marginRight: 6, marginTop: 6, marginBottom: 6 }}>
               {detailNode ? (
                 <>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 11 }}>
@@ -329,7 +361,7 @@ export default function CopilotPanel({
               {s.selectedIds.length}
             </span>
           )}
-          <span style={{ fontSize: 14, lineHeight: 1 }}>‹</span>
+          <span style={{ fontSize: 16, lineHeight: 1 }}>‹</span>
         </button>
       )}
     </div>
