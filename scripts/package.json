@@ -1,0 +1,13 @@
+{
+  "name": "graph-layout",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Offline 3D force-layout precompute for the top-cited graph viz.",
+  "scripts": {
+    "layout": "node layout_3d.mjs"
+  },
+  "dependencies": {
+    "d3-force-3d": "^3.0.5"
+  }
+}

@@ -3,3 +3,6 @@
 
 # Pulled data
 data/
+
+# Node deps for the layout step
+node_modules/

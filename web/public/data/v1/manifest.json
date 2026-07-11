@@ -1,0 +1,114 @@
+{
+  "version": "v1",
+  "counts": {
+    "nodes": 10000,
+    "edges": 36894,
+    "shards": 100
+  },
+  "shardSize": 100,
+  "citationDomain": {
+    "min": 4460,
+    "p50": 6559,
+    "p95": 22470,
+    "p99": 51977,
+    "max": 801217
+  },
+  "colorLegend": {
+    "domains": [
+      "Health Sciences",
+      "Life Sciences",
+      "Physical Sciences",
+      "Social Sciences",
+      "Unknown"
+    ],
+    "fields": [
+      "Agricultural and Biological Sciences",
+      "Arts and Humanities",
+      "Biochemistry, Genetics and Molecular Biology",
+      "Business, Management and Accounting",
+      "Chemical Engineering",
+      "Chemistry",
+      "Computer Science",
+      "Decision Sciences",
+      "Dentistry",
+      "Earth and Planetary Sciences",
+      "Economics, Econometrics and Finance",
+      "Energy",
+      "Engineering",
+      "Environmental Science",
+      "Health Professions",
+      "Immunology and Microbiology",
+      "Materials Science",
+      "Mathematics",
+      "Medicine",
+      "Neuroscience",
+      "Nursing",
+      "Pharmacology, Toxicology and Pharmaceutics",
+      "Physics and Astronomy",
+      "Psychology",
+      "Social Sciences",
+      "Unknown",
+      "Veterinary"
+    ]
+  },
+  "nodesBin": {
+    "count": 10000,
+    "layout": [
+      {
+        "name": "citations",
+        "type": "Uint32",
+        "offset": 0
+      },
+      {
+        "name": "year",
+        "type": "Uint16",
+        "offset": 40000
+      },
+      {
+        "name": "domainIdx",
+        "type": "Uint8",
+        "offset": 60000
+      },
+      {
+        "name": "fieldIdx",
+        "type": "Uint8",
+        "offset": 70000
+      },
+      {
+        "name": "flags",
+        "type": "Uint8",
+        "offset": 80000
+      }
+    ],
+    "flags": {
+      "suspect": 1
+    }
+  },
+  "edgesBin": {
+    "count": 36894,
+    "type": "Uint16",
+    "layout": "src[E] then dst[E]"
+  },
+  "positions": {
+    "file": "positions.bin",
+    "type": "Int16",
+    "layout": "x,y,z interleaved",
+    "scale": 1472.4494657205146,
+    "note": "decode: value/32767*scale"
+  },
+  "files": {
+    "nodesBin": "nodes.bin",
+    "nodesText": "nodes-text.json",
+    "searchKw": "search-kw.json",
+    "edgesBin": "edges.bin",
+    "positions": "positions.bin",
+    "detailsPattern": "details/shard-{shard:03d}.json"
+  },
+  "hashes": {
+    "nodes.bin": "0e5dfe72",
+    "nodes-text.json": "0bdf8a32",
+    "search-kw.json": "c2116dc3",
+    "edges.bin": "ae943d7d",
+    "positions.bin": "b9cc4653"
+  }
+}
