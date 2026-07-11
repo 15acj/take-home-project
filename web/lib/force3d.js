@@ -218,6 +218,11 @@ export class ForceGraph3D {
       ctx.beginPath(); ctx.moveTo(pa.sx,pa.sy); ctx.lineTo(pb.sx,pb.sy); ctx.stroke();
     }
 
+    // Additive blending ("lighter") makes dense clusters accumulate light and blow out
+    // as the corpus grows. Scale per-node glow/core alpha down with the visible count so
+    // dense 5K/10K views stay legible; ~1 for the ≤1.5K views the values were tuned for.
+    const densityDamp=Math.min(1,Math.pow(1000/Math.max(1,this.visible.size),0.7));
+    const coreDamp=Math.max(0.5,densityDamp);
     for (const c of cache) {
       const p=c.proj; if(!p)continue; const n=c.node;
       const [r,gc,bl]=this.fields[n.field].rgb;
@@ -227,11 +232,11 @@ export class ForceGraph3D {
       const isSel=this.selected.has(n.id);
       const halo=size*(isSel?4.0:(n.famous?3.0:2.3));
       const grd=ctx.createRadialGradient(p.sx,p.sy,0,p.sx,p.sy,halo);
-      grd.addColorStop(0,`rgba(${r},${gc},${bl},${0.4*bright})`);
-      grd.addColorStop(0.45,`rgba(${r},${gc},${bl},${0.1*bright})`);
+      grd.addColorStop(0,`rgba(${r},${gc},${bl},${0.4*bright*densityDamp})`);
+      grd.addColorStop(0.45,`rgba(${r},${gc},${bl},${0.1*bright*densityDamp})`);
       grd.addColorStop(1,`rgba(${r},${gc},${bl},0)`);
       ctx.fillStyle=grd; ctx.beginPath(); ctx.arc(p.sx,p.sy,halo,0,7); ctx.fill();
-      ctx.fillStyle=`rgba(${Math.round(r*0.8)},${Math.round(gc*0.8)},${Math.round(bl*0.8)},${bright*0.8})`;
+      ctx.fillStyle=`rgba(${Math.round(r*0.8)},${Math.round(gc*0.8)},${Math.round(bl*0.8)},${bright*0.8*coreDamp})`;
       ctx.beginPath(); ctx.arc(p.sx,p.sy,size,0,7); ctx.fill();
     }
 
