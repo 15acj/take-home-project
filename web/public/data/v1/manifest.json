@@ -1,17 +1,18 @@
 {
   "version": "v1",
   "counts": {
-    "nodes": 10000,
-    "edges": 36894,
-    "shards": 100
+    "nodes": 9566,
+    "edges": 24193,
+    "shards": 96
   },
   "shardSize": 100,
   "citationDomain": {
-    "min": 4460,
-    "p50": 6559,
-    "p95": 22470,
-    "p99": 51977,
-    "max": 801217
+    "min": 532,
+    "p50": 6537,
+    "p95": 22705,
+    "p99": 52259,
+    "max": 353004,
+    "excludesSuspect": true
   },
   "colorLegend": {
     "domains": [
@@ -52,7 +53,7 @@
     ]
   },
   "nodesBin": {
-    "count": 10000,
+    "count": 9566,
     "layout": [
       {
         "name": "citations",
@@ -62,30 +63,45 @@
       {
         "name": "year",
         "type": "Uint16",
-        "offset": 40000
+        "offset": 38264
+      },
+      {
+        "name": "sizeScore",
+        "type": "Uint16",
+        "offset": 57396,
+        "decode": "value/65535 -> [0,1] display size"
       },
       {
         "name": "domainIdx",
         "type": "Uint8",
-        "offset": 60000
+        "offset": 76528
       },
       {
         "name": "fieldIdx",
         "type": "Uint8",
-        "offset": 70000
+        "offset": 86094
       },
       {
         "name": "flags",
         "type": "Uint8",
-        "offset": 80000
+        "offset": 95660
       }
     ],
     "flags": {
-      "suspect": 1
+      "suspect": 1,
+      "openAccess": 2,
+      "hasPdf": 4,
+      "hasGrobid": 8
     }
   },
+  "sizeModel": {
+    "model": "log1p(mean citations/yr over last 3y), min..p99 normalized",
+    "dataYear": 2026,
+    "normalizedOver": "non-suspect nodes only",
+    "note": "size by recent citation momentum (robust to mis-dated years); raw citations retained for an all-time sizing toggle"
+  },
   "edgesBin": {
-    "count": 36894,
+    "count": 24193,
     "type": "Uint16",
     "layout": "src[E] then dst[E]"
   },
@@ -93,8 +109,9 @@
     "file": "positions.bin",
     "type": "Int16",
     "layout": "x,y,z interleaved",
-    "scale": 1472.4494657205146,
-    "note": "decode: value/32767*scale"
+    "scale": 695,
+    "note": "decode: value/32767*scale",
+    "layoutModel": "force3d field-clustered (Fibonacci-sphere centers, Barnes-Hut + springs)"
   },
   "files": {
     "nodesBin": "nodes.bin",
@@ -105,10 +122,10 @@
     "detailsPattern": "details/shard-{shard:03d}.json"
   },
   "hashes": {
-    "nodes.bin": "0e5dfe72",
-    "nodes-text.json": "0bdf8a32",
-    "search-kw.json": "c2116dc3",
-    "edges.bin": "ae943d7d",
-    "positions.bin": "b9cc4653"
+    "nodes.bin": "696e443f",
+    "nodes-text.json": "a4e4eafa",
+    "search-kw.json": "c11931d0",
+    "edges.bin": "153e34bb",
+    "positions.bin": "c4dda4d6"
   }
 }

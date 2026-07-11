@@ -1,0 +1,42 @@
+{
+  "comment": "Single source of truth mapping OpenAlex's 27 fields (manifest.colorLegend.fields) onto the 8 visual clusters from the Citation Atlas design. Consumed by scripts/layout_clustered.mjs (cluster centers drive the 3D layout) and by the frontend (colors/legend/filters). Changing a mapping requires re-running the layout script.",
+  "clusters": {
+    "genetics": { "label": "Genetics & Molecular Biology", "hue": 145, "rgb": [70, 220, 150] },
+    "ai": { "label": "Machine Learning & AI", "hue": 190, "rgb": [64, 208, 240] },
+    "physics": { "label": "Physics", "hue": 255, "rgb": [140, 150, 255] },
+    "chemistry": { "label": "Chemistry & Materials", "hue": 40, "rgb": [255, 176, 84] },
+    "medicine": { "label": "Medicine & Clinical", "hue": 355, "rgb": [255, 110, 130] },
+    "neuro": { "label": "Neuroscience", "hue": 300, "rgb": [214, 122, 255] },
+    "cs": { "label": "Computer Science & Math", "hue": 168, "rgb": [72, 224, 206] },
+    "economics": { "label": "Economics & Social Science", "hue": 50, "rgb": [240, 206, 96] }
+  },
+  "fieldToCluster": {
+    "Agricultural and Biological Sciences": "genetics",
+    "Biochemistry, Genetics and Molecular Biology": "genetics",
+    "Computer Science": "ai",
+    "Physics and Astronomy": "physics",
+    "Earth and Planetary Sciences": "physics",
+    "Environmental Science": "physics",
+    "Engineering": "physics",
+    "Chemistry": "chemistry",
+    "Chemical Engineering": "chemistry",
+    "Materials Science": "chemistry",
+    "Energy": "chemistry",
+    "Medicine": "medicine",
+    "Immunology and Microbiology": "medicine",
+    "Health Professions": "medicine",
+    "Nursing": "medicine",
+    "Dentistry": "medicine",
+    "Veterinary": "medicine",
+    "Pharmacology, Toxicology and Pharmaceutics": "medicine",
+    "Neuroscience": "neuro",
+    "Psychology": "neuro",
+    "Mathematics": "cs",
+    "Decision Sciences": "cs",
+    "Economics, Econometrics and Finance": "economics",
+    "Business, Management and Accounting": "economics",
+    "Social Sciences": "economics",
+    "Arts and Humanities": "economics",
+    "Unknown": "economics"
+  }
+}

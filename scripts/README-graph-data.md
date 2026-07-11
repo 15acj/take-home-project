@@ -9,9 +9,10 @@ Turns the raw top-cited pull into CDN-optimized artifacts for the 3D force-direc
 python3 scripts/build_graph_data.py \
   --in scripts/data/full/top_cited.jsonl --out web/public/data/v1 [--shard 100]
 
-# 2. precompute the 3D layout (Node; installs d3-force-3d)
-cd scripts && npm install && cd ..
-node scripts/layout_3d.mjs --out web/public/data/v1 [--ticks 300]
+# 2. precompute the field-clustered 3D layout (Node, no deps; port of the design's
+#    force3d.js layout — 8 cluster centers from web/lib/field-clusters.json)
+node scripts/layout_clustered.mjs --out web/public/data/v1
+#    (layout_3d.mjs is the older unclustered d3-force-3d variant, kept for reference)
 
 # 3. verify end-to-end
 node scripts/verify_graph_data.mjs --out web/public/data/v1
@@ -33,14 +34,20 @@ you can't rely on CDN on-the-fly Brotli; otherwise `.gz` + CDN Brotli suffices.
 | File | Format | Purpose | ~gz |
 |---|---|---|---|
 | `manifest.json` | JSON | counts, offsets, citation domain, color legends, position scale | 1 KB |
-| `nodes.bin` | binary SoA | `Uint32 citations[N]`, `Uint16 year[N]`, `Uint8 domainIdx/fieldIdx/flags[N]` (`flags` bit0 = suspect). Byte offsets in `manifest.nodesBin.layout` | 30 KB |
-| `nodes-text.json` | JSON | `title[]`, `author[]` (first), `topicIdx[]` + `topicTable[]` | 366 KB |
+| `nodes.bin` | binary SoA | `Uint32 citations[N]`, `Uint16 year[N]`, `Uint8 domainIdx/fieldIdx/flags[N]` (`flags`: bit0 suspect, bit1 openAccess, bit2 hasPdf, bit3 hasGrobid — map in `manifest.nodesBin.flags`), `Uint16 sizeScore[N]` (recent-momentum display size, `value/65535 → [0,1]`; model in `manifest.sizeModel`). Byte offsets in `manifest.nodesBin.layout` | 54 KB |
+| `nodes-text.json` | JSON | `title[]`, `author[]` (first), `authorsDisplay[]` (`"A, B"` / `"A et al."`), `topicIdx[]` + `topicTable[]` | 459 KB |
 | `positions.bin` | `Int16[N*3]` | x,y,z interleaved; decode `value/32767*manifest.positions.scale` | 58 KB |
 | `edges.bin` | `Uint16` SoA | `src[E]` then `dst[E]`, sorted & deduped (N<65536) | 70 KB |
 | `search-kw.json` | JSON | `kwIdx[][]` + `kwTable[]`; **load after first paint** | 303 KB |
-| `details/shard-NNN.json` | JSON | Tier-2: abstract, urls, all authors+institutions, topics, keywords, biblio. `SHARD` records each | ~58 KB ea |
+| `details/shard-NNN.json` | JSON | Tier-2: abstract, venue, publication_date, urls, all authors+institutions, topics, keywords, biblio. `SHARD` records each | ~60 KB ea |
 
-First-paint set = `manifest + nodes.bin + nodes-text.json + edges.bin + positions.bin` ≈ **525 KB gz**.
+First-paint set = `manifest + nodes.bin + nodes-text.json + edges.bin + positions.bin` ≈ **643 KB gz**.
+
+`positions.bin` is the design's field-clustered layout: the 8 clusters in
+`web/lib/field-clusters.json` (which also maps the 27 OpenAlex fields onto them) get
+Fibonacci-sphere centers and the layout runs Barnes-Hut + springs offline, so the client
+renders frozen positions with zero layout cost. Re-run `layout_clustered.mjs` whenever the
+mapping or nodes/edges change.
 
 ## Client loader (reference)
 
