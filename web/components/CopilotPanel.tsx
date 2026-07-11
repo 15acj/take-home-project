@@ -97,7 +97,10 @@ export default function CopilotPanel({
     <div style={{
       position: "absolute", top: 14, right: 14, zIndex: 20,
       ...(s.rightOpen ? { bottom: 96 } : { maxHeight: "calc(100% - 28px)" }),
-      display: "flex", flexDirection: "column", width: s.rightOpen ? 400 : 128,
+      display: "flex", flexDirection: "column",
+      // Collapsed pill widens when a selection count is shown so the count badge
+      // and caret don't overflow the box (which clips against overflow:hidden).
+      width: s.rightOpen ? 400 : s.selectedIds.length > 0 ? 152 : 128,
       borderRadius: 16, background: t.panelBg, border: `1px solid ${t.border}`,
       backdropFilter: "blur(18px)", WebkitBackdropFilter: "blur(18px)",
       boxShadow: t.panelShadow, overflow: "hidden",

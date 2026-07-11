@@ -258,11 +258,16 @@ export class ForceGraph3D {
       const isHover = n.id===this.hoverId;
       const isSel = this.selected.has(n.id);
       const strong = isHover||isSel;
+      // While hovering a node, fade labels for papers outside its connected set,
+      // matching the dimming applied to the nodes themselves above.
+      const dim = hoverN && !neighborSet.has(n.id) && !isSel;
       const weight = isSel && !isHover ? 700 : (strong ? 900 : 700);
       ctx.font = `${weight} ${isHover?13.5:12.5}px 'Lato', system-ui`;
       const wdt=ctx.measureText(txt).width;
+      ctx.globalAlpha = dim ? 0.26 : 1;
       ctx.fillStyle=light?"rgba(255,255,255,0.78)":"rgba(0,0,0,0.5)"; ctx.beginPath(); ctx.roundRect(tx-4,ty-9,wdt+8,18,3); ctx.fill();
       ctx.fillStyle=strong?(light?"#0a1020":"#ffffff"):th.labelColor; ctx.fillText(txt,tx,ty);
+      ctx.globalAlpha = 1;
     }
 
     this._hudTick=(this._hudTick||0)+1;

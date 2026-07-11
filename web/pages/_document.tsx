@@ -4,6 +4,7 @@ export default function Document() {
   return (
     <Html lang="en">
       <Head>
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
         {/* Same font setup as the design: Lato from Google Fonts, referenced by
             family name 'Lato' throughout the ported inline styles. */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />

@@ -6,7 +6,7 @@ export default function App({ Component, pageProps }: AppProps) {
   return (
     <>
       <Head>
-        <title>Citation Atlas</title>
+        <title>Research Atlas</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta
           name="description"

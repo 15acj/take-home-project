@@ -15,6 +15,7 @@ import ControlsHint from "./ControlsHint";
 import HoverCard from "./HoverCard";
 import FilterPanel from "./FilterPanel";
 import CopilotPanel from "./CopilotPanel";
+import SmallScreenNotice from "./SmallScreenNotice";
 
 export interface AtlasActions {
   setTheme: (key: ThemeKey) => void;
@@ -248,6 +249,8 @@ export default function CitationAtlas() {
         <FilterPanel t={t} />
         <CopilotPanel t={t} dataRef={dataRef} actions={actions} scrollRef={scrollRef} inputRef={inputRef} />
       </div>
+
+      <SmallScreenNotice t={t} />
     </div>
   );
 }
