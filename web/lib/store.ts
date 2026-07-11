@@ -37,7 +37,7 @@ export const TOPN: { v: number; label: string }[] = [
 
 export const GREETING: ChatMessage = {
   role: "assistant",
-  text: "Hi — I'm your research copilot. Click glowing papers in the graph to select them, then ask me to summarize, compare, or explain their methods.",
+  text: "Hi — I'm your research copilot. Click papers in the graph to select them, then ask me to summarize, compare, or explain their methods.",
 };
 
 export interface AtlasState {

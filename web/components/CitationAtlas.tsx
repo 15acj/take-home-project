@@ -3,9 +3,8 @@
 // callbacks, runs the applyFilters effect, and composes every overlay.
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ForceGraph3D } from "../lib/force3d";
-import { loadAtlas, loadSearchKeywords, type AtlasData } from "../lib/loaders";
+import { loadAtlas, loadSearchKeywords, fetchDetail, type AtlasData } from "../lib/loaders";
 import { computeFilter } from "../lib/filter";
-import { genReply } from "../lib/chat";
 import { FIELDS } from "../lib/fieldClusters";
 import { THEMES, engineTheme, type ThemeKey } from "../lib/themes";
 import { useAtlasStore, filterDefaults } from "../lib/store";
@@ -213,19 +212,105 @@ export default function CitationAtlas() {
     send: (text) => {
       const msg = (text || "").trim();
       if (!msg) return;
-      const st = S.getState();
-      S.setState({ messages: [...st.messages, { role: "user", text: msg }], chatInput: "", typing: true });
-      if (inputRef.current) inputRef.current.style.height = "auto";
+      const engine = engineRef.current, data = dataRef.current;
+      const ids = engine ? ([...engine.selected] as number[]) : [];
+
+      // Prior turns (before this one) become the chat history sent to the route.
+      const history = S.getState().messages;
+      S.setState({ messages: [...history, { role: "user", text: msg }], chatInput: "", typing: true });
+      if (inputRef.current) {
+        inputRef.current.style.height = "auto";
+        inputRef.current.style.overflowY = "hidden";
+      }
       scrollChat();
-      setTimeout(() => {
-        const engine = engineRef.current, data = dataRef.current;
-        const sel = engine && data
-          ? ([...engine.selected] as number[]).map((id) => data.nodes[id]).filter(Boolean)
-          : [];
-        const reply = genReply(msg, sel);
-        S.setState({ messages: [...S.getState().messages, { role: "assistant", text: reply }], typing: false });
-        scrollChat();
-      }, 900 + Math.random() * 700);
+
+      const appendAssistant = (text: string) =>
+        S.setState({ messages: [...S.getState().messages, { role: "assistant", text }], typing: false });
+      const replaceLast = (text: string) => {
+        const cur = S.getState().messages.slice();
+        cur[cur.length - 1] = { role: "assistant", text };
+        S.setState({ messages: cur });
+      };
+      // Sticky autoscroll: while a reply streams in, only follow the bottom if
+      // the user is already there — if they've scrolled up to read, leave them
+      // (the panel's "scroll to latest" button takes them back).
+      const nearBottom = () => {
+        const el = scrollRef.current;
+        return !el || el.scrollHeight - el.scrollTop - el.clientHeight < 60;
+      };
+
+      (async () => {
+        try {
+          // Assemble per-paper context when papers are selected: title/metadata
+          // from the in-memory node, abstract + rich fields from the (memoized)
+          // detail shard. With no selection, papers is empty and the copilot
+          // answers general science/research questions.
+          let papers: unknown[] = [];
+          if (data && ids.length) {
+            const details = await Promise.all(
+              ids.map((id) => fetchDetail(data.manifest, id).catch(() => null)),
+            );
+            papers = ids.map((id, i) => {
+              const node = data.nodes[id];
+              const d = details[i];
+              return {
+                title: d?.title ?? node?.title ?? null,
+                abstract: d?.abstract ?? null,
+                authors: d?.authors?.map((a) => a.name).filter((n): n is string => !!n)
+                  ?? (node?.authors ? [node.authors] : []),
+                year: d?.year ?? node?.year ?? null,
+                venue: d?.venue ?? null,
+                topics: d?.topics ?? [],
+                keywords: d?.keywords ?? [],
+                cited_by_count: d?.cited_by_count ?? node?.citations ?? null,
+              };
+            });
+          }
+
+          const res = await fetch("/api/copilot", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ question: msg, papers, history }),
+          });
+          if (!res.ok || !res.body) throw new Error(`copilot ${res.status}`);
+
+          const reader = res.body.getReader();
+          const decoder = new TextDecoder();
+          let acc = "";
+          let started = false;
+          for (;;) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            const chunk = decoder.decode(value, { stream: true });
+            if (!chunk) continue;
+            acc += chunk;
+            const stick = nearBottom(); // capture before the DOM grows
+            if (!started) {
+              started = true;
+              appendAssistant(acc); // clears typing, drops the empty-bubble case
+            } else {
+              replaceLast(acc);
+            }
+            if (stick) scrollChat();
+          }
+          if (!started) {
+            appendAssistant("The copilot returned an empty response — try asking again.");
+          }
+        } catch {
+          if (S.getState().typing) {
+            // Failed before any tokens streamed — show a fresh error bubble.
+            appendAssistant("Sorry — I couldn't reach the copilot. Check that the server is running and ANTHROPIC_API_KEY is set, then try again.");
+          } else {
+            // Failed mid-stream — note it on the partial reply.
+            const cur = S.getState().messages;
+            const last = cur[cur.length - 1];
+            replaceLast((last?.text ?? "") + "\n\n[connection lost]");
+          }
+        } finally {
+          if (S.getState().typing) S.setState({ typing: false });
+          if (nearBottom()) scrollChat();
+        }
+      })();
     },
     degree: (id) => {
       const engine = engineRef.current;

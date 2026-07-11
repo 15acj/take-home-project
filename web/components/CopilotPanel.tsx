@@ -1,8 +1,10 @@
 // RIGHT "Copilot" panel — 400px open / 128px collapsed. Chat/Paper tabs,
 // Selected Papers list, mocked chat (canned replies + typing indicator),
 // shard-backed Paper detail view.
-import { useEffect, useRef, useState } from "react";
-import type { CSSProperties, MutableRefObject, RefObject } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { ComponentProps, CSSProperties, MutableRefObject, RefObject } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import type { Theme } from "../lib/themes";
 import type { AtlasData } from "../lib/loaders";
 import { FIELDS } from "../lib/fieldClusters";
@@ -11,6 +13,11 @@ import { PROMPTS } from "../lib/chat";
 import { useDetail } from "../lib/useShard";
 import FullTextBadge from "./FullTextBadge";
 import type { AtlasActions } from "./CitationAtlas";
+
+// Assistant replies arrive as markdown; render them. Links open in a new tab.
+const mdComponents = {
+  a: (props: ComponentProps<"a">) => <a {...props} target="_blank" rel="noopener noreferrer" />,
+};
 
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
@@ -67,6 +74,23 @@ export default function CopilotPanel({
   const detailsTab = s.copilotTab === "details";
   const canSend = s.chatInput.trim().length > 0;
 
+  // Floating "scroll to latest" button — shown when the chat is scrolled up
+  // away from the newest message. Scrolling fires updateScrollDown; we also
+  // re-check when messages/typing change, since content added below while
+  // scrolled up doesn't fire a scroll event.
+  const [showScrollDown, setShowScrollDown] = useState(false);
+  const updateScrollDown = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return setShowScrollDown(false);
+    setShowScrollDown(el.scrollHeight - el.scrollTop - el.clientHeight > 60);
+  }, [scrollRef]);
+  useEffect(() => {
+    if (chatTab) updateScrollDown();
+  }, [chatTab, s.messages, s.typing, updateScrollDown]);
+  const scrollToBottom = () => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+  };
+
   const tabBtn = (on: boolean): CSSProperties => ({
     padding: "5px 12px", borderRadius: 7, border: "none", cursor: "pointer",
     fontFamily: "'Lato',sans-serif", fontSize: 11.5, fontWeight: 700,
@@ -91,6 +115,9 @@ export default function CopilotPanel({
     if (el) {
       el.style.height = "auto";
       el.style.height = Math.min(96, el.scrollHeight) + "px";
+      // Only show the textarea's scrollbar once content exceeds the 96px cap;
+      // otherwise the auto-grow leaves a sub-pixel gap and a scrollbar flashes.
+      el.style.overflowY = el.scrollHeight > 96 ? "auto" : "hidden";
     }
   };
 
@@ -200,7 +227,8 @@ export default function CopilotPanel({
           {/* chat tab */}
           {chatTab && (
             <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
-              <div ref={scrollRef} style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "10px 10px 10px 16px", marginRight: 6, marginTop: 6, marginBottom: 6 }}>
+             <div style={{ position: "relative", flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+              <div ref={scrollRef} onScroll={updateScrollDown} style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "10px 10px 10px 16px", marginRight: 6, marginTop: 6, marginBottom: 6 }}>
                 <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                   {s.messages.map((m, i) => {
                     const user = m.role === "user";
@@ -217,7 +245,13 @@ export default function CopilotPanel({
                           background: t.botBubble, border: `1px solid ${t.border}`, color: t.text,
                           fontSize: 13.5, lineHeight: 1.55, fontWeight: 400,
                         }}>
-                          {m.text}
+                          {user ? m.text : (
+                            <div className="md" style={{ ["--md-accent" as string]: t.accent }}>
+                              <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>
+                                {m.text}
+                              </ReactMarkdown>
+                            </div>
+                          )}
                         </div>
                       </div>
                     );
@@ -231,10 +265,26 @@ export default function CopilotPanel({
                   )}
                 </div>
               </div>
+              {showScrollDown && (
+                <button
+                  onClick={scrollToBottom}
+                  aria-label="Scroll to latest message"
+                  style={{
+                    position: "absolute", bottom: 14, right: 16,
+                    width: 30, height: 30, borderRadius: "50%", cursor: "pointer",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    background: t.cardBg, border: `1px solid ${t.border}`, color: t.text,
+                    boxShadow: "0 3px 12px rgba(0,0,0,0.4)", fontSize: 16, lineHeight: 1,
+                  }}
+                >
+                  ↓
+                </button>
+              )}
+             </div>
 
               <div style={{ flex: "0 0 auto", padding: "0 16px 8px" }}>
                 {s.selectedIds.length > 0 && (
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10 }}>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10, marginBottom: 10 }}>
                     {PROMPTS.map((p) => (
                       <button
                         key={p}
@@ -271,7 +321,7 @@ export default function CopilotPanel({
                     style={{
                       flex: 1, resize: "none", border: "none", outline: "none", background: "transparent",
                       color: t.text, fontFamily: "'Lato',sans-serif", fontSize: 14, lineHeight: 1.45,
-                      maxHeight: 96, padding: "4px 0",
+                      maxHeight: 96, padding: "4px 0", overflowY: "hidden",
                     }}
                   />
                   <button
