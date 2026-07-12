@@ -92,6 +92,9 @@ export interface AtlasState {
   chatInput: string;
   typing: boolean;
   ready: boolean;
+  // Transient notice shown under the Selected Papers header, e.g. when the
+  // selection cap is hit. Auto-cleared by the setter that raises it.
+  selectionNotice: string | null;
   set: (partial: Partial<AtlasState>) => void;
 }
 
@@ -141,5 +144,6 @@ export const useAtlasStore = create<AtlasState>((set) => ({
   chatInput: "",
   typing: false,
   ready: false,
+  selectionNotice: null,
   set: (partial) => set(partial),
 }));

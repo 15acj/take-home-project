@@ -36,6 +36,10 @@ export class ForceGraph3D {
     this.onSelect = opts.onSelect || (()=>{});
     this.onHover = opts.onHover || (()=>{});
     this.onHud = opts.onHud || (()=>{});
+    // Cap on the selection size (guardrail against runaway copilot context).
+    // onLimit fires when an add is refused because the cap is already reached.
+    this.maxSelected = opts.maxSelected || Infinity;
+    this.onLimit = opts.onLimit || (()=>{});
     this.selected = new Set(); this.hoverId = -1;
     this.yaw=0.6; this.pitch=-0.32; this.dist=980; this.panX=0; this.panY=0;
     this.targetYaw=this.yaw; this.targetPitch=this.pitch; this.targetDist=this.dist;
@@ -114,7 +118,9 @@ export class ForceGraph3D {
   }
 
   setSelection(set){ this.selected = new Set(set); }
-  toggleSelect(id){ if(this.selected.has(id)) this.selected.delete(id); else this.selected.add(id); }
+  toggleSelect(id){ if(this.selected.has(id)){ this.selected.delete(id); return true; }
+    if(this.selected.size>=this.maxSelected){ this.onLimit(); return false; }
+    this.selected.add(id); return true; }
   setHover(id){ this.hoverId=id; }
 
   focusNode(id){

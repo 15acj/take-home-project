@@ -9,6 +9,7 @@ import { FIELDS, CLUSTER_KEYS, type ClusterKey } from "../lib/fieldClusters";
 import { CONTENT_TYPE_KEYS, type ContentTypeKey } from "../lib/contentTypes";
 import { THEMES, engineTheme, type ThemeKey } from "../lib/themes";
 import { useAtlasStore, filterDefaults, YEAR_MIN, YEAR_MAX, CITE_MAX, TOPN, type AtlasState, type SimilarResult } from "../lib/store";
+import { MAX_SELECTED_PAPERS, MAX_MESSAGES } from "../lib/limits";
 import StatsBar from "./StatsBar";
 import Legend from "./Legend";
 import ControlsHint from "./ControlsHint";
@@ -49,6 +50,7 @@ export default function CitationAtlas() {
   const titleIndexRef = useRef<Map<string, number> | null>(null);
   const stickyRef = useRef<number | null>(null);
   const dismissedRef = useRef<number | null>(null);
+  const noticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [kwVersion, setKwVersion] = useState(0);
 
   const S = useAtlasStore;
@@ -110,6 +112,9 @@ export default function CitationAtlas() {
     const engine = new ForceGraph3D(canvas, {
       theme: engineTheme(S.getState().themeKey),
       fields: FIELDS,
+      maxSelected: MAX_SELECTED_PAPERS,
+      onLimit: () =>
+        flashNotice(`You can add up to ${MAX_SELECTED_PAPERS} papers to the chat. Remove one to add another.`),
       onSelect: (node: { id: number }) => {
         // Selecting a node pins its card open immediately, so it stays up until
         // the user hovers a different node or dismisses it — no longer dependent
@@ -177,6 +182,14 @@ export default function CitationAtlas() {
       if (el) el.scrollTop = el.scrollHeight;
     });
   }, []);
+
+  // Raise a transient notice under the Selected Papers header (e.g. the
+  // selection cap was hit), auto-clearing after a few seconds.
+  const flashNotice = useCallback((text: string) => {
+    if (noticeTimerRef.current) clearTimeout(noticeTimerRef.current);
+    S.setState({ selectionNotice: text });
+    noticeTimerRef.current = setTimeout(() => S.setState({ selectionNotice: null }), 4000);
+  }, [S]);
 
   // Build (once) and return the title -> graph node index map used to resolve
   // search results to graph nodes (see titleIndexRef).
@@ -262,7 +275,19 @@ export default function CitationAtlas() {
         if (idx != null && !engine.selected.has(idx)) ids.push(idx);
       }
       if (!ids.length) return;
-      for (const id of ids) engine.selected.add(id);
+      // Enforce the selection cap: only add up to the remaining capacity, and
+      // tell the user if some were dropped.
+      const room = MAX_SELECTED_PAPERS - engine.selected.size;
+      if (room <= 0) {
+        flashNotice(`You can add up to ${MAX_SELECTED_PAPERS} papers to the chat. Remove one to add another.`);
+        return;
+      }
+      const dropped = ids.length - room;
+      const toAdd = dropped > 0 ? ids.slice(0, room) : ids;
+      if (dropped > 0) {
+        flashNotice(`Added ${room} — the chat is capped at ${MAX_SELECTED_PAPERS} papers.`);
+      }
+      for (const id of toAdd) engine.selected.add(id);
       // The engine's card defaults to the LAST-selected node; override it to the
       // FIRST (top-ranked) added paper so the hover card matches detailId.
       dismissedRef.current = null;
@@ -285,6 +310,23 @@ export default function CitationAtlas() {
     send: (text) => {
       const msg = (text || "").trim();
       if (!msg) return;
+      // Hard message cap per session — bounds total API cost. When reached, show
+      // one notice instead of sending, and don't append it more than once.
+      const cur = S.getState().messages;
+      if (cur.length >= MAX_MESSAGES) {
+        const already = cur[cur.length - 1]?.text?.startsWith("You've reached the");
+        if (!already) {
+          S.setState({
+            messages: [...cur, {
+              role: "assistant",
+              text: `You've reached the ${MAX_MESSAGES}-message limit for this session. Reload the page to start a new session.`,
+            }],
+            typing: false,
+          });
+          scrollChat();
+        }
+        return;
+      }
       const engine = engineRef.current, data = dataRef.current;
       const ids = engine ? ([...engine.selected] as number[]) : [];
 

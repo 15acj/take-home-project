@@ -12,6 +12,12 @@ import Anthropic from "@anthropic-ai/sdk";
 import { CLUSTER_KEYS, FIELDS } from "../../lib/fieldClusters";
 import { CONTENT_TYPE_KEYS } from "../../lib/contentTypes";
 import { findSimilarPapers, findSpecificPaper, similarSearchConfigured } from "../../lib/similar";
+import {
+  MAX_SELECTED_PAPERS,
+  MAX_MESSAGES,
+  PER_PAPER_CONTEXT_CHARS,
+  TOTAL_CONTEXT_CHARS,
+} from "../../lib/limits";
 
 // Haiku 4.5 — the current, supported replacement for the retired Haiku 3.5
 // (claude-3-5-haiku-20241022, retired 2026-02-19). Fast/cheap, ideal for Q&A
@@ -217,7 +223,11 @@ function systemPrompt(paperCount: number, filters: FiltersSnapshot | undefined):
   return parts.join("\n");
 }
 
-function renderPaper(p: PaperContext, index: number, total: number): string {
+// `body` is the already-budgeted abstract/full-text for this paper: a string to
+// include, "" when the paper genuinely has no abstract, or null when its text was
+// dropped to stay under the total context budget (metadata is still shown so the
+// model knows the paper exists).
+function renderPaper(p: PaperContext, index: number, total: number, body: string | null): string {
   const lines: string[] = [];
   lines.push(total > 1 ? `=== Paper ${index + 1} of ${total} ===` : "=== Selected paper ===");
   lines.push(`Title: ${p.title ?? "(untitled)"}`);
@@ -228,13 +238,35 @@ function renderPaper(p: PaperContext, index: number, total: number): string {
   if (p.topics.length) lines.push(`Topics: ${p.topics.join(", ")}`);
   if (p.keywords.length) lines.push(`Keywords: ${p.keywords.join(", ")}`);
   lines.push("Abstract:");
-  lines.push(p.abstract && p.abstract.trim() ? p.abstract.trim() : "(no abstract available for this paper)");
+  lines.push(
+    body === null
+      ? "(text omitted — context budget reached)"
+      : body || "(no abstract available for this paper)",
+  );
   return lines.join("\n");
+}
+
+// Distribute the total context-character budget across the selected papers' text.
+// Each paper's body is capped at PER_PAPER_CONTEXT_CHARS; the running total is
+// capped at TOTAL_CONTEXT_CHARS. Papers whose text would overflow the total are
+// truncated to fit, then omitted entirely once the budget is spent. This bounds
+// per-turn input cost even when full paper text is included for many papers.
+function budgetBodies(papers: PaperContext[]): (string | null)[] {
+  let remaining = TOTAL_CONTEXT_CHARS;
+  return papers.map((p) => {
+    const raw = p.abstract && p.abstract.trim() ? p.abstract.trim() : "";
+    if (!raw) return "";
+    if (remaining <= 0) return null;
+    const cap = Math.min(PER_PAPER_CONTEXT_CHARS, remaining);
+    remaining -= Math.min(raw.length, cap);
+    return raw.length <= cap ? raw : raw.slice(0, cap).trimEnd() + " …[truncated]";
+  });
 }
 
 function buildUserMessage(papers: PaperContext[], question: string): string {
   if (!papers.length) return question;
-  const context = papers.map((p, i) => renderPaper(p, i, papers.length)).join("\n\n");
+  const bodies = budgetBodies(papers);
+  const context = papers.map((p, i) => renderPaper(p, i, papers.length, bodies[i])).join("\n\n");
   return `${context}\n\n---\nUser question: ${question}`;
 }
 
@@ -243,9 +275,12 @@ function buildUserMessage(papers: PaperContext[], question: string): string {
 // a user turn) and pass the stored text verbatim (no embedded paper context —
 // that lives only on the current turn, since the selection can change).
 function mapHistory(history: ChatTurn[]): Anthropic.MessageParam[] {
-  const firstUser = history.findIndex((m) => m.role === "user");
+  // Clamp to the last MAX_MESSAGES turns so a crafted oversized history can't
+  // blow up per-request cost (defense-in-depth behind the client-side cap).
+  const clamped = history.length > MAX_MESSAGES ? history.slice(-MAX_MESSAGES) : history;
+  const firstUser = clamped.findIndex((m) => m.role === "user");
   if (firstUser === -1) return [];
-  return history.slice(firstUser).map((m) => ({ role: m.role, content: m.text }));
+  return clamped.slice(firstUser).map((m) => ({ role: m.role, content: m.text }));
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -256,7 +291,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const body = req.body as CopilotRequest;
   const question = typeof body?.question === "string" ? body.question.trim() : "";
-  const papers = Array.isArray(body?.papers) ? body.papers : [];
+  // Clamp the paper count server-side (defense-in-depth behind the UI cap) so a
+  // client that ignores the selection limit can't force an oversized context.
+  const papers = (Array.isArray(body?.papers) ? body.papers : []).slice(0, MAX_SELECTED_PAPERS);
   const history = Array.isArray(body?.history) ? body.history : [];
   const filters = body?.filters;
   const selectedRanks = Array.isArray(body?.selectedRanks)

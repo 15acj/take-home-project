@@ -9,6 +9,7 @@ import type { Theme } from "../lib/themes";
 import type { AtlasData } from "../lib/loaders";
 import { FIELDS } from "../lib/fieldClusters";
 import { useAtlasStore, type SimilarResult } from "../lib/store";
+import { MAX_SELECTED_PAPERS, MAX_MESSAGES } from "../lib/limits";
 import { PROMPTS, STARTER_PROMPTS } from "../lib/chat";
 import { useDetail } from "../lib/useShard";
 import FullTextBadge from "./FullTextBadge";
@@ -37,7 +38,11 @@ function SimilarResults({ results, t, actions }: { results: SimilarResult[]; t: 
     const idx = actions.resolveTitle(r.title);
     return idx != null && !selectedSet.has(idx);
   });
-  const canAdd = pending.length > 0;
+  // Respect the selection cap: only as many as there's room for can be added.
+  const room = MAX_SELECTED_PAPERS - selectedIds.length;
+  const full = room <= 0;
+  const addCount = Math.min(pending.length, Math.max(0, room));
+  const canAdd = addCount > 0;
   const allOn = checked.size === results.length;
   const toggle = (rank: number) =>
     setChecked((prev) => {
@@ -108,7 +113,9 @@ function SimilarResults({ results, t, actions }: { results: SimilarResult[]; t: 
         }}
       >
         {canAdd ? (
-          `Add ${pending.length} to Graph Selection`
+          `Add ${addCount} to Graph Selection`
+        ) : full && pending.length > 0 ? (
+          `Selection full (${MAX_SELECTED_PAPERS} max)`
         ) : checked.size === 0 ? (
           "Select Papers to Add"
         ) : (
@@ -132,7 +139,8 @@ function SpecificResult({ paper, matchType, t, actions }: { paper: SimilarResult
   const idx = actions.resolveTitle(paper.title);
   const inGraph = idx != null;
   const added = inGraph && selectedIds.includes(idx as number);
-  const canAdd = inGraph && !added;
+  const full = selectedIds.length >= MAX_SELECTED_PAPERS;
+  const canAdd = inGraph && !added && !full;
 
   // Centre the paper in the graph as soon as the card appears (once).
   useEffect(() => {
@@ -173,6 +181,8 @@ function SpecificResult({ paper, matchType, t, actions }: { paper: SimilarResult
           </>
         ) : !inGraph ? (
           "Not shown on the graph"
+        ) : full ? (
+          `Selection full (${MAX_SELECTED_PAPERS} max)`
         ) : (
           "Add to Graph Selection"
         )}
@@ -234,7 +244,10 @@ export default function CopilotPanel({
 
   const chatTab = s.copilotTab !== "details";
   const detailsTab = s.copilotTab === "details";
-  const canSend = s.chatInput.trim().length > 0;
+  // Hard message cap: once reached, block the input entirely (mirrors the
+  // guard in the send() action, so the UI can't invite a send that won't fire).
+  const atMsgCap = s.messages.length >= MAX_MESSAGES;
+  const canSend = s.chatInput.trim().length > 0 && !atMsgCap;
   // Suggestion chips are an empty-state affordance — hide them once the user has
   // sent a message (the store seeds an assistant greeting, so check for a user turn).
   const hasUserMsg = s.messages.some((m) => m.role === "user");
@@ -342,6 +355,11 @@ export default function CopilotPanel({
                 </svg>
               </span>
             </div>
+            {s.selectionNotice && (
+              <div style={{ fontSize: 11.5, fontWeight: 600, lineHeight: 1.4, color: t.accent, marginBottom: selCollapsed ? 0 : 8, animation: "fadein .2s ease" }}>
+                {s.selectionNotice}
+              </div>
+            )}
             {selCollapsed ? null : s.selectedIds.length > 0 ? (
               <>
                 <div ref={selListRef} style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: 118, overflowY: "auto", marginRight: -10, paddingRight: 10, marginTop: 4, marginBottom: 4 }}>
@@ -488,11 +506,13 @@ export default function CopilotPanel({
                       }
                     }}
                     rows={1}
-                    placeholder="Ask about the selected papers…"
+                    disabled={atMsgCap}
+                    placeholder={atMsgCap ? `Message limit reached (${MAX_MESSAGES}) — reload to start over` : "Ask about the selected papers…"}
                     style={{
                       flex: 1, resize: "none", border: "none", outline: "none", background: "transparent",
                       color: t.text, fontFamily: "'Lato',sans-serif", fontSize: 14, lineHeight: 1.45,
                       maxHeight: 96, padding: "4px 0", overflowY: "hidden",
+                      cursor: atMsgCap ? "not-allowed" : "text",
                     }}
                   />
                   <button
