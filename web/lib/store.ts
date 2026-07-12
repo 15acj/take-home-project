@@ -33,6 +33,9 @@ export interface ChatMessage {
   // "title" = confident title match, "search" = closest hybrid-search guess.
   paper?: SimilarResult;
   matchType?: "title" | "search";
+  // When present, the message renders as a small muted "tool call" indicator line
+  // (friendly label) instead of a text bubble/card. Value is the raw tool name.
+  tool?: string;
 }
 
 export interface AvailCounts {

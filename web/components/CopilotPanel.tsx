@@ -20,6 +20,15 @@ const mdComponents = {
   a: (props: ComponentProps<"a">) => <a {...props} target="_blank" rel="noopener noreferrer" />,
 };
 
+// Friendly labels for the muted "tool call" indicator lines. Falls back to the
+// raw tool name for anything not mapped here.
+const TOOL_LABELS: Record<string, string> = {
+  find_similar_papers: "Searched papers",
+  find_specific_paper: "Looked up paper",
+  set_filters: "Updated filters",
+  reset_filters: "Reset filters",
+};
+
 const fmtCites = (n: number) =>
   n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0 : 1).replace(/\.0$/, "") + "K" : "" + n;
 
@@ -415,6 +424,21 @@ export default function CopilotPanel({
                 <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                   {s.messages.map((m, i) => {
                     const user = m.role === "user";
+                    // Muted "tool call" indicator line — no "Copilot" header, no bubble.
+                    if (!user && m.tool) {
+                      return (
+                        <div key={i} style={{
+                          display: "flex", alignItems: "center", gap: 6, alignSelf: "flex-start",
+                          color: t.textFaint, fontSize: 11, fontWeight: 700, letterSpacing: "0.01em",
+                          fontFamily: "'Lato',sans-serif", animation: "fadein .3s ease",
+                        }}>
+                          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", flex: "0 0 auto" }}>
+                            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+                          </svg>
+                          {TOOL_LABELS[m.tool] ?? m.tool}
+                        </div>
+                      );
+                    }
                     return (
                       <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: user ? "flex-end" : "flex-start", animation: "fadein .3s ease" }}>
                         {!user && (

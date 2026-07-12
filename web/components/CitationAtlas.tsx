@@ -360,6 +360,10 @@ export default function CitationAtlas() {
         S.setState({ messages: [...S.getState().messages, { role: "assistant", text: "", results }], typing: false });
       const appendPaper = (paper: SimilarResult, matchType: "title" | "search") =>
         S.setState({ messages: [...S.getState().messages, { role: "assistant", text: "", paper, matchType }], typing: false });
+      // A muted "tool call" indicator line. Leaves `typing` alone — the following
+      // card/filter effect and the finally block manage it.
+      const appendTool = (name: string) =>
+        S.setState({ messages: [...S.getState().messages, { role: "assistant", text: "", tool: name }] });
       const replaceLast = (text: string) => {
         const cur = S.getState().messages.slice();
         cur[cur.length - 1] = { role: "assistant", text };
@@ -490,6 +494,7 @@ export default function CitationAtlas() {
             let obj: { t?: string; v?: unknown; name?: unknown; input?: unknown };
             try { obj = JSON.parse(s); } catch { return; }
             if (obj.t === "text" && typeof obj.v === "string") pushText(obj.v);
+            else if (obj.t === "tool" && typeof obj.name === "string") appendTool(obj.name);
             else if (obj.t === "action" && typeof obj.name === "string") {
               if (obj.name === "show_similar") {
                 similarShown = true;

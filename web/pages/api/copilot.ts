@@ -6,6 +6,7 @@
 // The reply is streamed as NDJSON (one JSON object per line) so it can carry
 // both assistant text and structured filter actions:
 //   {"t":"text","v":"<delta>"}                          — assistant text
+//   {"t":"tool","name":"find_similar_papers"}           — a tool was invoked (shown as a muted line)
 //   {"t":"action","name":"set_filters","input":{...}}   — a filter change to apply
 import type { NextApiRequest, NextApiResponse } from "next";
 import Anthropic from "@anthropic-ai/sdk";
@@ -280,7 +281,13 @@ function mapHistory(history: ChatTurn[]): Anthropic.MessageParam[] {
   const clamped = history.length > MAX_MESSAGES ? history.slice(-MAX_MESSAGES) : history;
   const firstUser = clamped.findIndex((m) => m.role === "user");
   if (firstUser === -1) return [];
-  return clamped.slice(firstUser).map((m) => ({ role: m.role, content: m.text }));
+  // Drop UI-only turns that carry no text (tool-call indicator lines, and the
+  // results/paper cards) — they'd otherwise become empty-content assistant
+  // messages, which the API rejects.
+  return clamped
+    .slice(firstUser)
+    .filter((m) => m.text && m.text.trim())
+    .map((m) => ({ role: m.role, content: m.text }));
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -339,6 +346,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // After the streamed preamble, act on any tool calls.
     for (const block of final.content) {
       if (block.type !== "tool_use") continue;
+      // Surface the tool call itself as a muted line in the chat (name only).
+      writeLine({ t: "tool", name: block.name });
       if (block.name === "find_similar_papers") {
         const input = block.input as { query?: string; limit?: number };
         const query = typeof input?.query === "string" ? input.query.trim() : "";
