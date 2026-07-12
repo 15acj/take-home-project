@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import type { Theme } from "../lib/themes";
 
-const MIN_WIDTH = 1300;
+const MIN_WIDTH = 1200;
 
 export default function SmallScreenNotice({ t }: { t: Theme }) {
   const [tooSmall, setTooSmall] = useState(false);

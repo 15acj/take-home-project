@@ -1,4 +1,4 @@
-// Top-center stats pill: papers / citations / selected, Reset View, mode toggle.
+// Top-center stats pill: papers / citations, Reset View, mode toggle.
 import type { CSSProperties } from "react";
 import type { Theme } from "../lib/themes";
 import { useAtlasStore } from "../lib/store";
@@ -7,7 +7,6 @@ import type { AtlasActions } from "./CitationAtlas";
 export default function StatsBar({ t, actions }: { t: Theme; actions: AtlasActions }) {
   const shownCount = useAtlasStore((s) => s.shownCount);
   const edgeCount = useAtlasStore((s) => s.edgeCount);
-  const selCount = useAtlasStore((s) => s.selectedIds.length);
   const themeKey = useAtlasStore((s) => s.themeKey);
 
   const btn: CSSProperties = {
@@ -25,7 +24,6 @@ export default function StatsBar({ t, actions }: { t: Theme; actions: AtlasActio
       <div style={{ display: "flex", alignItems: "center", gap: 16, fontFamily: "'Lato',sans-serif", fontSize: 12, color: t.textDim }}>
         <div><span style={{ color: t.text, fontWeight: 700 }}>{shownCount.toLocaleString()}</span> papers</div>
         <div><span style={{ color: t.text, fontWeight: 700 }}>{edgeCount.toLocaleString()}</span> citations</div>
-        <div><span style={{ color: t.text, fontWeight: 700 }}>{selCount}</span> selected</div>
       </div>
       <div style={{ width: 1, height: 20, background: t.border }} />
       <button onClick={() => actions.resetView()} className="hc" style={{ ...btn, ["--hc" as string]: t.text }}>

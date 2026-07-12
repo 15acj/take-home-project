@@ -11,6 +11,9 @@ the full graph with zero layout cost.
 
 **Live app:** https://take-home-project-nine.vercel.app/
 
+> **Note:** The app is desktop-oriented and needs a screen width of **1200px or above**.
+> Below that, it shows a prompt to widen the window.
+
 ## Key functionality
 
 - **3D force-directed graph** — 10k nodes / edges rendered on a custom WebGL engine,
