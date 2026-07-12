@@ -27,6 +27,7 @@ export interface AtlasActions {
   toggleSelect: (id: number) => void;
   removeSelected: (id: number) => void;
   selectPapers: (results: SimilarResult[]) => void;
+  resolveTitle: (title: string) => number | null;
   clearSelection: () => void;
   closeCard: () => void;
   send: (text: string) => void;
@@ -176,6 +177,21 @@ export default function CitationAtlas() {
     });
   }, []);
 
+  // Build (once) and return the title -> graph node index map used to resolve
+  // search results to graph nodes (see titleIndexRef).
+  const titleToIndex = (): Map<string, number> | null => {
+    if (!titleIndexRef.current && dataRef.current) {
+      const map = new Map<string, number>();
+      const nodes = dataRef.current.nodes;
+      for (let i = 0; i < nodes.length; i++) {
+        const key = nodes[i].title?.trim();
+        if (key && !map.has(key)) map.set(key, i); // first = highest-cited
+      }
+      titleIndexRef.current = map;
+    }
+    return titleIndexRef.current;
+  };
+
   const actions: AtlasActions = {
     setTheme: (key) => {
       engineRef.current?.setTheme(engineTheme(key));
@@ -220,19 +236,13 @@ export default function CitationAtlas() {
       engine.selected.delete(id);
       S.setState({ selectedIds: [...engine.selected] as number[] });
     },
+    resolveTitle: (title) => titleToIndex()?.get((title || "").trim()) ?? null,
     selectPapers: (results) => {
-      const engine = engineRef.current, data = dataRef.current;
-      if (!engine || !data || !results.length) return;
-      // Resolve each result to its graph node index by title (see titleIndexRef).
-      let map = titleIndexRef.current;
-      if (!map) {
-        map = new Map<string, number>();
-        for (let i = 0; i < data.nodes.length; i++) {
-          const key = data.nodes[i].title?.trim();
-          if (key && !map.has(key)) map.set(key, i); // first = highest-cited
-        }
-        titleIndexRef.current = map;
-      }
+      const engine = engineRef.current;
+      const map = titleToIndex();
+      if (!engine || !map || !results.length) return;
+      // Resolve each result to its graph node index by title; skip any already
+      // selected (de-dup) or not in the graph.
       const ids: number[] = [];
       for (const r of results) {
         const idx = map.get((r.title || "").trim());
@@ -246,6 +256,9 @@ export default function CitationAtlas() {
       engine.setHover(ids[0]);
       engine.focusNode(ids[0]);
       S.setState({ selectedIds: [...engine.selected] as number[], detailId: ids[0] });
+      // The Selected Papers list grows and shrinks the chat area — keep the chat
+      // pinned to the bottom so the latest content stays in view.
+      scrollChat();
     },
     clearSelection: () => {
       engineRef.current?.selected.clear();
@@ -427,6 +440,10 @@ export default function CitationAtlas() {
                 const results = Array.isArray(input?.results) ? input.results : [];
                 if (results.length) appendResults(results);
                 else appendAssistant("I couldn't find papers similar enough to that — try describing the topic differently.");
+                // The results card is the payload the user asked for — scroll it
+                // fully into view (incl. the "Add to selection" button), rather
+                // than deferring to the sticky-scroll used for streaming text.
+                scrollChat();
               } else {
                 didAction = true;
                 applyFilterAction(obj.name, obj.input);

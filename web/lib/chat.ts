@@ -9,6 +9,14 @@ export const PROMPTS = [
   "Why are these so highly cited?",
 ];
 
+// Shown when nothing is selected — showcase what the copilot can do:
+// natural-language filtering, semantic search, and finding a specific paper.
+export const STARTER_PROMPTS = [
+  "Show biology papers from 2020 to 2025",
+  "Find papers about CRISPR gene editing",
+  "Find the AlphaFold paper",
+];
+
 export function genReply(q: string, sel: AtlasNode[]): string {
   if (!sel.length)
     return "Select one or more papers in the graph first — click any glowing node. Then I can summarize them, compare their methods, or trace how they cite each other.";

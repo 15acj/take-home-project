@@ -1,7 +1,7 @@
 // RIGHT "Copilot" panel — 400px open / 128px collapsed. Chat/Paper tabs,
 // Selected Papers list, mocked chat (canned replies + typing indicator),
 // shard-backed Paper detail view.
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ComponentProps, CSSProperties, MutableRefObject, RefObject } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -9,7 +9,7 @@ import type { Theme } from "../lib/themes";
 import type { AtlasData } from "../lib/loaders";
 import { FIELDS } from "../lib/fieldClusters";
 import { useAtlasStore, type SimilarResult } from "../lib/store";
-import { PROMPTS } from "../lib/chat";
+import { PROMPTS, STARTER_PROMPTS } from "../lib/chat";
 import { useDetail } from "../lib/useShard";
 import FullTextBadge from "./FullTextBadge";
 import type { AtlasActions } from "./CitationAtlas";
@@ -26,7 +26,18 @@ const fmtCites = (n: number) =>
 // button to add the checked papers to the graph selection.
 function SimilarResults({ results, t, actions }: { results: SimilarResult[]; t: Theme; actions: AtlasActions }) {
   const [checked, setChecked] = useState<Set<number>>(() => new Set(results.map((r) => r.rank)));
-  const [added, setAdded] = useState(false);
+  // Button state is DERIVED from the live selection, not latched: the checked
+  // papers that aren't already in the graph selection. So it disables once
+  // everything checked is added, and re-enables the moment you check a new paper
+  // or clear/reset the selection. selectPapers also de-dups as a safety net.
+  const selectedIds = useAtlasStore((s) => s.selectedIds);
+  const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
+  const pending = results.filter((r) => {
+    if (!checked.has(r.rank)) return false;
+    const idx = actions.resolveTitle(r.title);
+    return idx != null && !selectedSet.has(idx);
+  });
+  const canAdd = pending.length > 0;
   const allOn = checked.size === results.length;
   const toggle = (rank: number) =>
     setChecked((prev) => {
@@ -36,9 +47,8 @@ function SimilarResults({ results, t, actions }: { results: SimilarResult[]; t: 
     });
   const toggleAll = () => setChecked(allOn ? new Set() : new Set(results.map((r) => r.rank)));
   const add = () => {
-    if (!checked.size) return;
-    actions.selectPapers(results.filter((r) => checked.has(r.rank)));
-    setAdded(true);
+    if (!canAdd) return;
+    actions.selectPapers(pending);
   };
 
   return (
@@ -88,25 +98,26 @@ function SimilarResults({ results, t, actions }: { results: SimilarResult[]; t: 
       </div>
       <button
         onClick={add}
-        disabled={added || checked.size === 0}
+        disabled={!canAdd}
         style={{
           marginTop: 12, width: "100%", padding: "9px 12px", borderRadius: 9, border: "none",
           display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
-          cursor: added || checked.size === 0 ? "default" : "pointer",
+          cursor: canAdd ? "pointer" : "default",
           fontFamily: "'Lato',sans-serif", fontSize: 12.5, fontWeight: 700,
-          background: added ? t.chipBg : t.accent, color: added ? t.textDim : t.onAccent,
-          opacity: !added && checked.size === 0 ? 0.6 : 1,
+          background: canAdd ? t.accent : t.chipBg, color: canAdd ? t.onAccent : t.textDim,
         }}
       >
-        {added ? (
+        {canAdd ? (
+          `Add ${pending.length} to Graph Selection`
+        ) : checked.size === 0 ? (
+          "Select Papers to Add"
+        ) : (
           <>
             <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke={t.textDim} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", flex: "0 0 auto" }}>
               <polyline points="20 6 9 17 4 12" />
             </svg>
             Added to Selection
           </>
-        ) : (
-          `Add ${checked.size} to graph selection`
         )}
       </button>
     </div>
@@ -167,6 +178,9 @@ export default function CopilotPanel({
   const chatTab = s.copilotTab !== "details";
   const detailsTab = s.copilotTab === "details";
   const canSend = s.chatInput.trim().length > 0;
+  // Suggestion chips are an empty-state affordance — hide them once the user has
+  // sent a message (the store seeds an assistant greeting, so check for a user turn).
+  const hasUserMsg = s.messages.some((m) => m.role === "user");
 
   // Floating "scroll to latest" button — shown when the chat is scrolled up
   // away from the newest message. Scrolling fires updateScrollDown; we also
@@ -380,27 +394,27 @@ export default function CopilotPanel({
               )}
              </div>
 
+              {!hasUserMsg && (
               <div style={{ flex: "0 0 auto", padding: "0 16px 8px" }}>
-                {s.selectedIds.length > 0 && (
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10, marginBottom: 10 }}>
-                    {PROMPTS.map((p) => (
-                      <button
-                        key={p}
-                        onClick={() => actions.send(p)}
-                        className="hc"
-                        style={{
-                          padding: "6px 11px", borderRadius: 20, border: `1px solid ${t.border}`,
-                          background: t.chipBg, color: t.textDim, fontSize: 11.5, cursor: "pointer",
-                          fontFamily: "'Lato',sans-serif",
-                          ["--hc" as string]: t.text,
-                        }}
-                      >
-                        {p}
-                      </button>
-                    ))}
-                  </div>
-                )}
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10, marginBottom: 10 }}>
+                  {(s.selectedIds.length > 0 ? PROMPTS : STARTER_PROMPTS).map((p) => (
+                    <button
+                      key={p}
+                      onClick={() => actions.send(p)}
+                      className="hc"
+                      style={{
+                        padding: "6px 11px", borderRadius: 20, border: `1px solid ${t.border}`,
+                        background: t.chipBg, color: t.textDim, fontSize: 11.5, cursor: "pointer",
+                        fontFamily: "'Lato',sans-serif",
+                        ["--hc" as string]: t.text,
+                      }}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                </div>
               </div>
+              )}
 
               <div style={{ flex: "0 0 auto", padding: "0 16px 16px" }}>
                 <div style={{ display: "flex", gap: 8, alignItems: "center", padding: "8px 8px 8px 12px", borderRadius: 13, border: `1px solid ${t.border}`, background: t.inputBg }}>
