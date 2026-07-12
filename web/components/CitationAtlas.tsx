@@ -8,7 +8,7 @@ import { computeFilter } from "../lib/filter";
 import { FIELDS, CLUSTER_KEYS, type ClusterKey } from "../lib/fieldClusters";
 import { CONTENT_TYPE_KEYS, type ContentTypeKey } from "../lib/contentTypes";
 import { THEMES, engineTheme, type ThemeKey } from "../lib/themes";
-import { useAtlasStore, filterDefaults, YEAR_MIN, YEAR_MAX, CITE_MAX, TOPN, type AtlasState } from "../lib/store";
+import { useAtlasStore, filterDefaults, YEAR_MIN, YEAR_MAX, CITE_MAX, TOPN, type AtlasState, type SimilarResult } from "../lib/store";
 import StatsBar from "./StatsBar";
 import Legend from "./Legend";
 import ControlsHint from "./ControlsHint";
@@ -23,8 +23,10 @@ export interface AtlasActions {
   resetView: () => void;
   zoom: (dir: number) => void;
   focusNode: (id: number) => void;
+  showPaperCard: (id: number) => void;
   toggleSelect: (id: number) => void;
   removeSelected: (id: number) => void;
+  selectPapers: (results: SimilarResult[]) => void;
   clearSelection: () => void;
   closeCard: () => void;
   send: (text: string) => void;
@@ -38,6 +40,11 @@ export default function CitationAtlas() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const engineRef = useRef<ForceGraph3D | null>(null);
   const dataRef = useRef<AtlasData | null>(null);
+  // title -> graph node index, built lazily. The turbopuffer `rank` attribute is
+  // NOT the graph node index (the graph drops "suspect" records the embed set
+  // keeps, so the two orderings diverge), so similar-paper results are joined to
+  // the graph by their (byte-identical) title instead.
+  const titleIndexRef = useRef<Map<string, number> | null>(null);
   const stickyRef = useRef<number | null>(null);
   const dismissedRef = useRef<number | null>(null);
   const [kwVersion, setKwVersion] = useState(0);
@@ -189,6 +196,18 @@ export default function CitationAtlas() {
     },
     zoom: (dir) => engineRef.current?.zoom(dir),
     focusNode: (id) => engineRef.current?.focusNode(id),
+    // Centre a paper and pop its hover card (used by the Selected Papers list).
+    // setHover drives the engine's card for that node; the engine only overrides
+    // hoverId on canvas pointer-move, so the card persists while the user stays
+    // in the panel. Clear any prior dismissal so the card isn't suppressed.
+    showPaperCard: (id) => {
+      const engine = engineRef.current;
+      if (!engine) return;
+      dismissedRef.current = null;
+      engine.focusNode(id);
+      engine.setHover(id);
+      S.setState({ detailId: id });
+    },
     toggleSelect: (id) => {
       const engine = engineRef.current;
       if (!engine) return;
@@ -200,6 +219,33 @@ export default function CitationAtlas() {
       if (!engine) return;
       engine.selected.delete(id);
       S.setState({ selectedIds: [...engine.selected] as number[] });
+    },
+    selectPapers: (results) => {
+      const engine = engineRef.current, data = dataRef.current;
+      if (!engine || !data || !results.length) return;
+      // Resolve each result to its graph node index by title (see titleIndexRef).
+      let map = titleIndexRef.current;
+      if (!map) {
+        map = new Map<string, number>();
+        for (let i = 0; i < data.nodes.length; i++) {
+          const key = data.nodes[i].title?.trim();
+          if (key && !map.has(key)) map.set(key, i); // first = highest-cited
+        }
+        titleIndexRef.current = map;
+      }
+      const ids: number[] = [];
+      for (const r of results) {
+        const idx = map.get((r.title || "").trim());
+        if (idx != null && !engine.selected.has(idx)) ids.push(idx);
+      }
+      if (!ids.length) return;
+      for (const id of ids) engine.selected.add(id);
+      // The engine's card defaults to the LAST-selected node; override it to the
+      // FIRST (top-ranked) added paper so the hover card matches detailId.
+      dismissedRef.current = null;
+      engine.setHover(ids[0]);
+      engine.focusNode(ids[0]);
+      S.setState({ selectedIds: [...engine.selected] as number[], detailId: ids[0] });
     },
     clearSelection: () => {
       engineRef.current?.selected.clear();
@@ -242,6 +288,8 @@ export default function CitationAtlas() {
 
       const appendAssistant = (text: string) =>
         S.setState({ messages: [...S.getState().messages, { role: "assistant", text }], typing: false });
+      const appendResults = (results: SimilarResult[]) =>
+        S.setState({ messages: [...S.getState().messages, { role: "assistant", text: "", results }], typing: false });
       const replaceLast = (text: string) => {
         const cur = S.getState().messages.slice();
         cur[cur.length - 1] = { role: "assistant", text };
@@ -341,7 +389,7 @@ export default function CitationAtlas() {
           const res = await fetch("/api/copilot", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ question: msg, papers, history, filters }),
+            body: JSON.stringify({ question: msg, papers, history, filters, selectedRanks: ids }),
           });
           if (!res.ok || !res.body) throw new Error(`copilot ${res.status}`);
 
@@ -351,8 +399,9 @@ export default function CitationAtlas() {
           const decoder = new TextDecoder();
           let buf = "";
           let acc = "";
-          let started = false;   // any assistant text shown yet
-          let didAction = false; // a filter action was applied this turn
+          let started = false;      // any assistant text shown yet
+          let didAction = false;    // a filter action was applied this turn
+          let similarShown = false; // a similar-papers card was appended this turn
 
           const pushText = (delta: string) => {
             acc += delta;
@@ -372,8 +421,16 @@ export default function CitationAtlas() {
             try { obj = JSON.parse(s); } catch { return; }
             if (obj.t === "text" && typeof obj.v === "string") pushText(obj.v);
             else if (obj.t === "action" && typeof obj.name === "string") {
-              didAction = true;
-              applyFilterAction(obj.name, obj.input);
+              if (obj.name === "show_similar") {
+                similarShown = true;
+                const input = obj.input as { results?: SimilarResult[] } | undefined;
+                const results = Array.isArray(input?.results) ? input.results : [];
+                if (results.length) appendResults(results);
+                else appendAssistant("I couldn't find papers similar enough to that — try describing the topic differently.");
+              } else {
+                didAction = true;
+                applyFilterAction(obj.name, obj.input);
+              }
             }
           };
 
@@ -390,7 +447,7 @@ export default function CitationAtlas() {
           buf += decoder.decode();
           if (buf.trim()) handleLine(buf);
 
-          if (!started) {
+          if (!started && !similarShown) {
             appendAssistant(didAction
               ? "Done — updated the graph filters."
               : "The copilot returned an empty response — try asking again.");

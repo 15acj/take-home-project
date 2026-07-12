@@ -11,6 +11,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import Anthropic from "@anthropic-ai/sdk";
 import { CLUSTER_KEYS, FIELDS } from "../../lib/fieldClusters";
 import { CONTENT_TYPE_KEYS } from "../../lib/contentTypes";
+import { findSimilarPapers, similarSearchConfigured } from "../../lib/similar";
 
 // Haiku 4.5 — the current, supported replacement for the retired Haiku 3.5
 // (claude-3-5-haiku-20241022, retired 2026-02-19). Fast/cheap, ideal for Q&A
@@ -60,6 +61,7 @@ interface CopilotRequest {
   papers: PaperContext[];
   history: ChatTurn[];
   filters?: FiltersSnapshot;
+  selectedRanks?: number[];
 }
 
 const TOOLS: Anthropic.Tool[] = [
@@ -109,6 +111,23 @@ const TOOLS: Anthropic.Tool[] = [
       "Reset all graph filters to defaults: all fields and content types shown, full year range, zero minimum citations, no availability requirements, corpus 1000, no search. Call this when the user asks to reset or clear the filters.",
     input_schema: { type: "object", properties: {} },
   },
+  {
+    name: "find_similar_papers",
+    description:
+      "Find papers semantically similar to a topic or to the currently selected paper(s), using hybrid vector + keyword search over the entire corpus. Call this when the user asks to find, discover, surface, recommend, or search for papers on a topic, or papers similar/related to the selected one(s). This is different from set_filters, which only narrows the papers already on the graph — use find_similar_papers to pull in new papers by relevance.",
+    input_schema: {
+      type: "object",
+      properties: {
+        query: {
+          type: "string",
+          description:
+            "What to search for. For a topic request, use the user's topic or description. For 'papers similar to this', synthesize the query from the selected paper's title and main topics (given in the message). Make it a rich descriptive phrase, not a single keyword.",
+        },
+        limit: { type: "integer", description: "How many results to return (3–5). Default 5." },
+      },
+      required: ["query"],
+    },
+  },
 ];
 
 function filtersSummary(f: FiltersSnapshot | undefined): string {
@@ -144,6 +163,8 @@ function systemPrompt(paperCount: number, filters: FiltersSnapshot | undefined):
     "When you change filters, first write ONE short sentence stating exactly what you are filtering to, then call the tool. Apply only the dimensions the user mentions and leave the rest unchanged. The `fields` and `content_types` parameters REPLACE the visible set, so send the full list you want shown; to add or remove one, include the current ones plus or minus the change. Prefer field clusters for broad domains and the `keyword` parameter for specific topics or terms.",
     `Constraints: year ${YEAR_MIN}–${YEAR_MAX}, min citations 0–${CITE_MAX}, corpus size one of 100/1000/5000/10000.`,
     'Examples: "show machine learning papers" -> set_filters(fields:["ai"]); "genetics and neuroscience" -> set_filters(fields:["genetics","neuro"]); "articles from 2020 to 2026" -> set_filters(content_types:["article"], year_min:2020, year_max:2026); "more than 5000 citations" -> set_filters(min_citations:5000); "with pdf links" -> set_filters(require_pdf:true); "reset the filters" -> reset_filters().',
+    "",
+    "SEARCH: Use the find_similar_papers tool to find papers on a topic or similar to the selected paper(s) — semantic hybrid search over the whole corpus. This is different from set_filters (which only narrows the papers already on the graph); find_similar_papers pulls in new papers by relevance. Write one short sentence first (e.g. \"Finding papers similar to X…\"), then call it. For \"similar to this\", build the query from the selected paper's title and main topics. The results appear as an interactive list the user can add to the graph, so you don't need to list them yourself.",
     "",
     filtersSummary(filters),
   ];
@@ -219,6 +240,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const papers = Array.isArray(body?.papers) ? body.papers : [];
   const history = Array.isArray(body?.history) ? body.history : [];
   const filters = body?.filters;
+  const selectedRanks = Array.isArray(body?.selectedRanks)
+    ? body.selectedRanks.filter((n): n is number => typeof n === "number")
+    : [];
 
   if (!question) {
     return res.status(400).json({ error: "Missing question." });
@@ -256,9 +280,31 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
     stream.on("text", (delta) => writeLine({ t: "text", v: delta }));
     const final = await stream.finalMessage();
-    // Emit any tool calls (filter actions) after the streamed preamble text.
+    // After the streamed preamble, act on any tool calls.
     for (const block of final.content) {
-      if (block.type === "tool_use") {
+      if (block.type !== "tool_use") continue;
+      if (block.name === "find_similar_papers") {
+        const input = block.input as { query?: string; limit?: number };
+        const query = typeof input?.query === "string" ? input.query.trim() : "";
+        if (!query) continue;
+        if (!similarSearchConfigured()) {
+          writeLine({ t: "text", v: "\n\n(Similar-paper search isn't configured on the server.)" });
+          continue;
+        }
+        try {
+          const results = await findSimilarPapers({
+            anthropic: client,
+            query,
+            limit: input.limit ?? 5,
+            excludeRanks: selectedRanks,
+          });
+          writeLine({ t: "action", name: "show_similar", input: { query, results } });
+        } catch (e) {
+          console.error("[/api/copilot] similar search failed:", e);
+          writeLine({ t: "text", v: "\n\n(Similar-paper search failed — please try again.)" });
+        }
+      } else {
+        // set_filters / reset_filters apply on the client.
         writeLine({ t: "action", name: block.name, input: block.input });
       }
     }

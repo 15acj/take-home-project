@@ -198,13 +198,15 @@ export class ForceGraph3D {
     ctx.fillStyle=g; ctx.fillRect(0,0,this.w,this.h);
 
     const cache=[];
-    for (const n of this.allNodes){ if(!this.visible.has(n.id))continue; cache.push({node:n, proj:this._project(n)}); }
+    // Selected nodes always render, even when filters would hide them: they're the
+    // user's working set, so they stay visible/locatable and their hover card works.
+    for (const n of this.allNodes){ if(!this.visible.has(n.id) && !this.selected.has(n.id))continue; cache.push({node:n, proj:this._project(n)}); }
     cache.sort((a,b)=>(b.proj?b.proj.depth:1e9)-(a.proj?a.proj.depth:1e9));
     this._projCache=cache;
     const projById=new Map(); for (const c of cache) if(c.proj) projById.set(c.node.id,c.proj);
 
     ctx.globalCompositeOperation=light?"source-over":"lighter"; ctx.lineWidth=1;
-    const hoverN=this.hoverId>=0 && this.visible.has(this.hoverId) ? this.allNodes[this.idIndex.get(this.hoverId)] : null;
+    const hoverN=this.hoverId>=0 && (this.visible.has(this.hoverId)||this.selected.has(this.hoverId)) ? this.allNodes[this.idIndex.get(this.hoverId)] : null;
     const neighborSet=new Set();
     if (hoverN){ neighborSet.add(hoverN.id); for (const nb of this.adj.get(hoverN.id)) neighborSet.add(nb); }
     for (const [si,ti] of this.allEdges) {
@@ -275,7 +277,7 @@ export class ForceGraph3D {
 
     this._hudTick=(this._hudTick||0)+1;
     if (this._hudTick%2===0) {
-      const sel=[...this.selected].filter(id=>this.visible.has(id));
+      const sel=[...this.selected].filter(id=>projById.has(id));
       const last=sel[sel.length-1]; let card=null;
       if (this.hoverId>=0 && projById.get(this.hoverId)){ const p=projById.get(this.hoverId); card={id:this.hoverId,x:p.sx,y:p.sy,hover:true}; }
       else if (last!==undefined && projById.get(last)){ const p=projById.get(last); card={id:last,x:p.sx,y:p.sy,hover:false}; }

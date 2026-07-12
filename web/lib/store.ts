@@ -8,9 +8,26 @@ import type { ContentTypeKey } from "./contentTypes";
 import { CONTENT_TYPE_KEYS } from "./contentTypes";
 import type { ThemeKey } from "./themes";
 
+// A hybrid-search hit from the copilot's find_similar_papers tool. `rank` is the
+// graph node index (== turbopuffer `rank` attribute), so results join straight
+// back to the atlas selection.
+export interface SimilarResult {
+  rank: number;
+  id: string;
+  title: string;
+  year: number;
+  cited_by_count: number;
+  field: string;
+  doi: string | null;
+  similarity: number;
+}
+
 export interface ChatMessage {
   role: "user" | "assistant";
   text: string;
+  // When present, the message renders as the interactive similar-papers card
+  // (checkbox list + "add to selection") instead of a text bubble.
+  results?: SimilarResult[];
 }
 
 export interface AvailCounts {

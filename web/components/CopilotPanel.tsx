@@ -8,7 +8,7 @@ import remarkGfm from "remark-gfm";
 import type { Theme } from "../lib/themes";
 import type { AtlasData } from "../lib/loaders";
 import { FIELDS } from "../lib/fieldClusters";
-import { useAtlasStore } from "../lib/store";
+import { useAtlasStore, type SimilarResult } from "../lib/store";
 import { PROMPTS } from "../lib/chat";
 import { useDetail } from "../lib/useShard";
 import FullTextBadge from "./FullTextBadge";
@@ -18,6 +18,100 @@ import type { AtlasActions } from "./CitationAtlas";
 const mdComponents = {
   a: (props: ComponentProps<"a">) => <a {...props} target="_blank" rel="noopener noreferrer" />,
 };
+
+const fmtCites = (n: number) =>
+  n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0 : 1).replace(/\.0$/, "") + "K" : "" + n;
+
+// Interactive similar-papers card: checkbox list (all checked by default) + a
+// button to add the checked papers to the graph selection.
+function SimilarResults({ results, t, actions }: { results: SimilarResult[]; t: Theme; actions: AtlasActions }) {
+  const [checked, setChecked] = useState<Set<number>>(() => new Set(results.map((r) => r.rank)));
+  const [added, setAdded] = useState(false);
+  const allOn = checked.size === results.length;
+  const toggle = (rank: number) =>
+    setChecked((prev) => {
+      const n = new Set(prev);
+      if (n.has(rank)) n.delete(rank); else n.add(rank);
+      return n;
+    });
+  const toggleAll = () => setChecked(allOn ? new Set() : new Set(results.map((r) => r.rank)));
+  const add = () => {
+    if (!checked.size) return;
+    actions.selectPapers(results.filter((r) => checked.has(r.rank)));
+    setAdded(true);
+  };
+
+  return (
+    <div style={{ width: "100%", borderRadius: "4px 14px 14px 14px", background: t.botBubble, border: `1px solid ${t.border}`, padding: "12px 14px" }}>
+      <div style={{ display: "flex", alignItems: "center", marginBottom: 10 }}>
+        <span style={{ fontSize: 12.5, fontWeight: 700, color: t.text }}>Similar papers</span>
+        <span style={{ flex: 1 }} />
+        <button
+          onClick={toggleAll}
+          style={{ fontSize: 11.5, fontWeight: 700, color: t.accent, background: "none", border: "none", cursor: "pointer", fontFamily: "'Lato',sans-serif", padding: 0 }}
+        >
+          {allOn ? "None" : "All"}
+        </button>
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        {results.map((r) => {
+          const on = checked.has(r.rank);
+          return (
+            <button
+              key={r.rank}
+              onClick={() => toggle(r.rank)}
+              style={{
+                display: "flex", alignItems: "flex-start", gap: 9, padding: "6px", borderRadius: 9,
+                cursor: "pointer", background: on ? t.chipBg : "transparent",
+                border: `1px solid ${on ? t.border : "transparent"}`, width: "100%",
+                textAlign: "left", fontFamily: "'Lato',sans-serif",
+              }}
+            >
+              <span style={{
+                marginTop: 1, display: "flex", alignItems: "center", justifyContent: "center",
+                width: 16, height: 16, flex: "0 0 auto", borderRadius: 5,
+                border: `1px solid ${on ? t.accent : t.border}`, background: on ? t.accent : "transparent",
+              }}>
+                <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke={t.onAccent} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: on ? 1 : 0, display: "block" }}>
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </span>
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ display: "block", fontSize: 13, fontWeight: 700, color: t.text, lineHeight: 1.35 }}>{r.title || "(untitled)"}</span>
+                <span style={{ display: "block", fontSize: 11.5, fontWeight: 700, color: t.textDim, marginTop: 3 }}>
+                  {r.year || "—"} · {fmtCites(r.cited_by_count)} cites{r.field ? ` · ${r.field}` : ""} · {Math.round(r.similarity * 100)}% match
+                </span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+      <button
+        onClick={add}
+        disabled={added || checked.size === 0}
+        style={{
+          marginTop: 12, width: "100%", padding: "9px 12px", borderRadius: 9, border: "none",
+          display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
+          cursor: added || checked.size === 0 ? "default" : "pointer",
+          fontFamily: "'Lato',sans-serif", fontSize: 12.5, fontWeight: 700,
+          background: added ? t.chipBg : t.accent, color: added ? t.textDim : t.onAccent,
+          opacity: !added && checked.size === 0 ? 0.6 : 1,
+        }}
+      >
+        {added ? (
+          <>
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke={t.textDim} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", flex: "0 0 auto" }}>
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+            Added to Selection
+          </>
+        ) : (
+          `Add ${checked.size} to graph selection`
+        )}
+      </button>
+    </div>
+  );
+}
 
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
@@ -192,7 +286,7 @@ export default function CopilotPanel({
                       }}>
                         <span style={{ width: 8, height: 8, borderRadius: "50%", flex: "0 0 auto", background: `rgb(${FIELDS[n.field].rgb.join(",")})` }} />
                         <span
-                          onClick={() => { actions.focusNode(id); set({ detailId: id }); }}
+                          onClick={() => actions.showPaperCard(id)}
                           title={n.title}
                           style={{ flex: 1, fontSize: 12.5, fontWeight: 700, lineHeight: 1.35, cursor: "pointer", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
                         >
@@ -237,22 +331,26 @@ export default function CopilotPanel({
                         {!user && (
                           <div style={{ fontSize: 10.5, letterSpacing: "0.02em", fontWeight: 700, color: t.textDim, marginBottom: 5 }}>Copilot</div>
                         )}
-                        <div style={user ? {
-                          maxWidth: "88%", padding: "10px 13px", borderRadius: "14px 14px 4px 14px",
-                          background: t.accent, color: t.onAccent, fontSize: 13.5, lineHeight: 1.45, fontWeight: 400,
-                        } : {
-                          maxWidth: "94%", padding: "11px 14px", borderRadius: "4px 14px 14px 14px",
-                          background: t.botBubble, border: `1px solid ${t.border}`, color: t.text,
-                          fontSize: 13.5, lineHeight: 1.55, fontWeight: 400,
-                        }}>
-                          {user ? m.text : (
-                            <div className="md" style={{ ["--md-accent" as string]: t.accent }}>
-                              <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>
-                                {m.text}
-                              </ReactMarkdown>
-                            </div>
-                          )}
-                        </div>
+                        {!user && m.results ? (
+                          <SimilarResults results={m.results} t={t} actions={actions} />
+                        ) : (
+                          <div style={user ? {
+                            maxWidth: "88%", padding: "10px 13px", borderRadius: "14px 14px 4px 14px",
+                            background: t.accent, color: t.onAccent, fontSize: 13.5, lineHeight: 1.45, fontWeight: 400,
+                          } : {
+                            maxWidth: "94%", padding: "11px 14px", borderRadius: "4px 14px 14px 14px",
+                            background: t.botBubble, border: `1px solid ${t.border}`, color: t.text,
+                            fontSize: 13.5, lineHeight: 1.55, fontWeight: 400,
+                          }}>
+                            {user ? m.text : (
+                              <div className="md" style={{ ["--md-accent" as string]: t.accent }}>
+                                <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>
+                                  {m.text}
+                                </ReactMarkdown>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     );
                   })}
