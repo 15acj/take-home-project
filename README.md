@@ -9,6 +9,8 @@ Data comes from the [OpenAlex](https://openalex.org) API. The layout, node sizes
 edges are all precomputed offline into compact binary artifacts, so the client renders
 the full graph with zero layout cost.
 
+**Live app:** https://take-home-project-nine.vercel.app/
+
 ## Key functionality
 
 - **3D force-directed graph** — 10k nodes / edges rendered on a custom WebGL engine,
