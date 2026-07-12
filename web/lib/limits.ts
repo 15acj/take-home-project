@@ -19,3 +19,9 @@ export const PER_PAPER_CONTEXT_CHARS = 60_000;
 
 // Total budget across all selected papers' context — ~80K tokens.
 export const TOTAL_CONTEXT_CHARS = 320_000;
+
+// Max model round-trips per copilot request. One initial turn plus follow-ups
+// after a tool returns a result (fetch_full_text). Bounds worst-case per-request
+// cost when the model chains tool calls. Fire-and-forget tools (filters, search)
+// don't consume extra turns — the loop only continues when full text was fetched.
+export const MAX_TOOL_TURNS = 3;

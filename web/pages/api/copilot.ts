@@ -13,9 +13,11 @@ import Anthropic from "@anthropic-ai/sdk";
 import { CLUSTER_KEYS, FIELDS } from "../../lib/fieldClusters";
 import { CONTENT_TYPE_KEYS } from "../../lib/contentTypes";
 import { findSimilarPapers, findSpecificPaper, similarSearchConfigured } from "../../lib/similar";
+import { fetchFullTextForPapers, fullTextConfigured } from "../../lib/fulltext";
 import {
   MAX_SELECTED_PAPERS,
   MAX_MESSAGES,
+  MAX_TOOL_TURNS,
   PER_PAPER_CONTEXT_CHARS,
   TOTAL_CONTEXT_CHARS,
 } from "../../lib/limits";
@@ -41,6 +43,9 @@ interface PaperContext {
   topics: string[];
   keywords: string[];
   cited_by_count: number | null;
+  // OpenAlex GROBID full-text URL when the paper has parsed full text, else null.
+  // Sent by the client (from the detail shard) so fetch_full_text can dereference it.
+  grobid_xml_url: string | null;
 }
 
 interface ChatTurn {
@@ -151,6 +156,36 @@ const TOOLS: Anthropic.Tool[] = [
       required: ["query"],
     },
   },
+  {
+    name: "fetch_full_text",
+    description:
+      'Retrieve the FULL parsed text (methods, experiments, results, figure/table ' +
+      'captions, equations, discussion, limitations) of one or more of the SELECTED ' +
+      'papers — but ONLY for papers marked "Full text: available" in the context. ' +
+      "Call this ONLY when answering the question needs detail the abstract doesn't " +
+      "contain: how a method or experiment works, dataset/hyperparameter specifics, " +
+      "what a figure or table shows, an exact result or number, an equation, ablations, " +
+      "or stated limitations. Do NOT call it for questions the title/abstract already " +
+      "answer (what the paper is about, its headline contribution, its year/venue/" +
+      "citations). If the question spans multiple selected papers (summarize, compare, " +
+      "contrast, or synthesize) and several are marked available, pass ALL of their " +
+      'indices in one call so you read every applicable paper. Never pass the index of ' +
+      'a paper marked "Full text: not available".',
+    input_schema: {
+      type: "object",
+      properties: {
+        papers: {
+          type: "array",
+          items: { type: "integer" },
+          description:
+            'The 1-based indices of the selected papers to read, matching the "Paper N" ' +
+            "labels in the context (use [1] when a single paper is selected). Include " +
+            "every applicable available paper for a cross-paper question.",
+        },
+      },
+      required: ["papers"],
+    },
+  },
 ];
 
 function filtersSummary(f: FiltersSnapshot | undefined): string {
@@ -192,6 +227,8 @@ function systemPrompt(paperCount: number, filters: FiltersSnapshot | undefined):
     "- find_specific_paper — ONE particular paper the user names or describes (\"find the paper called <title>\", \"look up the deep residual learning paper\", \"the attention-is-all-you-need paper\", \"do we have <paper>\"). Pass the exact title when given. The single result is auto-focused in the graph and can be added to the selection.",
     "Route by intent: a specific, identifiable paper -> find_specific_paper; a topic or \"papers like X\" -> find_similar_papers. E.g. \"find the transformer paper\" -> find_specific_paper; \"papers about attention mechanisms\" -> find_similar_papers.",
     "",
+    "FULL TEXT: For a SELECTED paper marked \"Full text: available\", you can read its complete parsed text with the fetch_full_text tool. Use it ONLY when the question needs detail the abstract can't give — how a method or experiment works, dataset/hyperparameter specifics, what a figure or table shows, an exact result or number, an equation, ablations, or stated limitations. Do NOT fetch for questions the title/abstract already answer (what the paper is about, its headline contribution, its metadata). When the question spans multiple selected papers (summarize, compare, contrast, synthesize) and several are marked available, fetch ALL of their indices in one call. Only pass indices of papers marked available; if a paper the question needs has no full text, say so and answer from its abstract. After the tool returns, ground your answer in the retrieved text and be explicit about which paper each detail comes from.",
+    "",
     filtersSummary(filters),
   ];
 
@@ -203,12 +240,12 @@ function systemPrompt(paperCount: number, filters: FiltersSnapshot | undefined):
   } else if (paperCount === 1) {
     parts.push(
       "",
-      "The user has selected one paper; its details are in the next message. Ground your answer in its title, abstract, and metadata. You do NOT have the full text — when a question needs detail the abstract doesn't contain, say so plainly. Explain the paper's contribution, method, and significance.",
+      "The user has selected one paper; its details are in the next message. Ground your answer in its title, abstract, and metadata. If the paper is marked \"Full text: available\" and the question needs detail beyond the abstract (methods, figures, specific results), call fetch_full_text to read it; if it has no full text, say so when a question needs more than the abstract. Explain the paper's contribution, method, and significance.",
     );
   } else {
     parts.push(
       "",
-      `The user selected ${paperCount} papers, delineated as "Paper 1", "Paper 2", etc. in the next message. Ground your answer in the provided titles, abstracts, and metadata — you do NOT have the full text, so say so when a question needs more. Depending on the question, help them:`,
+      `The user selected ${paperCount} papers, delineated as "Paper 1", "Paper 2", etc. in the next message. Ground your answer in the provided titles, abstracts, and metadata. When a question needs detail beyond the abstracts (methods, figures, specific results) and the relevant papers are marked "Full text: available", call fetch_full_text — for a cross-paper task (summarize/compare/synthesize), pass every applicable available paper's index in one call. Say so for any needed paper that has no full text. Depending on the question, help them:`,
       "- Summarize the selection (individually and as a set).",
       "- Compare and contrast the papers' methods, approaches, assumptions, or scope.",
       "- Identify connections between them — shared methodological lineage, common themes, complementary or competing results, how one builds on another.",
@@ -238,6 +275,11 @@ function renderPaper(p: PaperContext, index: number, total: number, body: string
   if (p.cited_by_count != null) lines.push(`Citations: ${p.cited_by_count.toLocaleString()}`);
   if (p.topics.length) lines.push(`Topics: ${p.topics.join(", ")}`);
   if (p.keywords.length) lines.push(`Keywords: ${p.keywords.join(", ")}`);
+  lines.push(
+    p.grobid_xml_url
+      ? "Full text: available (use fetch_full_text to read it when the question needs paper internals)"
+      : "Full text: not available (only the abstract below)",
+  );
   lines.push("Abstract:");
   lines.push(
     body === null
@@ -331,73 +373,145 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   res.setHeader("Content-Type", "application/x-ndjson; charset=utf-8");
   res.setHeader("Cache-Control", "no-cache, no-transform");
   res.setHeader("X-Accel-Buffering", "no");
-  const writeLine = (obj: unknown) => res.write(JSON.stringify(obj) + "\n");
+
+  // If the client stops the request (hits the stop button → aborts the fetch),
+  // the connection closes. Abort the in-flight Claude stream so we don't keep
+  // generating (and billing) tokens no one will read, and stop writing to the
+  // dead socket.
+  let clientGone = false;
+  let activeStream: ReturnType<typeof client.messages.stream> | null = null;
+  res.on("close", () => {
+    if (res.writableEnded) return; // normal completion, not a client abort
+    clientGone = true;
+    try { activeStream?.abort(); } catch { /* already settled */ }
+  });
+  const writeLine = (obj: unknown) => {
+    if (!clientGone) res.write(JSON.stringify(obj) + "\n");
+  };
 
   try {
-    const stream = client.messages.stream({
-      model: MODEL,
-      max_tokens: 1024,
-      system: systemPrompt(papers.length, filters),
-      tools: TOOLS,
-      messages,
-    });
-    stream.on("text", (delta) => writeLine({ t: "text", v: delta }));
-    const final = await stream.finalMessage();
-    // After the streamed preamble, act on any tool calls.
-    for (const block of final.content) {
-      if (block.type !== "tool_use") continue;
-      // Surface the tool call itself as a muted line in the chat (name only).
-      writeLine({ t: "tool", name: block.name });
-      if (block.name === "find_similar_papers") {
-        const input = block.input as { query?: string; limit?: number };
-        const query = typeof input?.query === "string" ? input.query.trim() : "";
-        if (!query) continue;
-        if (!similarSearchConfigured()) {
-          writeLine({ t: "text", v: "\n\n(Similar-paper search isn't configured on the server.)" });
-          continue;
-        }
-        try {
-          const results = await findSimilarPapers({
-            anthropic: client,
-            query,
-            limit: input.limit ?? 5,
-            excludeRanks: selectedRanks,
-          });
-          writeLine({ t: "action", name: "show_similar", input: { query, results } });
-        } catch (e) {
-          console.error("[/api/copilot] similar search failed:", e);
-          writeLine({ t: "text", v: "\n\n(Similar-paper search failed — please try again.)" });
-        }
-      } else if (block.name === "find_specific_paper") {
-        const input = block.input as { query?: string };
-        const query = typeof input?.query === "string" ? input.query.trim() : "";
-        if (!query) continue;
-        if (!similarSearchConfigured()) {
-          writeLine({ t: "text", v: "\n\n(Paper lookup isn't configured on the server.)" });
-          continue;
-        }
-        try {
-          const { paper, matchType } = await findSpecificPaper({
-            anthropic: client,
-            query,
-            excludeRanks: selectedRanks,
-          });
-          if (paper) {
-            writeLine({ t: "action", name: "show_paper", input: { query, paper, matchType } });
-          } else {
-            writeLine({ t: "text", v: "\n\nI couldn't find that specific paper in the corpus — try the exact title, or ask me to find similar papers instead." });
+    // Bounded agentic loop. Most turns are single-pass: fire-and-forget tools
+    // (filters, search) render as client actions and DON'T continue the loop, so
+    // behavior is unchanged for them. fetch_full_text is different — its result
+    // must go back to the model to be reasoned over — so when it runs we append a
+    // tool_result turn and re-invoke the model (up to MAX_TOOL_TURNS).
+    for (let turn = 0; turn < MAX_TOOL_TURNS; turn++) {
+      if (clientGone) break;
+      const stream = client.messages.stream({
+        model: MODEL,
+        max_tokens: 1024,
+        system: systemPrompt(papers.length, filters),
+        tools: TOOLS,
+        messages,
+      });
+      activeStream = stream;
+      stream.on("text", (delta) => writeLine({ t: "text", v: delta }));
+      const final = await stream.finalMessage();
+
+      const toolUses = final.content.filter(
+        (b): b is Anthropic.ToolUseBlock => b.type === "tool_use",
+      );
+      if (!toolUses.length) break;
+
+      // Replay this assistant turn (text + tool_use blocks) so the tool_result we
+      // may append next references valid tool_use ids.
+      messages.push({ role: "assistant", content: final.content });
+
+      // The API requires a tool_result for EVERY tool_use in the turn we continue.
+      // We build one per block; the fire-and-forget acks are only sent to the model
+      // if fetch_full_text also ran this turn (otherwise we break without them).
+      const toolResults: Anthropic.ToolResultBlockParam[] = [];
+      let continueLoop = false;
+      const ack = (id: string, content: string) =>
+        toolResults.push({ type: "tool_result", tool_use_id: id, content });
+
+      for (const block of toolUses) {
+        // Surface the tool call itself as a muted line in the chat (name only).
+        writeLine({ t: "tool", name: block.name });
+
+        if (block.name === "fetch_full_text") {
+          // Read the selected paper(s) and feed the text back to the model.
+          try {
+            const text = await fetchFullTextForPapers(
+              block.input as { papers?: unknown },
+              papers,
+            );
+            ack(block.id, text);
+          } catch (e) {
+            console.error("[/api/copilot] full-text fetch failed:", e);
+            ack(block.id, "Full-text retrieval failed — answer from the abstract(s) and note that the full text couldn't be loaded.");
           }
-        } catch (e) {
-          console.error("[/api/copilot] specific-paper search failed:", e);
-          writeLine({ t: "text", v: "\n\n(Paper lookup failed — please try again.)" });
+          continueLoop = true;
+        } else if (block.name === "find_similar_papers") {
+          const input = block.input as { query?: string; limit?: number };
+          const query = typeof input?.query === "string" ? input.query.trim() : "";
+          if (!query) {
+            ack(block.id, "No query provided.");
+          } else if (!similarSearchConfigured()) {
+            writeLine({ t: "text", v: "\n\n(Similar-paper search isn't configured on the server.)" });
+            ack(block.id, "Similar-paper search isn't configured.");
+          } else {
+            try {
+              const results = await findSimilarPapers({
+                anthropic: client,
+                query,
+                limit: input.limit ?? 5,
+                excludeRanks: selectedRanks,
+              });
+              writeLine({ t: "action", name: "show_similar", input: { query, results } });
+              ack(block.id, "Results were shown to the user as cards.");
+            } catch (e) {
+              console.error("[/api/copilot] similar search failed:", e);
+              writeLine({ t: "text", v: "\n\n(Similar-paper search failed — please try again.)" });
+              ack(block.id, "Similar-paper search failed.");
+            }
+          }
+        } else if (block.name === "find_specific_paper") {
+          const input = block.input as { query?: string };
+          const query = typeof input?.query === "string" ? input.query.trim() : "";
+          if (!query) {
+            ack(block.id, "No query provided.");
+          } else if (!similarSearchConfigured()) {
+            writeLine({ t: "text", v: "\n\n(Paper lookup isn't configured on the server.)" });
+            ack(block.id, "Paper lookup isn't configured.");
+          } else {
+            try {
+              const { paper, matchType } = await findSpecificPaper({
+                anthropic: client,
+                query,
+                excludeRanks: selectedRanks,
+              });
+              if (paper) {
+                writeLine({ t: "action", name: "show_paper", input: { query, paper, matchType } });
+                ack(block.id, "The paper was shown to the user as a card.");
+              } else {
+                writeLine({ t: "text", v: "\n\nI couldn't find that specific paper in the corpus — try the exact title, or ask me to find similar papers instead." });
+                ack(block.id, "No matching paper found.");
+              }
+            } catch (e) {
+              console.error("[/api/copilot] specific-paper search failed:", e);
+              writeLine({ t: "text", v: "\n\n(Paper lookup failed — please try again.)" });
+              ack(block.id, "Paper lookup failed.");
+            }
+          }
+        } else {
+          // set_filters / reset_filters apply on the client.
+          writeLine({ t: "action", name: block.name, input: block.input });
+          ack(block.id, "Filters were applied.");
         }
-      } else {
-        // set_filters / reset_filters apply on the client.
-        writeLine({ t: "action", name: block.name, input: block.input });
       }
+
+      // Only fetch_full_text needs another model turn to answer over its result.
+      // For filter/search-only turns, stop here (unchanged single-pass behavior).
+      if (!continueLoop) break;
+      messages.push({ role: "user", content: toolResults });
     }
-    res.end();
+    if (!clientGone) res.end();
   } catch (err) {
+    // The client aborting (stop button) surfaces as an abort/closed-socket error
+    // here — that's expected, not a failure, so don't log it or try to write to
+    // the dead connection.
+    if (clientGone) return;
     console.error("[/api/copilot] error:", err);
     if (res.headersSent) {
       writeLine({ t: "text", v: "\n\n[The copilot hit an error and couldn't finish this reply.]" });

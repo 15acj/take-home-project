@@ -25,6 +25,7 @@ const mdComponents = {
 const TOOL_LABELS: Record<string, string> = {
   find_similar_papers: "Searched papers",
   find_specific_paper: "Looked up paper",
+  fetch_full_text: "Read full text",
   set_filters: "Updated filters",
   reset_filters: "Reset filters",
 };
@@ -439,6 +440,26 @@ export default function CopilotPanel({
                         </div>
                       );
                     }
+                    // Muted "Stopped" indicator line — shown when the user interrupts a reply.
+                    if (!user && m.stopped) {
+                      // When it directly follows a tool-call indicator line, pull it up
+                      // to tighten the two related micro-lines (parent list gap is 14).
+                      const prev = s.messages[i - 1];
+                      const afterTool = !!prev && prev.role !== "user" && !!prev.tool;
+                      return (
+                        <div key={i} style={{
+                          display: "flex", alignItems: "center", gap: 6, alignSelf: "flex-start",
+                          color: t.textFaint, fontSize: 11, fontWeight: 700, letterSpacing: "0.01em",
+                          fontFamily: "'Lato',sans-serif", animation: "fadein .3s ease",
+                          ...(afterTool ? { marginTop: -9 } : null),
+                        }}>
+                          <svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor" aria-hidden="true" style={{ display: "block", flex: "0 0 auto" }}>
+                            <rect x="5" y="5" width="14" height="14" rx="2.5" />
+                          </svg>
+                          Stopped
+                        </div>
+                      );
+                    }
                     return (
                       <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: user ? "flex-end" : "flex-start", animation: "fadein .3s ease" }}>
                         {!user && (
@@ -539,18 +560,38 @@ export default function CopilotPanel({
                       cursor: atMsgCap ? "not-allowed" : "text",
                     }}
                   />
-                  <button
-                    onClick={() => actions.send(s.chatInput)}
-                    style={{
-                      width: 32, height: 32, flex: "0 0 auto", borderRadius: 9, border: "none",
-                      cursor: canSend ? "pointer" : "default", fontSize: 15, fontWeight: 700,
-                      background: canSend ? t.accent : t.chipBg,
-                      color: canSend ? t.onAccent : t.textFaint,
-                      transition: "all .15s",
-                    }}
-                  >
-                    ↑
-                  </button>
+                  {s.streaming ? (
+                    <button
+                      onClick={actions.stop}
+                      title="Stop generating"
+                      aria-label="Stop generating"
+                      style={{
+                        width: 32, height: 32, flex: "0 0 auto", borderRadius: 9, border: "none",
+                        cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                        background: t.chipBg, color: t.text, transition: "all .15s",
+                      }}
+                    >
+                      <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" aria-hidden="true" style={{ display: "block" }}>
+                        <rect x="5" y="5" width="14" height="14" rx="2.5" />
+                      </svg>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => actions.send(s.chatInput)}
+                      disabled={!canSend}
+                      title="Send message"
+                      aria-label="Send message"
+                      style={{
+                        width: 32, height: 32, flex: "0 0 auto", borderRadius: 9, border: "none",
+                        cursor: canSend ? "pointer" : "default", fontSize: 15, fontWeight: 700,
+                        background: canSend ? t.accent : t.chipBg,
+                        color: canSend ? t.onAccent : t.textFaint,
+                        transition: "all .15s",
+                      }}
+                    >
+                      ↑
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

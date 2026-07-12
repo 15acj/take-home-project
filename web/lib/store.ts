@@ -36,6 +36,9 @@ export interface ChatMessage {
   // When present, the message renders as a small muted "tool call" indicator line
   // (friendly label) instead of a text bubble/card. Value is the raw tool name.
   tool?: string;
+  // When true, the message renders as a muted "Stopped" indicator line (same
+  // treatment as a tool-call line), shown after the user interrupts a reply.
+  stopped?: boolean;
 }
 
 export interface AvailCounts {
@@ -93,7 +96,12 @@ export interface AtlasState {
   edgeCount: number;
   messages: ChatMessage[];
   chatInput: string;
+  // `typing` is the pre-token "thinking" indicator — it flips off as soon as the
+  // first assistant token streams in. `streaming` stays true for the whole
+  // request (until the stream ends or is stopped), so the input's send button can
+  // switch to a stop button for the entire in-flight duration.
   typing: boolean;
+  streaming: boolean;
   ready: boolean;
   // Transient notice shown under the Selected Papers header, e.g. when the
   // selection cap is hit. Auto-cleared by the setter that raises it.
@@ -146,6 +154,7 @@ export const useAtlasStore = create<AtlasState>((set) => ({
   messages: [GREETING],
   chatInput: "",
   typing: false,
+  streaming: false,
   ready: false,
   selectionNotice: null,
   set: (partial) => set(partial),

@@ -33,6 +33,7 @@ export interface AtlasActions {
   clearSelection: () => void;
   closeCard: () => void;
   send: (text: string) => void;
+  stop: () => void;
   degree: (id: number) => number;
 }
 
@@ -51,6 +52,8 @@ export default function CitationAtlas() {
   const stickyRef = useRef<number | null>(null);
   const dismissedRef = useRef<number | null>(null);
   const noticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Aborts the in-flight copilot request when the user hits the stop button.
+  const abortRef = useRef<AbortController | null>(null);
   const [kwVersion, setKwVersion] = useState(0);
 
   const S = useAtlasStore;
@@ -310,6 +313,9 @@ export default function CitationAtlas() {
     send: (text) => {
       const msg = (text || "").trim();
       if (!msg) return;
+      // Ignore a send while a request is already streaming — the button is a stop
+      // button in that state, but Enter or a stray call shouldn't start a second.
+      if (S.getState().streaming) return;
       // Hard message cap per session — bounds total API cost. When reached, show
       // one notice instead of sending, and don't append it more than once.
       const cur = S.getState().messages;
@@ -347,7 +353,7 @@ export default function CitationAtlas() {
         require_full_text: st.availGrobid,
         top_n: st.topN,
       };
-      S.setState({ messages: [...history, { role: "user", text: msg }], chatInput: "", typing: true });
+      S.setState({ messages: [...history, { role: "user", text: msg }], chatInput: "", typing: true, streaming: true });
       if (inputRef.current) {
         inputRef.current.style.height = "auto";
         inputRef.current.style.overflowY = "hidden";
@@ -432,6 +438,13 @@ export default function CitationAtlas() {
         if (Object.keys(patch).length) S.setState(patch);
       };
 
+      // Fresh abort controller for this request; the stop action aborts it.
+      const ac = new AbortController();
+      abortRef.current = ac;
+      // Hoisted out of the try so the catch can tell whether any assistant text
+      // streamed before an abort (block-scoped try vars aren't visible in catch).
+      let started = false; // any assistant text shown yet
+
       (async () => {
         try {
           // Assemble per-paper context when papers are selected: title/metadata
@@ -456,6 +469,9 @@ export default function CitationAtlas() {
                 topics: d?.topics ?? [],
                 keywords: d?.keywords ?? [],
                 cited_by_count: d?.cited_by_count ?? node?.citations ?? null,
+                // Full-text handle for the fetch_full_text tool; null when the
+                // paper has no parsed GROBID text.
+                grobid_xml_url: d?.grobid_xml_url ?? null,
               };
             });
           }
@@ -464,6 +480,7 @@ export default function CitationAtlas() {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ question: msg, papers, history, filters, selectedRanks: ids }),
+            signal: ac.signal,
           });
           if (!res.ok || !res.body) throw new Error(`copilot ${res.status}`);
 
@@ -473,7 +490,6 @@ export default function CitationAtlas() {
           const decoder = new TextDecoder();
           let buf = "";
           let acc = "";
-          let started = false;      // any assistant text shown yet
           let didAction = false;    // a filter action was applied this turn
           let similarShown = false; // a similar-papers card was appended this turn
 
@@ -493,8 +509,14 @@ export default function CitationAtlas() {
             if (!s) return;
             let obj: { t?: string; v?: unknown; name?: unknown; input?: unknown };
             try { obj = JSON.parse(s); } catch { return; }
-            if (obj.t === "text" && typeof obj.v === "string") pushText(obj.v);
-            else if (obj.t === "tool" && typeof obj.name === "string") appendTool(obj.name);
+            if (obj.t === "text" && typeof obj.v === "string") { pushText(obj.v); return; }
+            // Any non-text line (a tool indicator, a card, or a filter action) closes
+            // the current assistant bubble: reset the stream accumulator so text that
+            // streams AFTER it (e.g. the answer following fetch_full_text) opens a
+            // fresh bubble instead of overwriting the muted tool line.
+            started = false;
+            acc = "";
+            if (obj.t === "tool" && typeof obj.name === "string") appendTool(obj.name);
             else if (obj.t === "action" && typeof obj.name === "string") {
               if (obj.name === "show_similar") {
                 similarShown = true;
@@ -538,7 +560,14 @@ export default function CitationAtlas() {
               : "The copilot returned an empty response — try asking again.");
           }
         } catch {
-          if (S.getState().typing) {
+          if (ac.signal.aborted) {
+            // User hit stop. Keep whatever streamed in intact and append a muted
+            // "Stopped" indicator line (rendered like a tool-call line), so the
+            // cancellation is visible whether or not any text had streamed.
+            S.setState({
+              messages: [...S.getState().messages, { role: "assistant", text: "", stopped: true }],
+            });
+          } else if (S.getState().typing) {
             // Failed before any tokens streamed — show a fresh error bubble.
             appendAssistant("Sorry — I couldn't reach the copilot. Check that the server is running and ANTHROPIC_API_KEY is set, then try again.");
           } else {
@@ -548,10 +577,17 @@ export default function CitationAtlas() {
             replaceLast((last?.text ?? "") + "\n\n[connection lost]");
           }
         } finally {
-          if (S.getState().typing) S.setState({ typing: false });
+          if (abortRef.current === ac) abortRef.current = null;
+          S.setState({ typing: false, streaming: false });
           if (nearBottom()) scrollChat();
         }
       })();
+    },
+    stop: () => {
+      // Abort the in-flight fetch; the send()'s catch/finally handle cleanup
+      // (keep partial text, clear typing/streaming). The server aborts its Claude
+      // stream when the connection drops.
+      abortRef.current?.abort();
     },
     degree: (id) => {
       const engine = engineRef.current;
