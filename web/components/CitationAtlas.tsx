@@ -23,6 +23,7 @@ export interface AtlasActions {
   resetView: () => void;
   zoom: (dir: number) => void;
   focusNode: (id: number) => void;
+  focusPaper: (result: SimilarResult) => void;
   showPaperCard: (id: number) => void;
   toggleSelect: (id: number) => void;
   removeSelected: (id: number) => void;
@@ -224,6 +225,18 @@ export default function CitationAtlas() {
       engine.setHover(id);
       S.setState({ detailId: id });
     },
+    // Auto-focus a "find a specific paper" result: resolve it to its graph node
+    // by title, centre it and pop its hover card (like showPaperCard). No-ops if
+    // the paper isn't in the graph (some corpus records are dropped from it).
+    focusPaper: (result) => {
+      const engine = engineRef.current;
+      const id = titleToIndex()?.get((result.title || "").trim()) ?? null;
+      if (!engine || id == null) return;
+      dismissedRef.current = null;
+      engine.focusNode(id);
+      engine.setHover(id);
+      S.setState({ detailId: id });
+    },
     toggleSelect: (id) => {
       const engine = engineRef.current;
       if (!engine) return;
@@ -303,6 +316,8 @@ export default function CitationAtlas() {
         S.setState({ messages: [...S.getState().messages, { role: "assistant", text }], typing: false });
       const appendResults = (results: SimilarResult[]) =>
         S.setState({ messages: [...S.getState().messages, { role: "assistant", text: "", results }], typing: false });
+      const appendPaper = (paper: SimilarResult, matchType: "title" | "search") =>
+        S.setState({ messages: [...S.getState().messages, { role: "assistant", text: "", paper, matchType }], typing: false });
       const replaceLast = (text: string) => {
         const cur = S.getState().messages.slice();
         cur[cur.length - 1] = { role: "assistant", text };
@@ -443,6 +458,12 @@ export default function CitationAtlas() {
                 // The results card is the payload the user asked for — scroll it
                 // fully into view (incl. the "Add to selection" button), rather
                 // than deferring to the sticky-scroll used for streaming text.
+                scrollChat();
+              } else if (obj.name === "show_paper") {
+                similarShown = true;
+                const input = obj.input as { paper?: SimilarResult; matchType?: "title" | "search" } | undefined;
+                if (input?.paper) appendPaper(input.paper, input.matchType === "title" ? "title" : "search");
+                else appendAssistant("I couldn't find that specific paper — try the exact title, or ask me to find similar papers instead.");
                 scrollChat();
               } else {
                 didAction = true;

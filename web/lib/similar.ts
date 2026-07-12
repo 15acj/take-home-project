@@ -21,6 +21,15 @@ const CANDIDATES = 40; // top_k per sub-query
 const SIM_THRESHOLD = 0.35;
 const ATTRS = ["rank", "title", "year", "cited_by_count", "field", "doi"];
 
+// --- find_specific_paper (one known paper by title, hybrid fallback) knobs ---
+const TITLE_CANDIDATES = 20; // BM25 top_k per variant when locating a specific paper
+// A candidate counts as a confident title match when the query's terms are almost
+// entirely present in the candidate title. Recall drives the score; DICE_FLOOR
+// guards against a short query coincidentally matching a long, unrelated title.
+const TITLE_MATCH_THRESHOLD = 0.8;
+const DICE_FLOOR = 0.34;
+const MIN_QUERY_TOKENS = 3; // below this, "find the exact paper" is too ambiguous — use hybrid
+
 // turbopuffer rows carry the included attributes dynamically alongside id/$dist.
 interface Row {
   id: string | number;
@@ -64,6 +73,143 @@ async function expandQuery(anthropic: Anthropic, query: string): Promise<string[
   } catch {
     return [];
   }
+}
+
+// Ask Haiku for a couple of *likely exact titles* for the paper the user is
+// naming/describing. Widens BM25 recall so a description ("the deep residual
+// learning paper") can still surface the literal title. Best-effort like above.
+async function expandTitleQuery(anthropic: Anthropic, query: string): Promise<string[]> {
+  try {
+    const msg = await anthropic.messages.create({
+      model: EXPAND_MODEL,
+      max_tokens: 200,
+      system:
+        "The user is trying to name ONE specific academic paper (by its title, a partial title, or a short description). Return ONLY a compact JSON array of exactly 2 strings: your best guesses at the paper's EXACT published title (or very close phrasings). No prose, no markdown, no code fences.",
+      messages: [{ role: "user", content: query }],
+    });
+    const text = msg.content.map((b) => (b.type === "text" ? b.text : "")).join("");
+    const start = text.indexOf("[");
+    const end = text.lastIndexOf("]");
+    if (start === -1 || end <= start) return [];
+    const arr = JSON.parse(text.slice(start, end + 1));
+    return Array.isArray(arr)
+      ? arr.filter((s): s is string => typeof s === "string" && s.trim().length > 0)
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+// Normalize a string to lowercase alphanumeric word tokens (punctuation → spaces).
+// Stopwords are intentionally kept: many real titles are stopword-dominated
+// ("Attention Is All You Need"), so dropping them would wreck the overlap.
+function titleTokens(s: string): string[] {
+  return s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+}
+
+// How well `title` matches `query`: the fraction of the query's distinct tokens
+// present in the title (recall), so a partial title still matches the full one.
+// Returns 0 when the Dice coefficient is below a floor, which stops a very short
+// query from scoring high against a long, mostly-unrelated title.
+function titleSimilarity(query: string, title: string): number {
+  const q = new Set(titleTokens(query));
+  const t = new Set(titleTokens(title));
+  if (!q.size || !t.size) return 0;
+  let inter = 0;
+  for (const w of q) if (t.has(w)) inter++;
+  const recall = inter / q.size;
+  const dice = (2 * inter) / (q.size + t.size);
+  return dice >= DICE_FLOOR ? recall : 0;
+}
+
+function rowToResult(row: Row, similarity: number): SimilarResult {
+  return {
+    rank: Number(row.rank),
+    id: String(row.id),
+    title: String(row.title ?? ""),
+    year: Number(row.year ?? 0),
+    cited_by_count: Number(row.cited_by_count ?? 0),
+    field: String(row.field ?? ""),
+    doi: row.doi ? String(row.doi) : null,
+    similarity: Math.round(similarity * 100) / 100,
+  };
+}
+
+// Locate ONE specific paper the user named or described. Tries a title match
+// first (BM25 recall over the corpus + a title-string-similarity gate); if no
+// candidate is close enough, falls back to the hybrid semantic search and
+// returns its single best guess. `matchType` lets the UI label the result
+// ("Title match" vs "Closest match").
+export async function findSpecificPaper(opts: {
+  anthropic: Anthropic;
+  query: string;
+  excludeRanks: number[];
+}): Promise<{ paper: SimilarResult | null; matchType: "title" | "search" }> {
+  const query = opts.query.trim();
+  if (!query) return { paper: null, matchType: "search" };
+
+  // 1. Expand → variant set (original + up to 2 likely-exact-title rephrasings).
+  const rephrasings = await expandTitleQuery(opts.anthropic, query);
+  const variants = Array.from(
+    new Set([query, ...rephrasings].map((s) => s.trim()).filter(Boolean)),
+  ).slice(0, 3);
+
+  // 2. BM25 retrieve per variant (title lives inside the FTS-indexed `text`).
+  const region = process.env.TURBOPUFFER_REGION!;
+  const namespace = process.env.TURBOPUFFER_NAMESPACE!;
+  const tpuf = new Turbopuffer({ apiKey: process.env.TURBOPUFFER_API_KEY!, region });
+  const ns = tpuf.namespace(namespace);
+  const bm25Res = await Promise.all(
+    variants.map((v) =>
+      ns.query({
+        rank_by: ["text", "BM25", v] as [string, "BM25", string],
+        top_k: TITLE_CANDIDATES,
+        include_attributes: ATTRS,
+      }),
+    ),
+  );
+
+  // 3. Pool candidates by id, preferring a row that carries the title attribute.
+  const byId = new Map<string, Row>();
+  for (const r of bm25Res) {
+    for (const row of r.rows as unknown as Row[]) {
+      const id = String(row.id);
+      const existing = byId.get(id);
+      if (!existing || (!existing.title && row.title)) byId.set(id, row);
+    }
+  }
+
+  // 4. Title-similarity gate: score each candidate as the best match across all
+  //    variants, so a rephrased exact title can win even if the raw query was a
+  //    loose description.
+  let best: { row: Row; score: number } | null = null;
+  for (const row of byId.values()) {
+    if (row.rank == null || !row.title) continue;
+    let score = 0;
+    for (const v of variants) score = Math.max(score, titleSimilarity(v, String(row.title)));
+    if (!best || score > best.score) best = { row, score };
+  }
+
+  const enoughTokens = variants.some((v) => titleTokens(v).length >= MIN_QUERY_TOKENS);
+  if (best && enoughTokens && best.score >= TITLE_MATCH_THRESHOLD) {
+    return { paper: rowToResult(best.row, best.score), matchType: "title" };
+  }
+
+  // 5. No close title match → hybrid search, single best guess. We don't exclude
+  //    already-selected papers: re-locating and re-focusing one is valid, and the
+  //    client's "add" step skips anything already in the selection.
+  const hits = await findSimilarPapers({
+    anthropic: opts.anthropic,
+    query,
+    limit: 1,
+    excludeRanks: [],
+  });
+  return { paper: hits[0] ?? null, matchType: "search" };
 }
 
 export async function findSimilarPapers(opts: {

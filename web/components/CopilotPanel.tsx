@@ -124,6 +124,63 @@ function SimilarResults({ results, t, actions }: { results: SimilarResult[]; t: 
   );
 }
 
+// Single-paper card from the "find a specific paper" tool. Auto-focuses the
+// paper in the graph on mount, and offers to add it to the selection. matchType
+// labels the header: a confident title match vs the closest hybrid-search guess.
+function SpecificResult({ paper, matchType, t, actions }: { paper: SimilarResult; matchType?: "title" | "search"; t: Theme; actions: AtlasActions }) {
+  const selectedIds = useAtlasStore((s) => s.selectedIds);
+  const idx = actions.resolveTitle(paper.title);
+  const inGraph = idx != null;
+  const added = inGraph && selectedIds.includes(idx as number);
+  const canAdd = inGraph && !added;
+
+  // Centre the paper in the graph as soon as the card appears (once).
+  useEffect(() => {
+    actions.focusPaper(paper);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <div style={{ width: "100%", borderRadius: "4px 14px 14px 14px", background: t.botBubble, border: `1px solid ${t.border}`, padding: "12px 14px" }}>
+      <div style={{ display: "flex", alignItems: "center", marginBottom: 10 }}>
+        <span style={{ fontSize: 12.5, fontWeight: 700, color: t.text }}>
+          {matchType === "title" ? "Title match" : "Closest match"}
+        </span>
+      </div>
+      <div style={{ padding: "0 2px" }}>
+        <span style={{ display: "block", fontSize: 13, fontWeight: 700, color: t.text, lineHeight: 1.35 }}>{paper.title || "(untitled)"}</span>
+        <span style={{ display: "block", fontSize: 11.5, fontWeight: 700, color: t.textDim, marginTop: 3 }}>
+          {paper.year || "—"} · {fmtCites(paper.cited_by_count)} cites{paper.field ? ` · ${paper.field}` : ""} · {Math.round(paper.similarity * 100)}% match
+        </span>
+      </div>
+      <button
+        onClick={() => canAdd && actions.selectPapers([paper])}
+        disabled={!canAdd}
+        style={{
+          marginTop: 12, width: "100%", padding: "9px 12px", borderRadius: 9, border: "none",
+          display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
+          cursor: canAdd ? "pointer" : "default",
+          fontFamily: "'Lato',sans-serif", fontSize: 12.5, fontWeight: 700,
+          background: canAdd ? t.accent : t.chipBg, color: canAdd ? t.onAccent : t.textDim,
+        }}
+      >
+        {added ? (
+          <>
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke={t.textDim} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", flex: "0 0 auto" }}>
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+            Added to Selection
+          </>
+        ) : !inGraph ? (
+          "Not shown on the graph"
+        ) : (
+          "Add to Graph Selection"
+        )}
+      </button>
+    </div>
+  );
+}
+
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December",
@@ -347,6 +404,8 @@ export default function CopilotPanel({
                         )}
                         {!user && m.results ? (
                           <SimilarResults results={m.results} t={t} actions={actions} />
+                        ) : !user && m.paper ? (
+                          <SpecificResult paper={m.paper} matchType={m.matchType} t={t} actions={actions} />
                         ) : (
                           <div style={user ? {
                             maxWidth: "88%", padding: "10px 13px", borderRadius: "14px 14px 4px 14px",

@@ -28,6 +28,11 @@ export interface ChatMessage {
   // When present, the message renders as the interactive similar-papers card
   // (checkbox list + "add to selection") instead of a text bubble.
   results?: SimilarResult[];
+  // When present, the message renders as the single-paper "find a specific paper"
+  // card (auto-focused in the graph + "add to selection"). matchType labels it:
+  // "title" = confident title match, "search" = closest hybrid-search guess.
+  paper?: SimilarResult;
+  matchType?: "title" | "search";
 }
 
 export interface AvailCounts {

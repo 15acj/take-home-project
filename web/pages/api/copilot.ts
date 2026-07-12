@@ -11,7 +11,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import Anthropic from "@anthropic-ai/sdk";
 import { CLUSTER_KEYS, FIELDS } from "../../lib/fieldClusters";
 import { CONTENT_TYPE_KEYS } from "../../lib/contentTypes";
-import { findSimilarPapers, similarSearchConfigured } from "../../lib/similar";
+import { findSimilarPapers, findSpecificPaper, similarSearchConfigured } from "../../lib/similar";
 
 // Haiku 4.5 — the current, supported replacement for the retired Haiku 3.5
 // (claude-3-5-haiku-20241022, retired 2026-02-19). Fast/cheap, ideal for Q&A
@@ -128,6 +128,22 @@ const TOOLS: Anthropic.Tool[] = [
       required: ["query"],
     },
   },
+  {
+    name: "find_specific_paper",
+    description:
+      "Locate ONE specific paper the user has named or described — by its title (full or partial), or a phrasing like \"the paper on X by author Y\", \"look up <title>\", \"do we have <paper>\". Tries an exact title match first and falls back to semantic search. The result is auto-focused in the graph and shown as a card the user can add to their selection. Use this (not find_similar_papers) whenever the user is after one particular, identifiable paper. Use find_similar_papers instead when they want several papers on a topic or papers related to the current selection.",
+    input_schema: {
+      type: "object",
+      properties: {
+        query: {
+          type: "string",
+          description:
+            "The paper to locate. Prefer the exact title if the user gave one (verbatim); otherwise pass the fullest identifying description they provided (title fragment, author + topic, etc.).",
+        },
+      },
+      required: ["query"],
+    },
+  },
 ];
 
 function filtersSummary(f: FiltersSnapshot | undefined): string {
@@ -164,7 +180,10 @@ function systemPrompt(paperCount: number, filters: FiltersSnapshot | undefined):
     `Constraints: year ${YEAR_MIN}–${YEAR_MAX}, min citations 0–${CITE_MAX}, corpus size one of 100/1000/5000/10000.`,
     'Examples: "show machine learning papers" -> set_filters(fields:["ai"]); "genetics and neuroscience" -> set_filters(fields:["genetics","neuro"]); "articles from 2020 to 2026" -> set_filters(content_types:["article"], year_min:2020, year_max:2026); "more than 5000 citations" -> set_filters(min_citations:5000); "with pdf links" -> set_filters(require_pdf:true); "reset the filters" -> reset_filters().',
     "",
-    "SEARCH: Use the find_similar_papers tool to find papers on a topic or similar to the selected paper(s) — semantic hybrid search over the whole corpus. This is different from set_filters (which only narrows the papers already on the graph); find_similar_papers pulls in new papers by relevance. Write one short sentence first (e.g. \"Finding papers similar to X…\"), then call it. For \"similar to this\", build the query from the selected paper's title and main topics. The results appear as an interactive list the user can add to the graph, so you don't need to list them yourself.",
+    "SEARCH: Two tools pull papers in from the whole corpus by relevance (unlike set_filters, which only narrows what's already on the graph). Write one short sentence first, then call the tool; results render as interactive cards the user can act on, so don't list them yourself.",
+    "- find_similar_papers — a SET of papers on a topic, or papers similar/related to the selected one(s). Use when the intent is discovery/recommendation (\"find papers about X\", \"papers similar to this\", \"what else is like this\"). For \"similar to this\", build the query from the selected paper's title and main topics.",
+    "- find_specific_paper — ONE particular paper the user names or describes (\"find the paper called <title>\", \"look up the deep residual learning paper\", \"the attention-is-all-you-need paper\", \"do we have <paper>\"). Pass the exact title when given. The single result is auto-focused in the graph and can be added to the selection.",
+    "Route by intent: a specific, identifiable paper -> find_specific_paper; a topic or \"papers like X\" -> find_similar_papers. E.g. \"find the transformer paper\" -> find_specific_paper; \"papers about attention mechanisms\" -> find_similar_papers.",
     "",
     filtersSummary(filters),
   ];
@@ -302,6 +321,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         } catch (e) {
           console.error("[/api/copilot] similar search failed:", e);
           writeLine({ t: "text", v: "\n\n(Similar-paper search failed — please try again.)" });
+        }
+      } else if (block.name === "find_specific_paper") {
+        const input = block.input as { query?: string };
+        const query = typeof input?.query === "string" ? input.query.trim() : "";
+        if (!query) continue;
+        if (!similarSearchConfigured()) {
+          writeLine({ t: "text", v: "\n\n(Paper lookup isn't configured on the server.)" });
+          continue;
+        }
+        try {
+          const { paper, matchType } = await findSpecificPaper({
+            anthropic: client,
+            query,
+            excludeRanks: selectedRanks,
+          });
+          if (paper) {
+            writeLine({ t: "action", name: "show_paper", input: { query, paper, matchType } });
+          } else {
+            writeLine({ t: "text", v: "\n\nI couldn't find that specific paper in the corpus — try the exact title, or ask me to find similar papers instead." });
+          }
+        } catch (e) {
+          console.error("[/api/copilot] specific-paper search failed:", e);
+          writeLine({ t: "text", v: "\n\n(Paper lookup failed — please try again.)" });
         }
       } else {
         // set_filters / reset_filters apply on the client.
