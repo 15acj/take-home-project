@@ -11,6 +11,11 @@ the full graph with zero layout cost.
 
 **Live app:** https://take-home-project-nine.vercel.app/
 
+**Project write-up:** https://docs.google.com/document/d/1f9570eMmHblfjSiTLIXYHKM1AljLc0nvZmXJqRpOzpQ
+
+**Demo video:** https://www.loom.com/share/a9f36b9e3cad463aafcce45d9d6a8a87
+([backup link](https://drive.google.com/file/d/1-sr2D5IfguUvKjKGJFVHB3aNXqjCHmmm/view) — same video on Google Drive, in case the Loom link isn't working)
+
 > **Note:** The app is desktop-oriented and needs a screen width of **1200px or above**.
 > Below that, it shows a prompt to widen the window.
 
